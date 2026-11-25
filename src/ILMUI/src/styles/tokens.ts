@@ -16,17 +16,25 @@ export const tokens = {
   // tool panel over bright terrain (TTE works around the same thing by overriding
   // --panelOpacityDark). Rows are tinted with white overlays so they pick up the
   // background hue.
-  colorPanelBg:        "rgba(20, 26, 36, 0.96)",
+  // The values below are the game's own palette (index.css :root), copied as literals where
+  // they go into shorthands: --panelColorDark (24,33,51), --sectionBackgroundColor
+  // (38,49,71), --sectionBackgroundColorLight (47,60,88), --selectedColor (#1e83aa).
+  colorPanelBg:        "rgba(24, 33, 51, 0.94)",
   // Solid surface for floating layers (dropdown menus, tooltips) that overlap other UI:
   // glass with blur smears the content behind them into unreadable blotches.
-  colorSurfaceSolid:   "rgba(24, 30, 40, 0.98)",
-  colorRowBg:          "rgba(255, 255, 255, 0.035)",
-  colorRowBgHover:     "rgba(255, 255, 255, 0.08)",
-  colorRowBgActive:    "rgba(70, 140, 255, 0.22)",
+  colorSurfaceSolid:   "rgba(24, 33, 51, 0.98)",
+  colorRowBg:          "rgba(38, 49, 71, 0.5)",
+  colorRowBgHover:     "rgba(47, 60, 88, 0.7)",
+  colorRowBgActive:    "rgba(30, 131, 170, 0.35)",
+  // Section header strip (--sectionHeaderColor).
+  colorSectionHeader:  "rgba(21, 25, 43, 0.5)",
+  // Selected toggle fill, as on the game's own tool option buttons (--selectedColor).
+  colorSelected:       "var(--selectedColor)",
+  colorSelectedHover:  "var(--selectedColor-hover)",
 
   // Filled rather than outlined buttons, so they read as native CS2 controls.
-  colorBtnBg:          "rgba(255, 255, 255, 0.07)",
-  colorBtnBgHover:     "rgba(255, 255, 255, 0.14)",
+  colorBtnBg:          "rgba(47, 60, 88, 0.6)",
+  colorBtnBgHover:     "rgba(63, 82, 125, 0.8)",
   // Dark text for accent-filled controls (game --focusedTextColorDark).
   colorTextOnAccent:   "#141B22",
 
@@ -35,8 +43,9 @@ export const tokens = {
   backdropBlur:        "var(--panelBlur)",
 
   // Borders: soft for separators, mid for interactive elements, strong for focus.
+  // Soft is the game's --dividerColor; mid its --sectionBorderColor.
   colorBorderSoft:     "rgba(255, 255, 255, 0.10)",
-  colorBorderMid:      "rgba(255, 255, 255, 0.18)",
+  colorBorderMid:      "rgba(56, 72, 104, 0.9)",
   colorBorderStrong:   "rgba(255, 255, 255, 0.35)",
 
   // Text. Primary/muted follow the game's own text roles (#F0FBFF and its
@@ -84,11 +93,12 @@ export const tokens = {
   // family override, even the generic "monospace", renders as empty squares. For aligned
   // digit columns use `font-variant-numeric: tabular-nums` instead of monospace. A custom
   // face would have to be bundled as a .ttf through webpack and @font-face.
-  fontSizeXs:  "10rem",
-  fontSizeSm:  "11rem",
-  fontSizeMd:  "12rem",
-  fontSizeLg:  "13rem",
-  fontSizeXl:  "15rem",
+  // A step larger than before, closer to the game's own panel text.
+  fontSizeXs:  "11rem",
+  fontSizeSm:  "12rem",
+  fontSizeMd:  "13rem",
+  fontSizeLg:  "14rem",
+  fontSizeXl:  "16rem",
   fontWeightRegular: "400",
   fontWeightMedium:  "500",
   fontWeightBold:    "600",
@@ -107,8 +117,8 @@ export const tokens = {
 
   // Layout. calc() does not work in cohtml, so the panel's max height is a fixed value
   // that leaves the bottom toolbar visible on most screens; the panel scrolls past it.
-  panelWidth:     "300rem",
-  panelMaxHeight: "800rem",
+  panelWidth:     "320rem",
+  panelMaxHeight: "760rem",
 
   // Icon sizes.
   iconSizeXs: "10rem",

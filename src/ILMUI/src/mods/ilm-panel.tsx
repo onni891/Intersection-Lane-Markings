@@ -2,6 +2,7 @@
 // document-level hotkey handler below uses.
 import { ChangeEvent, Component, ErrorInfo, KeyboardEvent as ReactKeyboardEvent, MouseEvent as ReactMouseEvent, ReactNode, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { Panel as VanillaPanel } from "cs2/ui";
 import {
   useToolState,
   cmdToggleSegment,
@@ -35,7 +36,7 @@ import {
 } from "../hooks/usePinnedStyles";
 import { registerSegmentAnchor, setAnchorExpanded, segKey, areaKey } from "../hooks/positionRegistry";
 import { useConfirm, useKeyedConfirm, Confirm } from "../hooks/useConfirm";
-import { ChevronRight, Cross, Eye, EyeOff, Trash, Cycle } from "../components/icons";
+import { ChevronRight, Eye, EyeOff, Trash, Cycle } from "../components/icons";
 import { LineStylePreview, AreaStylePreview, isG87LineStyle } from "../components/stylePreviews";
 import { Dropdown, DropdownOption } from "../components/Dropdown";
 import { TooltipProvider, Tooltip } from "../components/Tooltip";
@@ -44,10 +45,10 @@ import type { StringKey } from "../i18n";
 import { tokens as T } from "../styles/tokens";
 import {
   Panel,
+  WindowPosition,
+  WindowBody,
   PanelStickyChrome,
   PanelTitle,
-  PanelHeaderRow,
-  CloseBtn,
   StatusRow,
   StatusDot,
   ToggleRow,
@@ -414,18 +415,16 @@ const HotkeysFoldout = ({ defaultOpen = false }: { defaultOpen?: boolean }) => {
   );
 };
 
-// Title and close button, the same on both panel states.
-const PanelHeader = () => {
+// The game's own panel (cs2/ui): vanilla title bar, close button and blurred body, so the
+// tool window looks like the rest of the CS2 interface. Closing deactivates the tool.
+const ILMWindow = ({ children }: { children: ReactNode }) => {
   const t = useT();
   return (
-    <PanelHeaderRow>
-      <PanelTitle>{t("panel.appTitle")}</PanelTitle>
-      <Tooltip content={t("panel.close.tooltip")}>
-        <CloseBtn onClick={() => cmdActivateTool()}>
-          <Cross size={10} />
-        </CloseBtn>
-      </Tooltip>
-    </PanelHeaderRow>
+    <WindowPosition>
+      <VanillaPanel header={t("panel.appTitle")} onClose={() => cmdActivateTool()}>
+        <WindowBody>{children}</WindowBody>
+      </VanillaPanel>
+    </WindowPosition>
   );
 };
 
@@ -578,14 +577,13 @@ const ILMPanelInner = () => {
   // visible feedback before the first node click.
   if (state.selectedNodeIndex < 0) {
     return (
-      <Panel>
-        <PanelHeader />
+      <ILMWindow>
         <StatusRow>
           <StatusDot />
           <span>{t("panel.hint.selectNode")}</span>
         </StatusRow>
         <HotkeysFoldout defaultOpen />
-      </Panel>
+      </ILMWindow>
     );
   }
 
@@ -598,15 +596,8 @@ const ILMPanelInner = () => {
 
   return (
     <>
-      <Panel>
+      <ILMWindow>
         <PanelStickyChrome>
-          <PanelHeader />
-          <StatusRow>
-            <StatusDot />
-            <span>{toolStatus(t, state)}</span>
-          </StatusRow>
-
-          <SectionTitle>{t("section.drawing")}</SectionTitle>
           <ModeRow>
             <Tooltip content={t("mode.lines.tooltip")}>
               <ModeBtn $active={drawMode === "lines"} onClick={() => setDrawMode(drawMode, "lines")}>
@@ -624,6 +615,10 @@ const ILMPanelInner = () => {
               </ModeBtn>
             </Tooltip>
           </ModeRow>
+          <StatusRow>
+            <StatusDot />
+            <span>{toolStatus(t, state)}</span>
+          </StatusRow>
 
           {inAreaMode ? (
             <>
@@ -749,7 +744,7 @@ const ILMPanelInner = () => {
         <NodeIdText>{t("panel.title", { n: state.selectedNodeIndex })}</NodeIdText>
 
         <HotkeysFoldout />
-      </Panel>
+      </ILMWindow>
       {!inAreaMode && popoverLine?.segments.map((seg) => (
         <SegmentPopover
           key={`pop-${seg.lineIndex}-${seg.segmentIndex}`}

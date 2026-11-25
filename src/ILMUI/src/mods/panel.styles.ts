@@ -19,8 +19,31 @@
 import { styled } from "../styles/styled";
 import { tokens as T } from "../styles/tokens";
 
-// Main panel (GameTopRight).
+// Main window (GameTopRight): a positioned slot holding the game's own cs2/ui Panel, which
+// draws the vanilla title bar, close button and blurred body.
 
+export const WindowPosition = styled.div`
+  position: absolute;
+  // 56rem clears the game's top-right buttons (advisor, settings), which sit outside the
+  // GameTopRight slot.
+  top: 56rem;
+  right: ${T.space2};
+  width: ${T.panelWidth};
+  pointer-events: auto;
+`;
+
+// Scrolling body inside the vanilla Panel.
+export const WindowBody = styled.div`
+  max-height: ${T.panelMaxHeight};
+  overflow-y: auto;
+  padding: ${T.space2} ${T.space3} ${T.space3};
+  color: ${T.colorTextPrimary};
+  font-size: ${T.fontSizeMd};
+  line-height: ${T.lineHeightBase};
+`;
+
+// Standalone frame, only for the error fallback (kept independent of cs2/ui so it renders
+// even when the vanilla Panel is what failed).
 export const Panel = styled.div`
   position: absolute;
   // 56rem clears the game's top-right buttons (advisor, settings), which sit outside the
@@ -45,9 +68,7 @@ export const Panel = styled.div`
 // Header, status and drawing controls, divided from the lists below. Despite the name it
 // is not sticky (cohtml can't parse position: sticky); the whole panel scrolls as one.
 export const PanelStickyChrome = styled.div`
-  padding-bottom: ${T.space2};
-  margin-bottom: ${T.space2};
-  border-bottom: 1rem solid ${T.colorBorderSoft};
+  padding-bottom: ${T.space1};
 `;
 
 export const PanelTitle = styled.h3`
@@ -56,40 +77,7 @@ export const PanelTitle = styled.h3`
   margin: 0 0 ${T.space1} 0;
 `;
 
-// Title on the left, close button on the right.
-export const PanelHeaderRow = styled.div`
-  display: flex;
-  align-items: center;
-
-  > h3 {
-    flex: 1;
-    margin-bottom: 0;
-  }
-`;
-
-export const CloseBtn = styled.button`
-  width: 22rem;
-  height: 22rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  color: ${T.colorTextMuted};
-  border: 1rem solid transparent;
-  border-radius: ${T.radiusSm};
-  cursor: pointer;
-  pointer-events: auto;
-  padding: 0;
-  transition: background ${T.transitionFast}, color ${T.transitionFast}, border-color ${T.transitionFast};
-
-  &:hover {
-    background: ${T.colorRowBgHover};
-    border-color: ${T.colorBorderMid};
-    color: ${T.colorTextPrimary};
-  }
-`;
-
-// Mode switch (Lines / Area).
+// Mode switch (Lines / Free draw / Area).
 
 export const ModeRow = styled.div`
   display: flex;
@@ -104,15 +92,17 @@ export const ModeRow = styled.div`
   }
 `;
 
-// The active mode gets an accent fill with dark text, as the game marks selected toggles.
+// The active mode gets the game's selected-toggle blue (--selectedColor) with light text,
+// like the vanilla tool option buttons.
 export const ModeBtn = styled.button<{ $active?: boolean }>`
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: ${T.space1} ${T.space2};
+  height: 30rem;
+  padding: 0 ${T.space2};
   // background-color (longhand) — the active fill is a var()-based token.
-  background-color: ${(p) => (p.$active ? T.colorAccent : T.colorBtnBg)};
-  color: ${(p) => (p.$active ? T.colorTextOnAccent : T.colorTextMuted)};
+  background-color: ${(p) => (p.$active ? T.colorSelected : T.colorBtnBg)};
+  color: ${(p) => (p.$active ? T.colorTextPrimary : T.colorTextMuted)};
   border: 1rem solid transparent;
   border-radius: ${T.radiusSm};
   font-size: ${T.fontSizeSm};
@@ -127,8 +117,8 @@ export const ModeBtn = styled.button<{ $active?: boolean }>`
   }
 
   &:hover {
-    background-color: ${(p) => (p.$active ? "var(--accentColorNormal-hover)" : T.colorBtnBgHover)};
-    color: ${(p) => (p.$active ? T.colorTextOnAccent : T.colorTextPrimary)};
+    background-color: ${(p) => (p.$active ? T.colorSelectedHover : T.colorBtnBgHover)};
+    color: ${T.colorTextPrimary};
   }
 `;
 
@@ -167,13 +157,16 @@ export const FieldLabel = styled.span`
   flex-shrink: 0;
 `;
 
-// Section titles (Lines / Areas).
+// Section titles: the game's section header strip (--sectionHeaderColor), uppercase.
 export const SectionTitle = styled.div`
   font-size: ${T.fontSizeXs};
   font-weight: ${T.fontWeightBold};
-  color: ${T.colorTextDim};
+  color: ${T.colorTextMuted};
   text-transform: uppercase;
   letter-spacing: 0.6rem;
+  background: ${T.colorSectionHeader};
+  border-radius: ${T.radiusSm};
+  padding: ${T.space1} ${T.space2};
   margin: ${T.space3} 0 ${T.space1};
 `;
 
@@ -217,22 +210,21 @@ export const IconToggleBtn = styled.button<{ $active?: boolean }>`
   display: flex;
   align-items: center;
   justify-content: center;
-  background: ${(p) => (p.$active ? T.colorAccentDim : T.colorBtnBg)};
-  color: ${(p) => (p.$active ? T.colorAccent : T.colorTextPrimary)};
-  border: 1rem solid ${(p) => (p.$active ? T.colorAccentSoft : T.colorBorderSoft)};
+  background-color: ${(p) => (p.$active ? T.colorSelected : T.colorBtnBg)};
+  color: ${T.colorTextPrimary};
+  border: 1rem solid transparent;
   border-radius: ${T.radiusSm};
   cursor: pointer;
   pointer-events: auto;
   padding: 0;
-  transition: background ${T.transitionFast}, border-color ${T.transitionFast}, color ${T.transitionFast};
+  transition: background-color ${T.transitionFast}, color ${T.transitionFast};
 
   &:hover {
-    background: ${(p) => (p.$active ? T.colorAccentDim : T.colorBtnBgHover)};
-    border-color: ${T.colorBorderMid};
+    background-color: ${(p) => (p.$active ? T.colorSelectedHover : T.colorBtnBgHover)};
   }
 `;
 
-// Header of the collapsible hotkeys list: SectionTitle look plus a chevron.
+// Header of a collapsible list: SectionTitle look plus a chevron.
 export const FoldoutHeader = styled.div`
   display: flex;
   align-items: center;
@@ -240,9 +232,12 @@ export const FoldoutHeader = styled.div`
   user-select: none;
   font-size: ${T.fontSizeXs};
   font-weight: ${T.fontWeightBold};
-  color: ${T.colorTextDim};
+  color: ${T.colorTextMuted};
   text-transform: uppercase;
   letter-spacing: 0.6rem;
+  background: ${T.colorSectionHeader};
+  border-radius: ${T.radiusSm};
+  padding: ${T.space1} ${T.space2};
   margin: ${T.space3} 0 ${T.space1};
 
   > *:first-child {
@@ -250,7 +245,7 @@ export const FoldoutHeader = styled.div`
   }
 
   &:hover {
-    color: ${T.colorTextMuted};
+    color: ${T.colorTextPrimary};
   }
 `;
 
@@ -595,9 +590,7 @@ export const ConfirmRow = styled.div`
 // Hotkey hints.
 
 export const HintsBox = styled.div`
-  margin-top: ${T.space3};
-  padding-top: ${T.space2};
-  border-top: 1rem solid ${T.colorBorderSoft};
+  margin-top: ${T.space2};
 `;
 
 export const HintRow = styled.div`

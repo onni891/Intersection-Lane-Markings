@@ -11,26 +11,26 @@ const enUS = {
   "toolbar.toggle.tooltip":   "Toggle ILM marking tool (Ctrl+M)",
 
   // Panel chrome
-  "panel.appTitle":           "Road Markings",
+  "panel.appTitle":           "Intersection & Lane Markings",
   "panel.title":              "Node #{n}",
   "panel.close.tooltip":      "Close the marking tool",
-  "panel.hint.selectNode":    "Click an intersection on the map to edit its markings.",
+  "panel.hint.selectNode":    "Click a junction to edit its markings.",
   "panel.error.title":        "Panel error",
   "panel.error.retry":        "Retry",
 
   // Tool status (MarkingNodeToolSystem.State)
-  "status.line.first":        "Click the first point of a line",
-  "status.line.second":       "Click the second point to finish the line",
-  "status.area":              "Area mode — points placed: {n}",
+  "status.line.first":        "Click a point to start a line",
+  "status.line.second":       "Click a second point to finish",
+  "status.area":              "Outline the area — {n} points",
   "status.free.first":        "Click anywhere on the road to start drawing",
   "status.free.next":         "Click to add a point · Esc to finish",
 
   // Section headers
   "section.drawing":          "Drawing",
-  "section.node":             "Intersection",
+  "section.node":             "Junction",
 
   // Node block
-  "node.vanilla.label":       "Vanilla markings",
+  "node.vanilla.label":       "Game markings",
 
   // Mode switch
   "mode.lines":               "Lines",
@@ -47,9 +47,9 @@ const enUS = {
   "area.draft.cancel":        "Cancel area",
 
   // Next-object style pickers
-  "next.lineStyle":           "New line style",
+  "next.lineStyle":           "Line style",
   "next.lineStyle.tooltip":   "Style applied to the NEXT line you draw (hotkey Y cycles it)",
-  "next.areaStyle":           "New area fill",
+  "next.areaStyle":           "Fill",
   "next.areaStyle.tooltip":   "Fill applied to the NEXT area you close (hotkey U cycles it). Asphalt needs the separate 'G87 Vanilla Asphalt Pavement' mod (G87 VA); missing fills fall back to concrete. Pin favourites with the star to keep them on top.",
 
   // Sections
@@ -83,7 +83,7 @@ const enUS = {
   "areaStyle.22":             "Tiles 3",
 
   // Full node reset
-  "node.reset":               "Reset all markings",
+  "node.reset":               "Reset junction",
   "node.reset.tooltip":       "Delete every line and area on this node and bring back the game's own markings.",
 
   // Hotkey hints footer
@@ -147,7 +147,7 @@ const ruRU: LocaleDict = {
   "toolbar.toggle.tooltip":   "Включить инструмент разметки ILM (Ctrl+M)",
 
   // Panel chrome
-  "panel.appTitle":           "Дорожная разметка",
+  "panel.appTitle":           "Разметка перекрёстков и полос",
   "panel.title":              "Узел #{n}",
   "panel.close.tooltip":      "Закрыть инструмент разметки",
   "panel.hint.selectNode":    "Кликните по перекрёстку на карте, чтобы редактировать его разметку.",
