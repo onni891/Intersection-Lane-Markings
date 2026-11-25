@@ -17,7 +17,16 @@ namespace ILM.Localization
 
                 { _setting.GetOptionGroupLocaleID(ILMSetting.kEdgeGroup), "Curb-side edge line" },
                 { _setting.GetOptionGroupLocaleID(ILMSetting.kParkingGroup), "Parallel parking markings" },
+                { _setting.GetOptionGroupLocaleID(ILMSetting.kAnchorGroup), "Marking editor — anchor points" },
                 { _setting.GetOptionGroupLocaleID(ILMSetting.kSegmentGroup), "Marking editor — segment splitting" },
+
+                { _setting.GetOptionLabelLocaleID(nameof(ILMSetting.LaneCentrePoints)), "Lane centre points" },
+                { _setting.GetOptionDescLocaleID(nameof(ILMSetting.LaneCentrePoints)),
+                    "Adds a point in the middle of every lane at the junction, for arrows and centred lines. Lines drawn on these points are hidden while this is off." },
+
+                { _setting.GetOptionLabelLocaleID(nameof(ILMSetting.ExtraSetbackRows)), "Extra point rows (4 m and 16 m)" },
+                { _setting.GetOptionDescLocaleID(nameof(ILMSetting.ExtraSetbackRows)),
+                    "Repeats the lane points 4 m and 16 m back from the junction, next to the standard 8 m row. Rows that don't fit on a short road are skipped. Lines drawn on these points are hidden while this is off." },
                 { _setting.GetOptionGroupLocaleID(ILMSetting.kSegmentDevGroup), "Segment splitting — fine tuning" },
                 { _setting.GetOptionGroupLocaleID(ILMSetting.kKeybindGroup), "Keybinds" },
 

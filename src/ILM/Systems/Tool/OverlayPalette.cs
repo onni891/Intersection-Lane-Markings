@@ -43,6 +43,12 @@ namespace ILM.Systems.Tool
         public const float kSourceHaloDiameter = kDotDiameter * 2.2f;
         public const float kSourceHaloOutlineWidth = 0.10f;
         public static readonly Color kColSourceHalo = new Color(1f, 1f, 1f, 0.55f);
+        // Optional extra anchors (lane centres, 4 m / 16 m rows): smaller, so the main row stays
+        // the obvious first choice.
+        public const float kExtraDotDiameter = 0.42f;
+        public const float kExtraDotOutlineWidth = 0.07f;
+        // User-placed free points: white rings, whatever edge they sit on.
+        public static readonly Color kColFreePoint = new Color(1.00f, 1.00f, 1.00f, 0.90f);
         // Dot under the cursor.
         public const float kDotDiameterHover = 0.95f;
         public const float kDotOutlineWidthHover = 0.11f;

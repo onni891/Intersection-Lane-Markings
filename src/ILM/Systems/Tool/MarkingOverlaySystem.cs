@@ -244,12 +244,15 @@ namespace ILM.Systems.Tool
             for (int i = 0; i < endpoints.Count; i++)
             {
                 var ep = endpoints[i];
-                Color edgeColor = EdgeDotColor(ep.edge);
+                var kind = MarkingEndpointExtractor.KindOf(ep.gapIndex);
+                Color edgeColor = kind == MarkingEndpointExtractor.AnchorKind.Free ? kColFreePoint : EdgeDotColor(ep.edge);
                 bool connected = _connectedScratch.Contains((ep.edge, ep.gapIndex));
                 Color fill;
                 Color outline;
-                float diameter = kDotDiameter;
-                float outlineWidth = kDotOutlineWidth;
+                bool small = kind == MarkingEndpointExtractor.AnchorKind.LaneCentre
+                    || kind == MarkingEndpointExtractor.AnchorKind.ExtraSetback;
+                float diameter = small ? kExtraDotDiameter : kDotDiameter;
+                float outlineWidth = small ? kExtraDotOutlineWidth : kDotOutlineWidth;
 
                 if (i == sourceIdx)
                 {

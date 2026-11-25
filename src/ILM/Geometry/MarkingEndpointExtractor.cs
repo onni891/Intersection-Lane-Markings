@@ -150,6 +150,35 @@ namespace ILM.Geometry
         private const int kSetbackGapBase = 2000;
         private const float kSetbackDistanceM = 8f;
 
+        // Lane-centre anchors on the node-side cap: one per Road lane, in the middle of the lane
+        // rather than on its boundary. For arrows, centred lines and lane guidance. gapIndex =
+        // kLaneCentreGapBase + lane index (left to right). Optional (ILMSetting.LaneCentrePoints).
+        public const int kLaneCentreGapBase = 3000;
+
+        // Extra setback rows, the main row repeated at these distances. Same numbering scheme as
+        // the 8 m row: base + main gap. Optional (ILMSetting.ExtraSetbackRows).
+        public const int kSetbackNearGapBase = 4000;
+        private const float kSetbackNearDistanceM = 4f;
+        public const int kSetbackFarGapBase = 5000;
+        private const float kSetbackFarDistanceM = 16f;
+
+        // User-placed free points (MarkingFreePoint buffer on the node): kFreePointGapBase + id.
+        public const int kFreePointGapBase = 10000;
+
+        /// <summary>Kind of anchor a gapIndex belongs to, for drawing extra and free points
+        /// differently from the main row.</summary>
+        public enum AnchorKind { Main, Parking, Setback, LaneCentre, ExtraSetback, Free }
+
+        public static AnchorKind KindOf(int gapIndex)
+        {
+            if (gapIndex >= kFreePointGapBase) return AnchorKind.Free;
+            if (gapIndex >= kSetbackNearGapBase) return AnchorKind.ExtraSetback;
+            if (gapIndex >= kLaneCentreGapBase) return AnchorKind.LaneCentre;
+            if (gapIndex >= kSetbackGapBase) return AnchorKind.Setback;
+            if (gapIndex >= kExtendedGapBase) return AnchorKind.Parking;
+            return AnchorKind.Main;
+        }
+
         /// <summary>
         /// True when the edge's derived net state is filled in and extraction sees real data.
         /// False right after loading a save: <c>Composition</c> and <c>EdgeGeometry</c> are
@@ -451,30 +480,22 @@ namespace ILM.Geometry
             // emittedX[i] is main gap i for i < classicCount; the passes below append more.
             int classicCount = emittedX.Count;
 
-            // Setback row. Skipped when the cap-side geometry segment (about half the edge) is
-            // shorter than the setback: a row past the edge midpoint would collide with the row
-            // from the opposite node.
-            if (TryFindParamAtDistance(capLeftCurve, capRightCurve, nodeIsStart, kSetbackDistanceM, out float tSet))
+            // Lane centres on the cap row (optional).
+            var settings = Mod.Settings;
+            if (settings == null || settings.LaneCentrePoints)
             {
-                float3 setLeft = MathUtils.Position(capLeftCurve, tSet);
-                float3 setRight = MathUtils.Position(capRightCurve, tSet);
-                float3 tanLeft = MathUtils.Tangent(capLeftCurve, tSet);
-                float3 tanRight = MathUtils.Tangent(capRightCurve, tSet);
-                for (int i = 0; i < classicCount; i++)
-                {
-                    float f = math.saturate((emittedX[i] + halfWidth) / math.max(0.001f, halfWidth * 2f));
-                    float3 pos = math.lerp(setLeft, setRight, f);
-                    float3 tan3 = math.lerp(tanLeft, tanRight, f);
-                    // The tangent must point away from the node; end-cap curves run toward it.
-                    if (!nodeIsStart) tan3 = -tan3;
-                    outList.Add(new MarkingEndpoint
-                    {
-                        edge = edgeEntity,
-                        gapIndex = kSetbackGapBase + i,
-                        position = pos,
-                        tangent = math.normalizesafe(tan3.xz),
-                    });
-                }
+                for (int i = 0; i < sorted.Count; i++)
+                    outList.Add(MakeEndpoint(edgeEntity, kLaneCentreGapBase + i, sorted[i].x, halfWidth, leftAtNode, rightAtNode, tIntoEdge));
+            }
+
+            // Setback rows. Each is skipped when the cap-side geometry segment (about half the
+            // edge) is shorter than its distance: a row past the edge midpoint would collide with
+            // the row from the opposite node.
+            AddSetbackRow(edgeEntity, capLeftCurve, capRightCurve, nodeIsStart, kSetbackDistanceM, kSetbackGapBase, emittedX, classicCount, halfWidth, outList);
+            if (settings == null || settings.ExtraSetbackRows)
+            {
+                AddSetbackRow(edgeEntity, capLeftCurve, capRightCurve, nodeIsStart, kSetbackNearDistanceM, kSetbackNearGapBase, emittedX, classicCount, halfWidth, outList);
+                AddSetbackRow(edgeEntity, capLeftCurve, capRightCurve, nodeIsStart, kSetbackFarDistanceM, kSetbackFarGapBase, emittedX, classicCount, halfWidth, outList);
             }
 
             // Parking-bay edges. The main set covers only Road lanes, so on roads with parking
@@ -507,6 +528,34 @@ namespace ILM.Geometry
                 if (duplicate) continue;
                 outList.Add(MakeEndpoint(edgeEntity, g, x, halfWidth, leftAtNode, rightAtNode, tIntoEdge));
                 emittedX.Add(x);
+            }
+        }
+
+        /// <summary>The main row (the first <paramref name="count"/> lateral positions) repeated
+        /// <paramref name="distance"/> metres back along the road, with gapIndex = gapBase + main
+        /// gap. Tangents point away from the node, along the road.</summary>
+        private static void AddSetbackRow(Entity edgeEntity, in Bezier4x3 capLeftCurve, in Bezier4x3 capRightCurve, bool nodeIsStart,
+            float distance, int gapBase, List<float> lateralX, int count, float halfWidth, List<MarkingEndpoint> outList)
+        {
+            if (!TryFindParamAtDistance(capLeftCurve, capRightCurve, nodeIsStart, distance, out float tSet)) return;
+            float3 setLeft = MathUtils.Position(capLeftCurve, tSet);
+            float3 setRight = MathUtils.Position(capRightCurve, tSet);
+            float3 tanLeft = MathUtils.Tangent(capLeftCurve, tSet);
+            float3 tanRight = MathUtils.Tangent(capRightCurve, tSet);
+            for (int i = 0; i < count; i++)
+            {
+                float f = math.saturate((lateralX[i] + halfWidth) / math.max(0.001f, halfWidth * 2f));
+                float3 pos = math.lerp(setLeft, setRight, f);
+                float3 tan3 = math.lerp(tanLeft, tanRight, f);
+                // The tangent must point away from the node; end-cap curves run toward it.
+                if (!nodeIsStart) tan3 = -tan3;
+                outList.Add(new MarkingEndpoint
+                {
+                    edge = edgeEntity,
+                    gapIndex = gapBase + i,
+                    position = pos,
+                    tangent = math.normalizesafe(tan3.xz),
+                });
             }
         }
 

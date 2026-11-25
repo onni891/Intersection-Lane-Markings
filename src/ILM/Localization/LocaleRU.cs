@@ -17,7 +17,16 @@ namespace ILM.Localization
 
                 { _setting.GetOptionGroupLocaleID(ILMSetting.kEdgeGroup), "Краевая линия у бордюра" },
                 { _setting.GetOptionGroupLocaleID(ILMSetting.kParkingGroup), "Разметка параллельной парковки" },
+                { _setting.GetOptionGroupLocaleID(ILMSetting.kAnchorGroup), "Редактор разметки — точки привязки" },
                 { _setting.GetOptionGroupLocaleID(ILMSetting.kSegmentGroup), "Редактор разметки — разрезание на сегменты" },
+
+                { _setting.GetOptionLabelLocaleID(nameof(ILMSetting.LaneCentrePoints)), "Точки по центру полос" },
+                { _setting.GetOptionDescLocaleID(nameof(ILMSetting.LaneCentrePoints)),
+                    "Добавляет точку посередине каждой полосы у перекрёстка — для стрелок и линий по центру полосы. Линии на этих точках скрыты, пока опция выключена." },
+
+                { _setting.GetOptionLabelLocaleID(nameof(ILMSetting.ExtraSetbackRows)), "Дополнительные ряды точек (4 м и 16 м)" },
+                { _setting.GetOptionDescLocaleID(nameof(ILMSetting.ExtraSetbackRows)),
+                    "Повторяет точки полос в 4 м и 16 м от перекрёстка, рядом со стандартным рядом 8 м. Ряды, которые не помещаются на короткой дороге, пропускаются. Линии на этих точках скрыты, пока опция выключена." },
                 { _setting.GetOptionGroupLocaleID(ILMSetting.kSegmentDevGroup), "Разрезание сегментов — тонкая настройка" },
                 { _setting.GetOptionGroupLocaleID(ILMSetting.kKeybindGroup), "Горячие клавиши" },
 

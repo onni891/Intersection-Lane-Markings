@@ -18,8 +18,8 @@ namespace ILM
     /// keybind group).
     /// </summary>
     [FileLocation(nameof(ILM))]
-    [SettingsUIGroupOrder(kEdgeGroup, kParkingGroup, kSegmentGroup, kSegmentDevGroup, kKeybindGroup)]
-    [SettingsUIShowGroupName(kEdgeGroup, kParkingGroup, kSegmentGroup, kSegmentDevGroup, kKeybindGroup)]
+    [SettingsUIGroupOrder(kEdgeGroup, kParkingGroup, kAnchorGroup, kSegmentGroup, kSegmentDevGroup, kKeybindGroup)]
+    [SettingsUIShowGroupName(kEdgeGroup, kParkingGroup, kAnchorGroup, kSegmentGroup, kSegmentDevGroup, kKeybindGroup)]
     [SettingsUIKeyboardAction(ToggleMarkingTool, Usages.kDefaultUsage, Usages.kEditorUsage, Usages.kToolUsage)]
     [SettingsUIKeyboardAction(CycleMarkingStyle, Usages.kToolUsage)]
     [SettingsUIKeyboardAction(EnterAreaMode, Usages.kToolUsage)]
@@ -34,6 +34,7 @@ namespace ILM
         public const string kSection = "Main";
         public const string kEdgeGroup = "EdgeLine";
         public const string kParkingGroup = "ParkingMarkings";
+        public const string kAnchorGroup = "AnchorPoints";
         public const string kSegmentGroup = "SegmentSplit";
         public const string kSegmentDevGroup = "SegmentSplitDev";
         public const string kKeybindGroup = "Keybinds";
@@ -132,6 +133,15 @@ namespace ILM
         [SettingsUIDisableByCondition(typeof(ILMSetting), nameof(IsParkingDisabled))]
         public ParkingEndStyleEnum ParkingEndStyle { get; set; } = ParkingEndStyleEnum.WhiteSolid;
 
+        // Extra anchor points in the marking editor (MarkingEndpointExtractor). Read live: the
+        // next junction selected shows the change. Lines drawn on a disabled kind of point stay
+        // saved but are not drawn while it is off.
+        [SettingsUISection(kSection, kAnchorGroup)]
+        public bool LaneCentrePoints { get; set; } = true;
+
+        [SettingsUISection(kSection, kAnchorGroup)]
+        public bool ExtraSetbackRows { get; set; } = true;
+
         // Segment-splitting thresholds for MarkingTopologySystem. Unlike the styles above, these
         // need no restart: a junction re-segments the next time its lines change, and every
         // junction re-segments on save load because the topology hash isn't saved.
@@ -222,6 +232,8 @@ namespace ILM
             ParkingMarkingsEnabled = true;
             ParkingLineStyle = ParkingLineStyleEnum.WhiteDashed_G87;
             ParkingEndStyle = ParkingEndStyleEnum.WhiteSolid;
+            LaneCentrePoints = true;
+            ExtraSetbackRows = true;
             SegmentMinLengthM = MarkingTopologySystem.kDefaultMinSegmentLengthM;
             SegmentAnchorDeadZoneM = MarkingTopologySystem.kDefaultEndpointMarginM;
             SegmentMinCrossingAngleDeg = MarkingTopologySystem.kDefaultMinCrossingAngleDeg;
