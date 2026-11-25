@@ -59,6 +59,9 @@ namespace ILM.Systems.Emission
         // One warning per (node, line) over the PathNode slot capacity: the check fails every
         // tick for such a line, so unthrottled logging would flood.
         private readonly HashSet<(Entity, int)> _slotOverflowWarned = new HashSet<(Entity, int)>();
+        // The solid prefab check also fails every tick until the clone is baked, and forever if
+        // the clone system aborted. Warn once per load, then only at Debug level.
+        private bool _solidUnresolvedWarned;
         private PrefabSystem _prefabSystem;
         private EdgeLineCloneSystem _edgeLineSys;
         private CityConfigurationSystem _cityConfig;
@@ -100,6 +103,7 @@ namespace ILM.Systems.Emission
         {
             base.OnGameLoaded(serializationContext);
             _passPending = true;
+            _solidUnresolvedWarned = false;
             _retryAnyUntil = UnityEngine.Time.realtimeSinceStartup + kPostLoadRetrySeconds;
         }
 
@@ -147,7 +151,11 @@ namespace ILM.Systems.Emission
                 bool isNA = IsNATheme();
                 if (!TryResolveStylePrefab(MarkingStyle.Solid, isNA, out var solidPair))
                 {
-                    log.Warn("segment-emission: solid prefab not resolved yet — deferring entire tick");
+                    if (!_solidUnresolvedWarned)
+                    {
+                        _solidUnresolvedWarned = true;
+                        log.Warn("segment-emission: solid prefab not resolved yet — deferring until it is (logged once per load)");
+                    }
                     _passPending = true;
                 }
                 else

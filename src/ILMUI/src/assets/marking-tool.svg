@@ -1,10 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
-  <!-- ILM toolbar icon: the tool's own gesture — two endpoint dots
-       joined by a dashed marking curve. White-on-transparent to match the
-       vanilla CS2 floating-button icon language (game tints it via CSS). -->
-  <circle cx="11" cy="37" r="5.5" fill="#ffffff"/>
-  <circle cx="37" cy="11" r="5.5" fill="#ffffff"/>
-  <path d="M14.5 33.5 C 22 26, 26 22, 33.5 14.5"
-        stroke="#ffffff" stroke-width="4.5"
-        stroke-linecap="round" stroke-dasharray="7.5 6"/>
+<svg width="150" height="150" viewBox="0 0 150 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_2_5)">
+<path d="M121.498 15.2725L131.466 25.2401L106.235 50.4711L96.2729 40.5035L121.498 15.2725ZM139.03 12.8685L134.584 8.42331C132.866 6.70539 130.077 6.70539 128.353 8.42331L124.095 12.6814L134.063 22.6491L139.03 17.6823C140.362 16.3498 140.362 14.2009 139.03 12.8685ZM91.0566 54.5138C90.8752 55.3302 91.6123 56.0617 92.4288 55.8632L106.235 50.4711L96.2729 40.5035L91.0566 54.5138Z" fill="white"/>
+</g>
+<path d="M103 31.0059L92.2207 41.7881L89.0352 56.0996C88.8056 57.1326 89.7384 58.0588 90.7715 57.8076L103 54.8418V136H47V14H103V31.0059ZM73.5 126H76.5V109.5H73.5V126ZM73.5 104.5H76.5V88H73.5V104.5ZM73.5 83H76.5V66.5H73.5V83ZM73.5 61.5H76.5V45H73.5V61.5ZM73.5 40H76.5V23.5H73.5V40Z" fill="white"/>
+<defs>
+<clipPath id="clip0_2_5">
+<rect width="49" height="49" fill="white" transform="translate(91 7)"/>
+</clipPath>
+</defs>
 </svg>

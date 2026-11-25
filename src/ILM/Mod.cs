@@ -65,10 +65,16 @@ namespace ILM
             // A decode failure silently falls back to SetDefaults(), so log what the load actually
             // produced; user reports then show the real state.
             log.Info($"settings loaded: edge={Settings.EdgeLineEnabled}/{Settings.EdgeLineStyle}, parking={Settings.ParkingMarkingsEnabled}/{Settings.ParkingLineStyle}/{Settings.ParkingEndStyle}, pins='{Settings.PinnedLineStylesCsv}'/'{Settings.PinnedAreaStylesCsv}'");
+            // Set the level explicitly either way: the logger's default level is not ours to rely
+            // on, and ~60 Debug lines sit in per-tick code paths.
             if (Settings.VerboseLogging)
             {
                 log.effectivenessLevel = Level.Debug;
                 log.Info("verbose logging on");
+            }
+            else
+            {
+                log.effectivenessLevel = Level.Info;
             }
 
             // Vanilla-surface fill styles; see VanillaSurfaceLateClone for why they are registered

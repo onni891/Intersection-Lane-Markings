@@ -1,0 +1,39 @@
+{
+  "version": "2.0.0",
+  "options": {
+    // Make node/npm and dotnet reachable even when VS Code was started with a stale PATH.
+    "env": {
+      "PATH": "C:\\Program Files\\nodejs;C:\\Program Files\\dotnet;${env:PATH}",
+      // The game's ModPostProcessor targets .NET 6; let it run on the installed .NET 8.
+      "DOTNET_ROLL_FORWARD": "Major"
+    }
+  },
+  "tasks": [
+    {
+      "label": "ILM: build + deploy (Debug)",
+      "type": "process",
+      "command": "C:\\Program Files\\dotnet\\dotnet.exe",
+      "args": ["build", "${workspaceFolder}/src/ILM/ILM.csproj", "-c", "Debug"],
+      "problemMatcher": "$msCompile",
+      "group": { "kind": "build", "isDefault": true },
+      "presentation": { "reveal": "always", "clear": true }
+    },
+    {
+      "label": "ILM: build + deploy (Release)",
+      "type": "process",
+      "command": "C:\\Program Files\\dotnet\\dotnet.exe",
+      "args": ["build", "${workspaceFolder}/src/ILM/ILM.csproj", "-c", "Release"],
+      "problemMatcher": "$msCompile",
+      "group": "build",
+      "presentation": { "reveal": "always", "clear": true }
+    },
+    {
+      "label": "ILM: npm install (UI, run once)",
+      "type": "process",
+      "command": "C:\\Program Files\\nodejs\\npm.cmd",
+      "args": ["install"],
+      "options": { "cwd": "${workspaceFolder}/src/ILMUI" },
+      "problemMatcher": []
+    }
+  ]
+}
