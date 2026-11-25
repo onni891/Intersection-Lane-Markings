@@ -321,8 +321,17 @@ namespace ILM.Systems.Tool
         {
             if (_state == MarkingToolState.AreaSelecting)
             {
-                log.Debug($"area: cancelled AreaSelecting via Esc (had {_areaPolygon.Count} vertices)");
-                LeaveAreaSelecting();
+                // First Esc drops a half-drawn outline; Esc with nothing placed leaves area mode.
+                if (_areaPolygon.Count > 0)
+                {
+                    log.Debug($"area: Esc cleared the unfinished outline ({_areaPolygon.Count} vertices)");
+                    _areaPolygon.Clear();
+                }
+                else
+                {
+                    log.Debug("area: left AreaSelecting via Esc");
+                    LeaveAreaSelecting();
+                }
             }
             else if (_state == MarkingToolState.SourceSelected)
             {

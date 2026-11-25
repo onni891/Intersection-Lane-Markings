@@ -34,6 +34,18 @@ const enUS = {
   // Node block
   "node.vanilla.label":       "Game markings",
 
+  // Tabs and sections
+  "tab.lines":                "Lines",
+  "tab.areas":                "Areas",
+  "tab.advanced":             "Advanced",
+  "status.advanced":          "Settings for this selection",
+  "section.draw":             "Draw",
+  "section.more":             "More options",
+  "mode.points":              "Snap to points",
+  "lines.empty":              "No lines yet. Click a point on the road to start one.",
+  "areas.empty":              "No areas yet. Click points to outline one.",
+  "advanced.optionsHint":     "Extra point rows, lane centre points and keybinds are in Options → Intersection & Lane Markings.",
+
   // Mode switch
   "mode.lines":               "Lines",
   "mode.area":                "Area",
@@ -171,6 +183,18 @@ const ruRU: LocaleDict = {
 
   // Node block
   "node.vanilla.label":       "Ванильная разметка",
+
+  // Tabs and sections
+  "tab.lines":                "Линии",
+  "tab.areas":                "Области",
+  "tab.advanced":             "Ещё",
+  "status.advanced":          "Настройки выбранного объекта",
+  "section.draw":             "Рисование",
+  "section.more":             "Другие настройки",
+  "mode.points":              "По точкам",
+  "lines.empty":              "Линий пока нет. Кликните точку на дороге, чтобы начать.",
+  "areas.empty":              "Областей пока нет. Кликайте точки, чтобы обвести область.",
+  "advanced.optionsHint":     "Доп. ряды точек, точки по центру полос и клавиши — в Настройки → Intersection & Lane Markings.",
 
   // Mode switch
   "mode.lines":               "Линии",

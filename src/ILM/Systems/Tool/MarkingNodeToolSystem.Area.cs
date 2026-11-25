@@ -296,7 +296,9 @@ namespace ILM.Systems.Tool
             EntityManager.MarkUpdated(_selectedNode);
 
             log.Debug($"area: closed with {_areaPolygon.Count} vertices on node #{_selectedNode.Index} — buffer now has {areas.Length} area(s)");
-            LeaveAreaSelecting();
+            // Stay in area drawing for the next area (the panel's Areas tab follows this state).
+            _areaPolygon.Clear();
+            _areaHover = AreaCandidate.None;
         }
 
         /// <summary>The saved form of a placed vertex.</summary>

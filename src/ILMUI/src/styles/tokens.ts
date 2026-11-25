@@ -119,6 +119,8 @@ export const tokens = {
   // that leaves the bottom toolbar visible on most screens; the panel scrolls past it.
   panelWidth:     "320rem",
   panelMaxHeight: "760rem",
+  // Scrolling part below the title bar, tabs and status; leaves the bottom toolbar visible.
+  panelScrollMaxHeight: "600rem",
 
   // Icon sizes.
   iconSizeXs: "10rem",

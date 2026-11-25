@@ -2,7 +2,7 @@
 // document-level hotkey handler below uses.
 import { ChangeEvent, Component, ErrorInfo, KeyboardEvent as ReactKeyboardEvent, MouseEvent as ReactMouseEvent, ReactNode, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Panel as VanillaPanel } from "cs2/ui";
+import { Panel as VanillaPanel, Scrollable } from "cs2/ui";
 import {
   useToolState,
   cmdToggleSegment,
@@ -47,6 +47,9 @@ import {
   Panel,
   WindowPosition,
   WindowBody,
+  WindowFixed,
+  TabRow,
+  TabBtn,
   PanelStickyChrome,
   PanelTitle,
   StatusRow,
@@ -387,46 +390,41 @@ const AreaPopover = ({ area }: { area: AreaVM }) => {
   );
 };
 
-// Hotkey list, collapsed by default so it doesn't take a third of the panel. It starts
-// open on the "select a node" card, where the panel is otherwise empty.
-const HotkeysFoldout = ({ defaultOpen = false }: { defaultOpen?: boolean }) => {
+// Hotkey list, on the Advanced tab and the "select a node" card.
+const HotkeysList = () => {
   const t = useT();
-  const [open, setOpen] = useState(defaultOpen);
   return (
     <HintsBox>
-      <FoldoutHeader onClick={() => setOpen(!open)}>
-        <LineChevron $open={open}>
-          <ChevronRight size={10} />
-        </LineChevron>
-        <span>{t("hotkeys.title")}</span>
-      </FoldoutHeader>
-      {open && (
-        <>
-          <HintRow><HintKey>Ctrl+M</HintKey><span>{t("hotkeys.toggle")}</span></HintRow>
-          <HintRow><HintKey>Y</HintKey><span>{t("hotkeys.cycleLine")}</span></HintRow>
-          <HintRow><HintKey>A</HintKey><span>{t("hotkeys.areaMode")}</span></HintRow>
-          <HintRow><HintKey>U</HintKey><span>{t("hotkeys.cycleArea")}</span></HintRow>
-          <HintRow><HintKey>F</HintKey><span>{t("hotkeys.freeDraw")}</span></HintRow>
-          <HintRow><HintKey>{t("hotkeys.rmb")}</HintKey><span>{t("hotkeys.rmb.desc")}</span></HintRow>
-          <HintRow><HintKey>{t("hotkeys.esc")}</HintKey><span>{t("hotkeys.esc.desc")}</span></HintRow>
-        </>
-      )}
+      <HintRow><HintKey>Ctrl+M</HintKey><span>{t("hotkeys.toggle")}</span></HintRow>
+      <HintRow><HintKey>Y</HintKey><span>{t("hotkeys.cycleLine")}</span></HintRow>
+      <HintRow><HintKey>A</HintKey><span>{t("hotkeys.areaMode")}</span></HintRow>
+      <HintRow><HintKey>U</HintKey><span>{t("hotkeys.cycleArea")}</span></HintRow>
+      <HintRow><HintKey>F</HintKey><span>{t("hotkeys.freeDraw")}</span></HintRow>
+      <HintRow><HintKey>{t("hotkeys.rmb")}</HintKey><span>{t("hotkeys.rmb.desc")}</span></HintRow>
+      <HintRow><HintKey>{t("hotkeys.esc")}</HintKey><span>{t("hotkeys.esc.desc")}</span></HintRow>
     </HintsBox>
   );
 };
 
 // The game's own panel (cs2/ui): vanilla title bar, close button and blurred body, so the
 // tool window looks like the rest of the CS2 interface. Closing deactivates the tool.
-const ILMWindow = ({ children }: { children: ReactNode }) => {
+// `fixed` stays put above the scrolling body (tabs and status); the body scrolls with the
+// game's own Scrollable, which draws the vanilla scrollbar.
+const ILMWindow = ({ fixed, children }: { fixed?: ReactNode; children: ReactNode }) => {
   const t = useT();
   return (
     <WindowPosition>
       <VanillaPanel header={t("panel.appTitle")} onClose={() => cmdActivateTool()}>
-        <WindowBody>{children}</WindowBody>
+        {fixed && <WindowFixed>{fixed}</WindowFixed>}
+        <Scrollable vertical trackVisibility="scrollable" style={{ maxHeight: T.panelScrollMaxHeight }}>
+          <WindowBody>{children}</WindowBody>
+        </Scrollable>
       </VanillaPanel>
     </WindowPosition>
   );
 };
+
+type PanelTab = "lines" | "areas" | "advanced";
 
 // The next step for the user in the current tool state.
 const toolStatus = (t: ReturnType<typeof useT>, state: { toolState: number; areaVertexCount: number; freeDraw: boolean }): string => {
@@ -442,17 +440,6 @@ const toolStatus = (t: ReturnType<typeof useT>, state: { toolState: number; area
   return t("status.line.first");
 };
 
-type DrawMode = "lines" | "free" | "area";
-
-// Switches between the three drawing modes. Area mode and free draw are separate flags on
-// the C# side, so leaving one may need a second command.
-const setDrawMode = (current: DrawMode, next: DrawMode) => {
-  if (current === next) return;
-  if (current === "area") cmdToggleAreaMode();
-  if (current === "free") cmdToggleFreeDraw();
-  if (next === "area") cmdToggleAreaMode();
-  if (next === "free") cmdToggleFreeDraw();
-};
 
 const ILMPanelInner = () => {
   const state = useToolState();
@@ -468,8 +455,9 @@ const ILMPanelInner = () => {
   // Folded lists keep only the header (with count) and the row that is expanded or hovered
   // in the world, so a busy junction doesn't turn the panel into a wall. Kept across node
   // switches on purpose.
-  const [linesFolded, setLinesFolded] = useState(false);
-  const [areasFolded, setAreasFolded] = useState(false);
+  // Chosen tab. Area drawing is the C# AreaSelecting state, so the Areas tab follows it:
+  // while drawing an area the Areas tab shows, and when drawing ends it falls back to Lines.
+  const [tab, setTab] = useState<PanelTab>("lines");
 
   // The expanded rows react to changes pushed by C#. They are adjusted while rendering, on
   // the render that first sees the change, instead of in effects that would commit a frame
@@ -486,8 +474,11 @@ const ILMPanelInner = () => {
     // Another node or line count: a node with a single line opens with that line expanded,
     // and a row past the end of the list is dropped.
     if (lineListKey !== seenLineListKey) {
+      const [prevNode, prevLen] = (seenLineListKey ?? "-1:0").split(":").map(Number);
       setSeenLineListKey(lineListKey);
-      if (state.lines.length === 1) next = 0;
+      // A line was just drawn on this node: open it (new lines are appended).
+      if (prevNode === state.selectedNodeIndex && state.lines.length > prevLen) next = state.lines.length - 1;
+      else if (state.lines.length === 1) next = 0;
       else if (next >= state.lines.length) next = -1;
     }
     // A click on a line in the world expands its row, a click that hit no line collapses.
@@ -505,8 +496,11 @@ const ILMPanelInner = () => {
 
   // Drop the expanded area row when the list shrinks below it.
   if (areaListKey !== seenAreaListKey) {
+    const [prevNode, prevLen] = (seenAreaListKey ?? "-1:0").split(":").map(Number);
     setSeenAreaListKey(areaListKey);
-    if (expandedArea >= state.areas.length) setExpandedArea(-1);
+    // An area was just closed on this node: open it.
+    if (prevNode === state.selectedNodeIndex && state.areas.length > prevLen) setExpandedArea(state.areas.length - 1);
+    else if (expandedArea >= state.areas.length) setExpandedArea(-1);
   }
 
   // Panel shortcuts while a node is selected. Keys typed into text fields and combos with
@@ -571,18 +565,28 @@ const ILMPanelInner = () => {
   if (!state.isActive) return null;
 
   const inAreaMode = state.toolState === TOOL_STATE.AreaSelecting;
-  const drawMode: DrawMode = inAreaMode ? "area" : state.freeDraw ? "free" : "lines";
+  const shownTab: PanelTab = inAreaMode ? "areas" : tab === "areas" ? "lines" : tab;
+
+  // Tabs drive the C# drawing state: Areas enters area drawing, the others leave it.
+  const openTab = (next: PanelTab) => {
+    setTab(next);
+    if (next === "areas" && !inAreaMode) cmdToggleAreaMode();
+    if (next !== "areas" && inAreaMode) cmdToggleAreaMode();
+  };
 
   // No node selected yet: a short "how to start" card, so activating the tool gives
   // visible feedback before the first node click.
   if (state.selectedNodeIndex < 0) {
     return (
-      <ILMWindow>
-        <StatusRow>
-          <StatusDot />
-          <span>{t("panel.hint.selectNode")}</span>
-        </StatusRow>
-        <HotkeysFoldout defaultOpen />
+      <ILMWindow
+        fixed={
+          <StatusRow>
+            <StatusDot />
+            <span>{t("panel.hint.selectNode")}</span>
+          </StatusRow>
+        }
+      >
+        <HotkeysList />
       </ILMWindow>
     );
   }
@@ -594,55 +598,44 @@ const ILMPanelInner = () => {
   const lineStyleOptions = makeLineStyleOptions(t, pinned.lineStyles);
   const areaStyleOptions = makeAreaStyleOptions(t, pinned.areaStyles);
 
+  const fixed = (
+    <>
+      <TabRow>
+        <TabBtn $active={shownTab === "lines"} onClick={() => openTab("lines")}>
+          {`${t("tab.lines")} · ${state.lines.length}`}
+        </TabBtn>
+        <TabBtn $active={shownTab === "areas"} onClick={() => openTab("areas")}>
+          {`${t("tab.areas")} · ${state.areas.length}`}
+        </TabBtn>
+        <TabBtn $active={shownTab === "advanced"} onClick={() => openTab("advanced")}>
+          {t("tab.advanced")}
+        </TabBtn>
+      </TabRow>
+      <StatusRow>
+        <StatusDot />
+        <span>{shownTab === "advanced" ? t("status.advanced") : toolStatus(t, state)}</span>
+      </StatusRow>
+    </>
+  );
+
   return (
     <>
-      <ILMWindow>
-        <PanelStickyChrome>
-          <ModeRow>
-            <Tooltip content={t("mode.lines.tooltip")}>
-              <ModeBtn $active={drawMode === "lines"} onClick={() => setDrawMode(drawMode, "lines")}>
-                {t("mode.lines")}
-              </ModeBtn>
-            </Tooltip>
-            <Tooltip content={t("mode.free.tooltip")}>
-              <ModeBtn $active={drawMode === "free"} onClick={() => setDrawMode(drawMode, "free")}>
-                {t("mode.free")}
-              </ModeBtn>
-            </Tooltip>
-            <Tooltip content={t("mode.area.tooltip")}>
-              <ModeBtn $active={drawMode === "area"} onClick={() => setDrawMode(drawMode, "area")}>
-                {t("mode.area")}
-              </ModeBtn>
-            </Tooltip>
-          </ModeRow>
-          <StatusRow>
-            <StatusDot />
-            <span>{toolStatus(t, state)}</span>
-          </StatusRow>
-
-          {inAreaMode ? (
-            <>
-              <FieldRow>
-                <Tooltip content={t("next.areaStyle.tooltip")}>
-                  <FieldLabel>{t("next.areaStyle")}</FieldLabel>
-                </Tooltip>
-                <Dropdown
-                  value={state.currentAreaStyle}
-                  options={areaStyleOptions}
-                  onChange={(s) => cmdSetCurrentAreaStyle(s)}
-                  onTogglePin={cmdTogglePinAreaStyle}
-                />
-              </FieldRow>
-              <DraftBox>
-                <DraftHint>{t("area.draft.hint.add")}</DraftHint>
-                <DraftHint>{t("area.draft.hint.undo")}</DraftHint>
-                <DraftHint>{t("area.draft.hint.close")}</DraftHint>
-                <Btn $full onClick={() => cmdToggleAreaMode()}>
-                  <span>{t("area.draft.cancel")}</span>
-                </Btn>
-              </DraftBox>
-            </>
-          ) : (
+      <ILMWindow fixed={fixed}>
+        {shownTab === "lines" && (
+          <>
+            <SectionTitle>{t("section.draw")}</SectionTitle>
+            <ModeRow>
+              <Tooltip content={t("mode.lines.tooltip")}>
+                <ModeBtn $active={!state.freeDraw} onClick={() => { if (state.freeDraw) cmdToggleFreeDraw(); }}>
+                  {t("mode.points")}
+                </ModeBtn>
+              </Tooltip>
+              <Tooltip content={t("mode.free.tooltip")}>
+                <ModeBtn $active={state.freeDraw} onClick={() => { if (!state.freeDraw) cmdToggleFreeDraw(); }}>
+                  {t("mode.free")}
+                </ModeBtn>
+              </Tooltip>
+            </ModeRow>
             <FieldRow>
               <Tooltip content={t("next.lineStyle.tooltip")}>
                 <FieldLabel>{t("next.lineStyle")}</FieldLabel>
@@ -654,26 +647,13 @@ const ILMPanelInner = () => {
                 onTogglePin={cmdTogglePinLineStyle}
               />
             </FieldRow>
-          )}
-        </PanelStickyChrome>
 
-        {state.lines.length > 0 && (
-          <>
-            <FoldoutHeader onClick={() => setLinesFolded(!linesFolded)}>
-              <LineChevron $open={!linesFolded}>
-                <ChevronRight size={10} />
-              </LineChevron>
-              <span>{`${t("section.lines")} · ${state.lines.length}`}</span>
-            </FoldoutHeader>
-            <PanelList>
-              {state.lines.map((line) => {
-                if (
-                  linesFolded &&
-                  expandedLine !== line.lineIndex &&
-                  state.hoveredLineInGame !== line.lineIndex
-                )
-                  return null;
-                return (
+            <SectionTitle>{`${t("section.lines")} · ${state.lines.length}`}</SectionTitle>
+            {state.lines.length === 0 ? (
+              <PanelHint>{t("lines.empty")}</PanelHint>
+            ) : (
+              <PanelList>
+                {state.lines.map((line) => (
                   <LineRow
                     key={line.lineIndex}
                     line={line}
@@ -685,29 +665,38 @@ const ILMPanelInner = () => {
                     }
                     onCancelPendingDelete={keyDelete.disarm}
                   />
-                );
-              })}
-            </PanelList>
+                ))}
+              </PanelList>
+            )}
           </>
         )}
 
-        {state.areas.length > 0 && (
+        {shownTab === "areas" && (
           <>
-            <FoldoutHeader onClick={() => setAreasFolded(!areasFolded)}>
-              <LineChevron $open={!areasFolded}>
-                <ChevronRight size={10} />
-              </LineChevron>
-              <span>{`${t("section.areas")} · ${state.areas.length}`}</span>
-            </FoldoutHeader>
-            <PanelList>
-              {state.areas.map((area) => {
-                if (
-                  areasFolded &&
-                  expandedArea !== area.areaIndex &&
-                  state.hoveredAreaInGame !== area.areaIndex
-                )
-                  return null;
-                return (
+            <SectionTitle>{t("section.draw")}</SectionTitle>
+            <FieldRow>
+              <Tooltip content={t("next.areaStyle.tooltip")}>
+                <FieldLabel>{t("next.areaStyle")}</FieldLabel>
+              </Tooltip>
+              <Dropdown
+                value={state.currentAreaStyle}
+                options={areaStyleOptions}
+                onChange={(s) => cmdSetCurrentAreaStyle(s)}
+                onTogglePin={cmdTogglePinAreaStyle}
+              />
+            </FieldRow>
+            <DraftBox>
+              <DraftHint>{t("area.draft.hint.add")}</DraftHint>
+              <DraftHint>{t("area.draft.hint.undo")}</DraftHint>
+              <DraftHint>{t("area.draft.hint.close")}</DraftHint>
+            </DraftBox>
+
+            <SectionTitle>{`${t("section.areas")} · ${state.areas.length}`}</SectionTitle>
+            {state.areas.length === 0 ? (
+              <PanelHint>{t("areas.empty")}</PanelHint>
+            ) : (
+              <PanelList>
+                {state.areas.map((area) => (
                   <AreaRow
                     key={area.areaIndex}
                     area={area}
@@ -718,44 +707,47 @@ const ILMPanelInner = () => {
                       setExpandedArea(expandedArea === area.areaIndex ? -1 : area.areaIndex)
                     }
                   />
-                );
-              })}
-            </PanelList>
+                ))}
+              </PanelList>
+            )}
           </>
         )}
 
-        {/* Node settings sit at the bottom: the vanilla toggle is a setting, not an action,
-            and the full reset is rare and destructive. */}
-        <SectionTitle>{state.selectedIsRoad ? t("section.road") : t("section.node")}</SectionTitle>
-        <ToggleRow>
-          <FieldLabel>{t("node.vanilla.label")}</FieldLabel>
-          <Tooltip content={t("vanilla.tooltip")}>
-            <IconToggleBtn
-              $active={state.vanillaHidden}
-              onClick={cmdToggleVanillaMarkings}
-            >
-              {state.vanillaHidden ? <EyeOff size={14} /> : <Eye size={14} />}
-            </IconToggleBtn>
-          </Tooltip>
-        </ToggleRow>
-        {(state.lines.length > 0 || state.areas.length > 0 || state.vanillaHidden || state.freePointCount > 0) && (
-          <ResetNodeButton />
-        )}
-        <NodeIdText>
-          {state.selectedIsRoad
-            ? t("panel.title.road", { n: state.selectedNodeIndex })
-            : t("panel.title", { n: state.selectedNodeIndex })}
-        </NodeIdText>
+        {shownTab === "advanced" && (
+          <>
+            <SectionTitle>{state.selectedIsRoad ? t("section.road") : t("section.node")}</SectionTitle>
+            <ToggleRow>
+              <FieldLabel>{t("node.vanilla.label")}</FieldLabel>
+              <Tooltip content={t("vanilla.tooltip")}>
+                <IconToggleBtn $active={state.vanillaHidden} onClick={cmdToggleVanillaMarkings}>
+                  {state.vanillaHidden ? <EyeOff size={14} /> : <Eye size={14} />}
+                </IconToggleBtn>
+              </Tooltip>
+            </ToggleRow>
+            {(state.lines.length > 0 || state.areas.length > 0 || state.vanillaHidden || state.freePointCount > 0) && (
+              <ResetNodeButton />
+            )}
+            <NodeIdText>
+              {state.selectedIsRoad
+                ? t("panel.title.road", { n: state.selectedNodeIndex })
+                : t("panel.title", { n: state.selectedNodeIndex })}
+            </NodeIdText>
 
-        <HotkeysFoldout />
+            <SectionTitle>{t("hotkeys.title")}</SectionTitle>
+            <HotkeysList />
+
+            <SectionTitle>{t("section.more")}</SectionTitle>
+            <PanelHint>{t("advanced.optionsHint")}</PanelHint>
+          </>
+        )}
       </ILMWindow>
-      {!inAreaMode && popoverLine?.segments.map((seg) => (
+      {shownTab === "lines" && popoverLine?.segments.map((seg) => (
         <SegmentPopover
           key={`pop-${seg.lineIndex}-${seg.segmentIndex}`}
           seg={seg}
         />
       ))}
-      {!inAreaMode && popoverArea && (
+      {shownTab === "areas" && popoverArea && (
         <AreaPopover key={`pop-area-${popoverArea.areaIndex}`} area={popoverArea} />
       )}
     </>

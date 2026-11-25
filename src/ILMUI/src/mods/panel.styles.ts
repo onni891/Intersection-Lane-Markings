@@ -32,11 +32,52 @@ export const WindowPosition = styled.div`
   pointer-events: auto;
 `;
 
-// Scrolling body inside the vanilla Panel.
+// Non-scrolling top of the window: tabs and the status line.
+export const WindowFixed = styled.div`
+  padding: ${T.space2} ${T.space3} ${T.space1};
+  border-bottom: 1rem solid ${T.colorBorderSoft};
+  color: ${T.colorTextPrimary};
+  font-size: ${T.fontSizeMd};
+`;
+
+// Tab strip (Lines / Areas / Advanced). The active tab gets the game's selected blue.
+export const TabRow = styled.div`
+  display: flex;
+
+  > * {
+    flex: 1;
+    margin-right: 2rem;
+  }
+  > *:last-child {
+    margin-right: 0;
+  }
+`;
+
+export const TabBtn = styled.button<{ $active?: boolean }>`
+  height: 32rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: ${(p) => (p.$active ? T.colorSelected : T.colorBtnBg)};
+  color: ${(p) => (p.$active ? T.colorTextPrimary : T.colorTextMuted)};
+  border: 0;
+  border-radius: ${T.radiusSm};
+  font-size: ${T.fontSizeSm};
+  font-weight: ${T.fontWeightBold};
+  text-transform: uppercase;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: background-color ${T.transitionFast}, color ${T.transitionFast};
+
+  &:hover {
+    background-color: ${(p) => (p.$active ? T.colorSelectedHover : T.colorBtnBgHover)};
+    color: ${T.colorTextPrimary};
+  }
+`;
+
+// Body inside the vanilla Scrollable, which does the scrolling.
 export const WindowBody = styled.div`
-  max-height: ${T.panelMaxHeight};
-  overflow-y: auto;
-  padding: ${T.space2} ${T.space3} ${T.space3};
+  padding: ${T.space1} ${T.space3} ${T.space3};
   color: ${T.colorTextPrimary};
   font-size: ${T.fontSizeMd};
   line-height: ${T.lineHeightBase};
