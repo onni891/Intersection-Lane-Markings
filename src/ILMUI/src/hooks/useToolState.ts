@@ -24,6 +24,8 @@ export interface LineVM {
   // Curvature in integer percent: 0 is a straight chord, 50 the default arc (pull factor
   // 0.4), 100 the roundest (pull factor 0.8).
   curv: number;
+  // Shaped by dragging its handles; the curvature value then doesn't apply.
+  handles: boolean;
   segments: SegmentVM[];
 }
 
@@ -168,6 +170,16 @@ export const cmdSetCurrentAreaStyle = (styleId: number) => {
 // A hotkey. Leaving area mode drops an unfinished contour.
 export const cmdToggleAreaMode = () => {
   trigger(BINDING_GROUP, "ToggleAreaMode");
+};
+
+// The line expanded in the panel; the tool shows its drag handles on the road. -1 for none.
+export const cmdSetEditLine = (lineIndex: number) => {
+  trigger(BINDING_GROUP, "SetEditLine", lineIndex);
+};
+
+// Splits the line at its middle through a new point that can be dragged.
+export const cmdSplitLine = (lineIndex: number) => {
+  trigger(BINDING_GROUP, "SplitLine", lineIndex);
 };
 
 // Free draw on/off, like the F hotkey.

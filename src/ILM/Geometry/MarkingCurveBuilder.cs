@@ -81,10 +81,23 @@ namespace ILM.Geometry
         {
             bez = default;
             var endpoints = MarkingEndpointExtractor.Extract(em, node);
-            if (!TryFind(endpoints, line.sourceEdge, line.sourceGapIndex, out var src)) return false;
-            if (!TryFind(endpoints, line.targetEdge, line.targetGapIndex, out var dst)) return false;
-            bez = Build(src.position, src.tangent, dst.position, dst.tangent, line.curvature);
-            return true;
+            return TryBuild(endpoints, line, out bez);
+        }
+
+        /// <summary>The line's curve between its resolved endpoints: hand-shaped when it has
+        /// handles, otherwise the automatic arc from the curvature.</summary>
+        public static Bezier4x3 BuildLine(MarkingEndpoint src, MarkingEndpoint dst, MarkingLine line)
+        {
+            if (line.hasHandles)
+                return new Bezier4x3(src.position, src.position + line.handleA, dst.position + line.handleB, dst.position);
+            return Build(src.position, src.tangent, dst.position, dst.tangent, line.curvature);
+        }
+
+        public static bool TryFindEndpoints(IReadOnlyList<MarkingEndpoint> endpoints, MarkingLine line, out MarkingEndpoint src, out MarkingEndpoint dst)
+        {
+            dst = default;
+            return TryFind(endpoints, line.sourceEdge, line.sourceGapIndex, out src)
+                && TryFind(endpoints, line.targetEdge, line.targetGapIndex, out dst);
         }
 
         /// <summary>Same as the node overload, but reuses an already extracted endpoint list,
@@ -93,9 +106,8 @@ namespace ILM.Geometry
         {
             bez = default;
             if (endpoints == null) return false;
-            if (!TryFind(endpoints, line.sourceEdge, line.sourceGapIndex, out var src)) return false;
-            if (!TryFind(endpoints, line.targetEdge, line.targetGapIndex, out var dst)) return false;
-            bez = Build(src.position, src.tangent, dst.position, dst.tangent, line.curvature);
+            if (!TryFindEndpoints(endpoints, line, out var src, out var dst)) return false;
+            bez = BuildLine(src, dst, line);
             return true;
         }
 

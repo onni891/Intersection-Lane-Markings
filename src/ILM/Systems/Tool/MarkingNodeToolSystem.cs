@@ -204,6 +204,9 @@ namespace ILM.Systems.Tool
             _lastClickedLine = -1; // so a new selection doesn't expand a stale panel row
             _lastClickedTick++;
             _hoveredLineInGame = -1;
+            _editLine = -1;
+            _drag = DragKind.None;
+            _dragMoved = false;
         }
 
         public override void InitializeRaycast()
@@ -294,6 +297,10 @@ namespace ILM.Systems.Tool
                 TryRemoveHoveredFreePoint();
                 return inputDeps;
             }
+
+            // Handle and free-point drags take the mouse before a normal click.
+            if (UpdateDrag(hitSomething))
+                return inputDeps;
 
             if (applyAction.WasPressedThisFrame())
                 HandleApply(hitSomething, hitNode, hitEdge, hitEntity);
@@ -454,6 +461,7 @@ namespace ILM.Systems.Tool
             _cornerAnchors = MarkingEndpointExtractor.ExtractCornerAnchors(EntityManager, node);
             RefreshIntersectionAnchors();
             _sourceIdx = -1;
+            _editLine = -1;
             _state = MarkingToolState.NodeSelected;
             int existingLines = EntityManager.HasBuffer<MarkingLine>(node)
                 ? EntityManager.GetBuffer<MarkingLine>(node, isReadOnly: true).Length

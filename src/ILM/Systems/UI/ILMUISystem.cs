@@ -91,6 +91,8 @@ namespace ILM.Systems.UI
             CreateTrigger<int>("TogglePinAreaStyle", OnTogglePinAreaStyle);
             CreateTrigger("ToggleAreaMode", OnToggleAreaMode);
             CreateTrigger("ToggleFreeDraw", OnToggleFreeDraw);
+            CreateTrigger<int>("SetEditLine", OnSetEditLine);
+            CreateTrigger<int>("SplitLine", OnSplitLine);
             CreateTrigger<int, int>("SetAreaStyle", OnSetAreaStyle);
             CreateTrigger<int>("ToggleAreaVisible", OnToggleAreaVisible);
             CreateTrigger<int>("DeleteArea", OnDeleteArea);
@@ -169,6 +171,7 @@ namespace ILM.Systems.UI
                 {
                     h.Add(lines[i].style);
                     h.Add(lines[i].curvature);
+                    h.Add(lines[i].hasHandles);
                 }
                 if (EntityManager.HasBuffer<MarkingSegment>(node))
                 {
@@ -281,6 +284,7 @@ namespace ILM.Systems.UI
                         style = line.style,
                         // Integer percent of [0, kMaxPullFactor]; 50% is the 0.4 default pull.
                         curv = (int)math.round(math.saturate(line.curvature / MarkingCurveBuilder.kMaxPullFactor) * 100f),
+                        handles = line.hasHandles,
                         segments = segScratch.ToArray(),
                     };
                 }

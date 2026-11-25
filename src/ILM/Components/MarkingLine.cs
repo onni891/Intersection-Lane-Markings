@@ -1,5 +1,6 @@
 using Colossal.Serialization.Entities;
 using Unity.Entities;
+using Unity.Mathematics;
 using ILM.Geometry;
 
 namespace ILM.Components
@@ -29,7 +30,14 @@ namespace ILM.Components
         // 0 = straight, 0.4 = default arc, 0.55 ≈ quarter circle.
         public float curvature;
 
-        private const int kVersion = 4;
+        // Hand-shaped curve: when set, the Bezier control points are the endpoints plus these
+        // offsets (dragged in the tool), and curvature is ignored. Offsets rather than world
+        // positions, so the shape travels with the road.
+        public bool hasHandles;
+        public float3 handleA; // control point 1 = source position + handleA
+        public float3 handleB; // control point 2 = target position + handleB
+
+        private const int kVersion = 5;
 
         public void Serialize<TWriter>(TWriter writer) where TWriter : IWriter
         {
@@ -40,6 +48,9 @@ namespace ILM.Components
             writer.Write(targetGapIndex);
             writer.Write(style);
             writer.Write(curvature);
+            writer.Write(hasHandles);
+            writer.Write(handleA);
+            writer.Write(handleB);
         }
 
         public void Deserialize<TReader>(TReader reader) where TReader : IReader
@@ -53,6 +64,18 @@ namespace ILM.Components
             // Version 3 lines have no curvature field and used this constant.
             if (version >= 4) reader.Read(out curvature);
             else curvature = MarkingCurveBuilder.kPullFactor;
+            if (version >= 5)
+            {
+                reader.Read(out hasHandles);
+                reader.Read(out handleA);
+                reader.Read(out handleB);
+            }
+            else
+            {
+                hasHandles = false;
+                handleA = default;
+                handleB = default;
+            }
         }
     }
 }

@@ -49,6 +49,11 @@ namespace ILM.Systems.Tool
         public const float kExtraDotOutlineWidth = 0.07f;
         // User-placed free points: white rings, whatever edge they sit on.
         public static readonly Color kColFreePoint = new Color(1.00f, 1.00f, 1.00f, 0.90f);
+        // Curve handles of the line open in the panel: cyan grab dots on thin stems.
+        public const float kHandleDotDiameter = 0.85f;
+        public const float kHandleStemWidth = 0.06f;
+        public static readonly Color kColHandleFill = new Color(0.30f, 0.85f, 1.00f, 0.95f);
+        public static readonly Color kColHandleStem = new Color(0.30f, 0.85f, 1.00f, 0.60f);
         // Dot under the cursor.
         public const float kDotDiameterHover = 0.95f;
         public const float kDotOutlineWidthHover = 0.11f;

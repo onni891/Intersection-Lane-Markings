@@ -40,6 +40,8 @@ namespace ILM.Systems.UI
         public int lineIndex;
         public int style;
         public int curv;
+        // Hand-shaped with drag handles; the curvature stepper then shows "custom".
+        public bool handles;
         public SegmentVM[] segments = Array.Empty<SegmentVM>();
     }
 

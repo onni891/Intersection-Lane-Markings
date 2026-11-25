@@ -20,6 +20,8 @@ import {
   cmdSetCurrentAreaStyle,
   cmdToggleAreaMode,
   cmdToggleFreeDraw,
+  cmdSetEditLine,
+  cmdSplitLine,
   cmdSetAreaStyle,
   cmdToggleAreaVisible,
   cmdDeleteArea,
@@ -503,6 +505,12 @@ const ILMPanelInner = () => {
     else if (expandedArea >= state.areas.length) setExpandedArea(-1);
   }
 
+  // The open line gets drag handles on the road (only on the Lines tab).
+  const handleLine = state.isActive && !(state.toolState === TOOL_STATE.AreaSelecting) && tab !== "advanced" ? expandedLine : -1;
+  useEffect(() => {
+    cmdSetEditLine(handleLine);
+  }, [handleLine, state.selectedNodeIndex]);
+
   // Panel shortcuts while a node is selected. Keys typed into text fields and combos with
   // Ctrl/Meta/Alt are left alone; those belong to the input or the game.
   useEffect(() => {
@@ -797,6 +805,12 @@ const LineRow = ({
       <LineBody $open={isExpanded}>
         <StyleSelector line={line} />
         <CurvatureInput line={line} />
+        <PanelHint>{t("line.handles.hint")}</PanelHint>
+        <Tooltip content={t("line.addPoint.tooltip")}>
+          <Btn $full onClick={() => cmdSplitLine(line.lineIndex)}>
+            <span>{t("line.addPoint")}</span>
+          </Btn>
+        </Tooltip>
         {line.segments.map((seg) => (
           <SegmentRowComponent key={`${seg.lineIndex}-${seg.segmentIndex}`} seg={seg} />
         ))}
@@ -1006,7 +1020,7 @@ const CurvatureInput = ({ line }: { line: LineVM }) => {
       </Tooltip>
       <CurvInput
         type="text"
-        value={draft ?? String(line.curv)}
+        value={draft ?? (line.handles ? "—" : String(line.curv))}
         onChange={(e: ChangeEvent<HTMLInputElement>) =>
           setDraft(e.target.value.replace(/[^0-9]/g, "").slice(0, 3))
         }
@@ -1019,7 +1033,7 @@ const CurvatureInput = ({ line }: { line: LineVM }) => {
         <CurvStepBtn onClick={(e: ReactMouseEvent<HTMLButtonElement>) => step(1, e)}>+</CurvStepBtn>
       </Tooltip>
       <CurvUnit>%</CurvUnit>
-      {line.curv !== CURV_DEFAULT && (
+      {(line.curv !== CURV_DEFAULT || line.handles) && (
         <Tooltip content={t("line.curvature.reset")}>
           <CurvResetBtn
             onClick={() => cmdSetLineCurvature(line.lineIndex, CURV_DEFAULT)}

@@ -435,6 +435,12 @@ namespace ILM.Systems.Topology
                 h.Add(l.targetEdge);
                 h.Add(l.targetGapIndex);
                 h.Add(l.curvature);
+                h.Add(l.hasHandles);
+                if (l.hasHandles)
+                {
+                    h.Add(l.handleA.x); h.Add(l.handleA.y); h.Add(l.handleA.z);
+                    h.Add(l.handleB.x); h.Add(l.handleB.y); h.Add(l.handleB.z);
+                }
             }
         }
 

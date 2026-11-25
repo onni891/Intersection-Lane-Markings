@@ -149,6 +149,8 @@ namespace ILM.Systems.UI
 
             var ln = lines[lineIndex];
             ln.curvature = math.saturate(percent / 100f) * MarkingCurveBuilder.kMaxPullFactor;
+            // The stepper sets the automatic arc, which replaces a hand-shaped curve.
+            ln.hasHandles = false;
             lines[lineIndex] = ln;
             EntityManager.MarkUpdated(node);
             log.Debug($"UI: set line#{lineIndex} curvature → {percent}% (pull={ln.curvature:0.###})");
@@ -214,6 +216,23 @@ namespace ILM.Systems.UI
                 _tool.ExitAreaMode();
             else
                 _tool.TryEnterAreaMode();
+        }
+
+        /// <summary>The line expanded in the panel; the tool shows its drag handles.</summary>
+        private void OnSetEditLine(int lineIndex)
+        {
+            _tool.SetEditLine(lineIndex);
+        }
+
+        /// <summary>"Add point": splits the line at its middle through a new movable point.</summary>
+        private void OnSplitLine(int lineIndex)
+        {
+            if (!TryGetSelectedBuffer<MarkingLine>("SplitLine", out var node, out var lines)
+                || !IsInRange(lines, lineIndex)) return;
+            bool ok = MarkingEdits.SplitLine(EntityManager, node, lineIndex);
+            _tool.OnNodeEditedExternally();
+            ClearUIHover();
+            log.Debug($"UI: split line#{lineIndex} on node#{node.Index} → {(ok ? "ok" : "middle is off the road, not split")}");
         }
 
         /// <summary>Free-draw on/off, like the F hotkey.</summary>

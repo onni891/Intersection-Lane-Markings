@@ -128,6 +128,9 @@ const enUS = {
   "line.curvature.tooltip":   "Bend of the line: 0% = straight, 50% = default arc, 100% = maximum roundness",
   "line.curvature.reset":     "Reset to the default 50%",
   "line.curvature.step":      "Step 1 · Shift: 10 · Ctrl: 5",
+  "line.handles.hint":        "Drag the blue handles on the road to shape the curve.",
+  "line.addPoint":            "Add point",
+  "line.addPoint.tooltip":    "Split the line in the middle with a new point you can drag (white). Right-click it in free draw to remove.",
 
   // Segment row
   "segment.label":            "Segment {n}",
@@ -278,6 +281,9 @@ const ruRU: LocaleDict = {
   "line.curvature.tooltip":   "Изгиб линии: 0% — прямая, 50% — стандартная дуга, 100% — максимальное скругление",
   "line.curvature.reset":     "Вернуть стандартные 50%",
   "line.curvature.step":      "Шаг 1 · Shift: 10 · Ctrl: 5",
+  "line.handles.hint":        "Тяните голубые ручки на дороге, чтобы изогнуть линию.",
+  "line.addPoint":            "Добавить точку",
+  "line.addPoint.tooltip":    "Разделить линию посередине новой точкой, которую можно перетаскивать (белая). Правый клик в свободном режиме удаляет её.",
 
   // Segment row
   "segment.label":            "Сегмент {n}",

@@ -125,6 +125,8 @@ namespace ILM.Systems.Tool
             DrawDragPreview(buf, endpoints);
             DrawEndpointDots(buf, node, endpoints);
 
+            DrawEditHandles(buf);
+
             // Free draw: a ghost dot under the cursor shows where a click would place a point.
             if (_tool.FreeDraw && _tool.HoveredEndpointIndex < 0
                 && (_tool.ToolState == MarkingToolState.NodeSelected || _tool.ToolState == MarkingToolState.SourceSelected)
@@ -303,6 +305,29 @@ namespace ILM.Systems.Tool
         }
 
         private static Color WithAlpha(Color c, float alpha) => new Color(c.r, c.g, c.b, alpha);
+
+        /// <summary>Curve handles of the line open in the panel: a stem from each end to its
+        /// control point and a grab dot there. While a handle is dragged the reshaped curve is
+        /// previewed; while a free point is dragged, its new spot.</summary>
+        private void DrawEditHandles(OverlayRenderSystem.Buffer buf)
+        {
+            var state = _tool.ToolState;
+            if (state != MarkingToolState.NodeSelected && state != MarkingToolState.SourceSelected) return;
+
+            var drag = _tool.Dragging;
+            if (drag == MarkingNodeToolSystem.DragKind.FreePoint)
+            {
+                DrawDot(buf, _tool.CursorWorldPos, kDotDiameterHover, kColFreePoint, kColDotOutline, kDotOutlineWidthHover);
+                return;
+            }
+            if (!_tool.TryGetEditCurve(out var c)) return;
+            if (drag == MarkingNodeToolSystem.DragKind.HandleA || drag == MarkingNodeToolSystem.DragKind.HandleB)
+                buf.DrawCurve(kColPreviewCurve, c, kPreviewCurveWidth * 1.5f);
+            buf.DrawLine(kColHandleStem, new Line3.Segment(c.a, c.b), kHandleStemWidth);
+            buf.DrawLine(kColHandleStem, new Line3.Segment(c.d, c.c), kHandleStemWidth);
+            DrawDot(buf, c.b, kHandleDotDiameter, kColHandleFill, kColDotOutline, kDotOutlineWidth);
+            DrawDot(buf, c.c, kHandleDotDiameter, kColHandleFill, kColDotOutline, kDotOutlineWidth);
+        }
 
         /// <summary>Outlines every piece of the hovered area, the area counterpart of the line
         /// hover trace: cyan for visible pieces, red for hidden ones.</summary>
