@@ -70,6 +70,12 @@ namespace ILM.Systems.Tool
         private ProxyAction _cycleAreaStyleAction;
         private int _currentAreaStyle;
 
+        // Free draw: a click on bare road places a free point (MarkingFreePoint) and continues
+        // the line from the last point, so lines can go anywhere. Existing dots still snap;
+        // right-click on a free point removes it. Kept across node selections in a session.
+        private bool _freeDraw;
+        private ProxyAction _freeDrawAction;
+
         // A click in NodeSelected that misses every dot is hit-tested against committed lines,
         // and the panel expands the row of the line that was hit. The panel watches the tick,
         // so clicking the same line twice still registers. Line -1 means empty space: collapse
@@ -102,6 +108,15 @@ namespace ILM.Systems.Tool
         public int LastClickedTick => _lastClickedTick;
         public int HoveredLineInGame => _hoveredLineInGame;
         public int HoveredAreaInGame => _hoveredAreaInGame;
+        public bool FreeDraw => _freeDraw;
+
+        /// <summary>Turns free draw on or off. Turning it off ends an open chain.</summary>
+        public void SetFreeDraw(bool on)
+        {
+            _freeDraw = on;
+            if (!on && _state == MarkingToolState.SourceSelected) DropSource();
+            log.Debug($"tool: free draw → {_freeDraw}");
+        }
 
         public override PrefabBase GetPrefab() => null;
         public override bool TrySetPrefab(PrefabBase prefab) => false;
@@ -137,6 +152,7 @@ namespace ILM.Systems.Tool
                 _cycleStyleAction = Mod.Settings.GetAction(ILMSetting.CycleMarkingStyle);
                 _enterAreaAction = Mod.Settings.GetAction(ILMSetting.EnterAreaMode);
                 _cycleAreaStyleAction = Mod.Settings.GetAction(ILMSetting.CycleAreaStyle);
+                _freeDrawAction = Mod.Settings.GetAction(ILMSetting.ToggleFreeDraw);
             }
             log.Info($"MarkingNodeToolSystem: OnCreate — toolID='{toolID}' registered with ToolSystem.tools (count={m_ToolSystem.tools.Count}), cycleStyleAction={(_cycleStyleAction != null ? "OK" : "NULL")}, enterAreaAction={(_enterAreaAction != null ? "OK" : "NULL")}, cycleAreaStyleAction={(_cycleAreaStyleAction != null ? "OK" : "NULL")}");
         }
@@ -170,6 +186,7 @@ namespace ILM.Systems.Tool
             if (_cycleStyleAction != null) _cycleStyleAction.shouldBeEnabled = enabled;
             if (_enterAreaAction != null) _enterAreaAction.shouldBeEnabled = enabled;
             if (_cycleAreaStyleAction != null) _cycleAreaStyleAction.shouldBeEnabled = enabled;
+            if (_freeDrawAction != null) _freeDrawAction.shouldBeEnabled = enabled;
         }
 
         private void ResetSelection()
@@ -264,8 +281,17 @@ namespace ILM.Systems.Tool
                 return inputDeps;
             }
 
-            // Outside area mode right-click does nothing: lines are removed by repeating the
-            // create gesture (see TogglePair).
+            if (_freeDrawAction != null && _freeDrawAction.WasPerformedThisFrame())
+                SetFreeDraw(!_freeDraw);
+
+            // In free draw, right-click on a free point removes it with its lines and areas.
+            // Otherwise right-click does nothing: lines are removed by repeating the create
+            // gesture (see TogglePair).
+            if (_freeDraw && secondaryApplyAction.WasPressedThisFrame())
+            {
+                TryRemoveHoveredFreePoint();
+                return inputDeps;
+            }
 
             if (applyAction.WasPressedThisFrame())
                 HandleApply(hitSomething, hitNode, hitEntity);
@@ -339,6 +365,16 @@ namespace ILM.Systems.Tool
                     {
                         SelectNode(hitEntity);
                     }
+                    else if (_freeDraw && hitSomething)
+                    {
+                        // Start a chain from a new free point.
+                        int idx = PlaceFreePoint(_cursorWorldPos);
+                        if (idx >= 0)
+                        {
+                            _sourceIdx = idx;
+                            _state = MarkingToolState.SourceSelected;
+                        }
+                    }
                     else if (hitSomething)
                     {
                         // Neither a dot nor another node: expand the panel row of the line
@@ -358,7 +394,21 @@ namespace ILM.Systems.Tool
                     if (_hoverIdx >= 0 && _hoverIdx != _sourceIdx)
                     {
                         TogglePair(_endpoints[_sourceIdx], _endpoints[_hoverIdx]);
-                        DropSource();
+                        // Free draw continues the chain from the dot just reached.
+                        if (_freeDraw) _sourceIdx = _hoverIdx;
+                        else DropSource();
+                    }
+                    else if (_freeDraw && _hoverIdx < 0 && hitSomething)
+                    {
+                        var src = _endpoints[_sourceIdx];
+                        int idx = PlaceFreePoint(_cursorWorldPos);
+                        if (idx >= 0)
+                        {
+                            // The endpoint list was re-extracted; find the source again by identity.
+                            int srcIdx = IndexOfEndpoint(src.edge, src.gapIndex);
+                            if (srcIdx >= 0) TogglePair(_endpoints[srcIdx], _endpoints[idx]);
+                            _sourceIdx = idx;
+                        }
                     }
                     else
                     {
@@ -435,12 +485,67 @@ namespace ILM.Systems.Tool
                 targetEdge = dst.edge,
                 targetGapIndex = dst.gapIndex,
                 style = (int)_currentStyle,
-                curvature = MarkingCurveBuilder.AdaptivePullFactor(src, dst),
+                // Free-draw segments start straight; built-in dots get the arc that follows
+                // their lanes.
+                curvature = IsFree(src) || IsFree(dst) ? 0f : MarkingCurveBuilder.AdaptivePullFactor(src, dst),
             });
             EntityManager.MarkUpdated(_selectedNode);
             log.Debug($"tool: toggled ON line #{buf.Length - 1} on node #{_selectedNode.Index} style={_currentStyle} — "
                 + $"src(edge=#{src.edge.Index} gap={src.gapIndex}) → "
                 + $"dst(edge=#{dst.edge.Index} gap={dst.gapIndex})");
+        }
+
+        private static bool IsFree(MarkingEndpoint ep)
+            => MarkingEndpointExtractor.KindOf(ep.gapIndex) == MarkingEndpointExtractor.AnchorKind.Free;
+
+        private int IndexOfEndpoint(Entity edge, int gapIndex)
+        {
+            for (int i = 0; i < _endpoints.Count; i++)
+                if (_endpoints[i].edge == edge && _endpoints[i].gapIndex == gapIndex) return i;
+            return -1;
+        }
+
+        /// <summary>Called by the panel after it changed the node's anchors (reset): drops a
+        /// half-drawn line and re-extracts the dots.</summary>
+        public void OnNodeEditedExternally()
+        {
+            if (_selectedNode == Entity.Null) return;
+            if (_state == MarkingToolState.SourceSelected) DropSource();
+            RefreshEndpoints();
+        }
+
+        /// <summary>Re-extracts the endpoints after a free point was added or removed.</summary>
+        private void RefreshEndpoints()
+        {
+            _endpoints = MarkingEndpointExtractor.Extract(EntityManager, _selectedNode);
+        }
+
+        /// <summary>Places a free point at the cursor and returns its index in the refreshed
+        /// endpoint list, or -1 when the click is not on this junction's road surface.</summary>
+        private int PlaceFreePoint(float3 cursor)
+        {
+            int id = MarkingEdits.NextFreePointId(EntityManager, _selectedNode);
+            if (!MarkingFreePointGeometry.TryCreate(EntityManager, _selectedNode, cursor, id, out var point))
+            {
+                log.Debug("tool: free point — click is not on this junction's road, ignored");
+                return -1;
+            }
+            var (edge, gap) = MarkingEdits.AddFreePoint(EntityManager, _selectedNode, point);
+            RefreshEndpoints();
+            log.Debug($"tool: free point #{id} placed on {(point.IsInterior(_selectedNode) ? "junction" : $"edge #{edge.Index}")}");
+            return IndexOfEndpoint(edge, gap);
+        }
+
+        private void TryRemoveHoveredFreePoint()
+        {
+            if (_hoverIdx < 0 || _hoverIdx >= _endpoints.Count) return;
+            var ep = _endpoints[_hoverIdx];
+            if (!IsFree(ep)) return;
+            if (!MarkingEdits.RemoveFreePoint(EntityManager, _selectedNode, ep.edge, ep.gapIndex)) return;
+            if (_state == MarkingToolState.SourceSelected) DropSource();
+            RefreshEndpoints();
+            _hoverIdx = -1;
+            log.Debug($"tool: free point gap={ep.gapIndex} removed with its lines and areas");
         }
 
         private static bool LineStartsAt(MarkingLine line, MarkingEndpoint ep)

@@ -27,6 +27,8 @@ namespace ILM.Systems.UI
         public int lastClickedTick;
         public int hoveredLineInGame = -1;
         public int hoveredAreaInGame = -1;
+        public bool freeDraw;
+        public int freePointCount;
         public LineVM[] lines = Array.Empty<LineVM>();
         public AreaVM[] areas = Array.Empty<AreaVM>();
     }

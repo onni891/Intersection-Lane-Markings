@@ -22,6 +22,8 @@ const enUS = {
   "status.line.first":        "Click the first point of a line",
   "status.line.second":       "Click the second point to finish the line",
   "status.area":              "Area mode — points placed: {n}",
+  "status.free.first":        "Click anywhere on the road to start drawing",
+  "status.free.next":         "Click to add a point · Esc to finish",
 
   // Section headers
   "section.drawing":          "Drawing",
@@ -35,6 +37,8 @@ const enUS = {
   "mode.area":                "Area",
   "mode.lines.tooltip":       "Draw marking lines between endpoint dots",
   "mode.area.tooltip":        "Fill a polygon between anchor dots (safety islands, hatched zones)",
+  "mode.free":                "Free draw",
+  "mode.free.tooltip":        "Click anywhere on the junction or its roads to place points and draw through them (hotkey F). Right-click a white point to remove it.",
 
   // Area draft (AreaSelecting)
   "area.draft.hint.add":      "LMB — add a point",
@@ -88,6 +92,7 @@ const enUS = {
   "hotkeys.cycleLine":        "next line style",
   "hotkeys.cycleArea":        "next area fill",
   "hotkeys.areaMode":         "area mode",
+  "hotkeys.freeDraw":         "free draw",
   "hotkeys.rmb":              "RMB",
   "hotkeys.rmb.desc":         "undo point / cancel",
   "hotkeys.esc":              "Esc",
@@ -153,6 +158,8 @@ const ruRU: LocaleDict = {
   "status.line.first":        "Кликните первую точку линии",
   "status.line.second":       "Кликните вторую точку — линия завершится",
   "status.area":              "Режим области — точек: {n}",
+  "status.free.first":        "Кликните в любом месте дороги, чтобы начать",
+  "status.free.next":         "Клик — добавить точку · Esc — закончить",
 
   // Section headers
   "section.drawing":          "Рисование",
@@ -166,6 +173,8 @@ const ruRU: LocaleDict = {
   "mode.area":                "Область",
   "mode.lines.tooltip":       "Рисование линий разметки между точками",
   "mode.area.tooltip":        "Заливка полигона по опорным точкам (островки безопасности, штриховка)",
+  "mode.free":                "Свободно",
+  "mode.free.tooltip":        "Кликайте в любом месте перекрёстка или его дорог, чтобы ставить точки и рисовать через них (клавиша F). Правый клик по белой точке удаляет её.",
 
   // Area draft (AreaSelecting)
   "area.draft.hint.add":      "ЛКМ — добавить точку",
@@ -219,6 +228,7 @@ const ruRU: LocaleDict = {
   "hotkeys.cycleLine":        "стиль новой линии",
   "hotkeys.cycleArea":        "заливка новой области",
   "hotkeys.areaMode":         "режим области",
+  "hotkeys.freeDraw":         "свободное рисование",
   "hotkeys.rmb":              "ПКМ",
   "hotkeys.rmb.desc":         "убрать точку / отмена",
   "hotkeys.esc":              "Esc",

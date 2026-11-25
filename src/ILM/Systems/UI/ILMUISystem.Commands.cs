@@ -185,11 +185,9 @@ namespace ILM.Systems.UI
             if (!TryGetSelectedBuffer<MarkingLine>("DeleteLine", out var node, out var lines)
                 || !IsInRange(lines, lineIndex)) return;
 
-            lines.RemoveAt(lineIndex);
             // Reindex rather than rebuild, so the other lines keep their segment overrides and
             // area anchors follow the shifted indices.
-            MarkingTopologySystem.OnLineRemoved(EntityManager, node, lineIndex);
-            EntityManager.MarkUpdated(node);
+            MarkingEdits.DeleteLine(EntityManager, node, lineIndex);
             ClearUIHover();
             log.Debug($"UI: deleted line#{lineIndex} on node#{node.Index} — segment overrides and area anchors reindexed");
         }
@@ -216,6 +214,12 @@ namespace ILM.Systems.UI
                 _tool.ExitAreaMode();
             else
                 _tool.TryEnterAreaMode();
+        }
+
+        /// <summary>Free-draw on/off, like the F hotkey.</summary>
+        private void OnToggleFreeDraw()
+        {
+            _tool.SetFreeDraw(!_tool.FreeDraw);
         }
 
         // Pinned styles. Apply(), not ApplyAndSave(): each ApplyAndSave is a separate async
@@ -294,31 +298,9 @@ namespace ILM.Systems.UI
             if (!TryGetSelectedBuffer<MarkingArea>("DeleteArea", out var node, out var areas)
                 || !IsInRange(areas, areaIndex)) return;
 
-            var removed = areas[areaIndex];
-            if (EntityManager.HasBuffer<MarkingAreaVertex>(node) && removed.vertexCount > 0)
-            {
-                var verts = EntityManager.GetBuffer<MarkingAreaVertex>(node);
-                if (removed.firstVertex >= 0 && removed.firstVertex + removed.vertexCount <= verts.Length)
-                    verts.RemoveRange(removed.firstVertex, removed.vertexCount);
-            }
-            areas.RemoveAt(areaIndex);
-            for (int a = 0; a < areas.Length; a++)
-            {
-                var other = areas[a];
-                if (other.firstVertex > removed.firstVertex)
-                {
-                    other.firstVertex -= removed.vertexCount;
-                    areas[a] = other;
-                }
-            }
-
-            // Pieces refer to areas by index, so MarkingAreaTopologySystem has to rebuild them
-            // against the shifted list.
-            if (EntityManager.HasComponent<MarkingAreaTopologyState>(node))
-                EntityManager.SetComponentData(node, new MarkingAreaTopologyState { combinedHash = 0 });
-            EntityManager.MarkUpdated(node);
+            MarkingEdits.DeleteArea(EntityManager, node, areaIndex);
             ClearUIHover();
-            log.Debug($"UI: deleted area#{areaIndex} on node#{node.Index} ({areas.Length} remaining)");
+            log.Debug($"UI: deleted area#{areaIndex} on node#{node.Index}");
         }
 
         /// <summary>Removes every line, segment, area and the vanilla override from the selected
@@ -341,6 +323,8 @@ namespace ILM.Systems.UI
                 EntityManager.GetBuffer<MarkingAreaPiece>(node).Clear();
             if (EntityManager.HasBuffer<MarkingAreaPieceVertex>(node))
                 EntityManager.GetBuffer<MarkingAreaPieceVertex>(node).Clear();
+            if (EntityManager.HasBuffer<MarkingFreePoint>(node))
+                EntityManager.GetBuffer<MarkingFreePoint>(node).Clear();
             if (EntityManager.HasComponent<MarkingOverride>(node))
                 EntityManager.RemoveComponent<MarkingOverride>(node);
             if (EntityManager.HasComponent<MarkingTopologyState>(node))
@@ -349,6 +333,7 @@ namespace ILM.Systems.UI
                 EntityManager.SetComponentData(node, new MarkingAreaTopologyState { combinedHash = 0 });
             EntityManager.MarkUpdated(node);
             ClearUIHover();
+            _tool.OnNodeEditedExternally();
             log.Debug($"UI: full reset of node#{node.Index} — lines, areas and vanilla override cleared");
         }
     }

@@ -90,6 +90,10 @@ namespace ILM.Localization
                 { _setting.GetOptionDescLocaleID(nameof(ILMSetting.CycleAreaStyleBinding)),
                     "While the marking tool is active, cycles the fill style for the NEXT area you close (Solid → Junction Box → White Stripes → Yellow Stripes → Green Bike → Red Bus → back). Default U. G87 styles fall back to Solid when G87 isn't installed." },
 
+                { _setting.GetOptionLabelLocaleID(nameof(ILMSetting.ToggleFreeDrawBinding)), "Free draw on/off (hotkey)" },
+                { _setting.GetOptionDescLocaleID(nameof(ILMSetting.ToggleFreeDrawBinding)),
+                    "While the marking tool is active, switches free draw: click anywhere on the junction or its roads to place a point and keep drawing from it; right-click a free point to remove it. Default F." },
+
                 { _setting.GetEnumValueLocaleID(ILMSetting.EdgeLineStyleEnum.WhiteSolid), "White solid" },
                 { _setting.GetEnumValueLocaleID(ILMSetting.EdgeLineStyleEnum.WhiteSolidThick), "White solid (thick)" },
                 { _setting.GetEnumValueLocaleID(ILMSetting.EdgeLineStyleEnum.WhiteDashed), "White dashed" },

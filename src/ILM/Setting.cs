@@ -24,6 +24,7 @@ namespace ILM
     [SettingsUIKeyboardAction(CycleMarkingStyle, Usages.kToolUsage)]
     [SettingsUIKeyboardAction(EnterAreaMode, Usages.kToolUsage)]
     [SettingsUIKeyboardAction(CycleAreaStyle, Usages.kToolUsage)]
+    [SettingsUIKeyboardAction(ToggleFreeDraw, Usages.kToolUsage)]
     // The class name must be unique among all installed mods: ApplyAndSave() calls
     // AssetDatabase.SaveSpecificSetting(GetType().Name), which matches settings by bare type name
     // across every mod and takes the first hit. With the template name "Setting" and another
@@ -53,6 +54,9 @@ namespace ILM
 
         // Cycles the fill style for the next closed area.
         public const string CycleAreaStyle = "CycleAreaStyle";
+
+        // Free draw on/off: clicks on bare road place free points.
+        public const string ToggleFreeDraw = "ToggleFreeDraw";
 
         public ILMSetting(IMod mod) : base(mod) { }
 
@@ -196,6 +200,10 @@ namespace ILM
         [SettingsUISection(kSection, kKeybindGroup)]
         [SettingsUIKeyboardBinding(BindingKeyboard.U, CycleAreaStyle)]
         public ProxyBinding CycleAreaStyleBinding { get; set; }
+
+        [SettingsUISection(kSection, kKeybindGroup)]
+        [SettingsUIKeyboardBinding(BindingKeyboard.F, ToggleFreeDraw)]
+        public ProxyBinding ToggleFreeDrawBinding { get; set; }
 
         public bool IsEdgeDisabled() => !EdgeLineEnabled;
         public bool IsParkingDisabled() => !ParkingMarkingsEnabled;

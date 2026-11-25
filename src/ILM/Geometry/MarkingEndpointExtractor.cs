@@ -350,6 +350,7 @@ namespace ILM.Geometry
             {
                 ExtractForEdge(em, node, connected[e].m_Edge, results, log);
             }
+            MarkingFreePointGeometry.AppendFreePoints(em, node, results);
             if (log) Mod.log.Debug($"extractor: total endpoints = {results.Count}");
             return results;
         }

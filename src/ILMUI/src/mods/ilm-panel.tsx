@@ -18,6 +18,7 @@ import {
   cmdSetCurrentStyle,
   cmdSetCurrentAreaStyle,
   cmdToggleAreaMode,
+  cmdToggleFreeDraw,
   cmdSetAreaStyle,
   cmdToggleAreaVisible,
   cmdDeleteArea,
@@ -404,6 +405,7 @@ const HotkeysFoldout = ({ defaultOpen = false }: { defaultOpen?: boolean }) => {
           <HintRow><HintKey>Y</HintKey><span>{t("hotkeys.cycleLine")}</span></HintRow>
           <HintRow><HintKey>A</HintKey><span>{t("hotkeys.areaMode")}</span></HintRow>
           <HintRow><HintKey>U</HintKey><span>{t("hotkeys.cycleArea")}</span></HintRow>
+          <HintRow><HintKey>F</HintKey><span>{t("hotkeys.freeDraw")}</span></HintRow>
           <HintRow><HintKey>{t("hotkeys.rmb")}</HintKey><span>{t("hotkeys.rmb.desc")}</span></HintRow>
           <HintRow><HintKey>{t("hotkeys.esc")}</HintKey><span>{t("hotkeys.esc.desc")}</span></HintRow>
         </>
@@ -428,14 +430,29 @@ const PanelHeader = () => {
 };
 
 // The next step for the user in the current tool state.
-const toolStatus = (t: ReturnType<typeof useT>, state: { toolState: number; areaVertexCount: number }): string => {
+const toolStatus = (t: ReturnType<typeof useT>, state: { toolState: number; areaVertexCount: number; freeDraw: boolean }): string => {
   if (state.toolState === TOOL_STATE.AreaSelecting) {
     return t("status.area", { n: state.areaVertexCount });
+  }
+  if (state.freeDraw) {
+    return state.toolState === TOOL_STATE.SourceSelected ? t("status.free.next") : t("status.free.first");
   }
   if (state.toolState === TOOL_STATE.SourceSelected) {
     return t("status.line.second");
   }
   return t("status.line.first");
+};
+
+type DrawMode = "lines" | "free" | "area";
+
+// Switches between the three drawing modes. Area mode and free draw are separate flags on
+// the C# side, so leaving one may need a second command.
+const setDrawMode = (current: DrawMode, next: DrawMode) => {
+  if (current === next) return;
+  if (current === "area") cmdToggleAreaMode();
+  if (current === "free") cmdToggleFreeDraw();
+  if (next === "area") cmdToggleAreaMode();
+  if (next === "free") cmdToggleFreeDraw();
 };
 
 const ILMPanelInner = () => {
@@ -555,6 +572,7 @@ const ILMPanelInner = () => {
   if (!state.isActive) return null;
 
   const inAreaMode = state.toolState === TOOL_STATE.AreaSelecting;
+  const drawMode: DrawMode = inAreaMode ? "area" : state.freeDraw ? "free" : "lines";
 
   // No node selected yet: a short "how to start" card, so activating the tool gives
   // visible feedback before the first node click.
@@ -591,18 +609,17 @@ const ILMPanelInner = () => {
           <SectionTitle>{t("section.drawing")}</SectionTitle>
           <ModeRow>
             <Tooltip content={t("mode.lines.tooltip")}>
-              <ModeBtn
-                $active={!inAreaMode}
-                onClick={() => { if (inAreaMode) cmdToggleAreaMode(); }}
-              >
+              <ModeBtn $active={drawMode === "lines"} onClick={() => setDrawMode(drawMode, "lines")}>
                 {t("mode.lines")}
               </ModeBtn>
             </Tooltip>
+            <Tooltip content={t("mode.free.tooltip")}>
+              <ModeBtn $active={drawMode === "free"} onClick={() => setDrawMode(drawMode, "free")}>
+                {t("mode.free")}
+              </ModeBtn>
+            </Tooltip>
             <Tooltip content={t("mode.area.tooltip")}>
-              <ModeBtn
-                $active={inAreaMode}
-                onClick={() => { if (!inAreaMode) cmdToggleAreaMode(); }}
-              >
+              <ModeBtn $active={drawMode === "area"} onClick={() => setDrawMode(drawMode, "area")}>
                 {t("mode.area")}
               </ModeBtn>
             </Tooltip>
@@ -726,7 +743,7 @@ const ILMPanelInner = () => {
             </IconToggleBtn>
           </Tooltip>
         </ToggleRow>
-        {(state.lines.length > 0 || state.areas.length > 0 || state.vanillaHidden) && (
+        {(state.lines.length > 0 || state.areas.length > 0 || state.vanillaHidden || state.freePointCount > 0) && (
           <ResetNodeButton />
         )}
         <NodeIdText>{t("panel.title", { n: state.selectedNodeIndex })}</NodeIdText>

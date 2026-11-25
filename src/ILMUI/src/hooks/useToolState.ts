@@ -70,6 +70,10 @@ export interface ToolStateVM {
   // The selected node carries MarkingOverride{All}: its vanilla markings are hidden
   // regardless of user lines.
   vanillaHidden: boolean;
+  // Free draw: clicks on bare road place free points and continue the line (F hotkey).
+  freeDraw: boolean;
+  // User-placed free points on the selected node.
+  freePointCount: number;
   lines: LineVM[];
   areas: AreaVM[];
 }
@@ -86,6 +90,8 @@ const EMPTY: ToolStateVM = {
   hoveredLineInGame: -1,
   hoveredAreaInGame: -1,
   vanillaHidden: false,
+  freeDraw: false,
+  freePointCount: 0,
   lines: [],
   areas: [],
 };
@@ -161,7 +167,12 @@ export const cmdToggleAreaMode = () => {
   trigger(BINDING_GROUP, "ToggleAreaMode");
 };
 
-export const cmdSetAreaStyle = (areaIndex: number, styleId: number) => {
+// Free draw on/off, like the F hotkey.
+export const cmdToggleFreeDraw = () => {
+  trigger(BINDING_GROUP, "ToggleFreeDraw");
+};
+
+export const cmdSetAreaStyle =(areaIndex: number, styleId: number) => {
   trigger(BINDING_GROUP, "SetAreaStyle", areaIndex, styleId);
 };
 

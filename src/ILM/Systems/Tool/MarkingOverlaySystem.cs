@@ -123,6 +123,14 @@ namespace ILM.Systems.Tool
             DrawDragPreview(buf, endpoints);
             DrawEndpointDots(buf, node, endpoints);
 
+            // Free draw: a ghost dot under the cursor shows where a click would place a point.
+            if (_tool.FreeDraw && _tool.HoveredEndpointIndex < 0
+                && (_tool.ToolState == MarkingToolState.NodeSelected || _tool.ToolState == MarkingToolState.SourceSelected)
+                && math.lengthsq(_tool.CursorWorldPos) > 0f)
+            {
+                DrawDot(buf, _tool.CursorWorldPos, kDotDiameter, WithAlpha(kColFreePoint, 0.25f), kColFreePoint, kDotOutlineWidth);
+            }
+
             // Corner anchors. Not clickable in line mode (only area mode uses them), so they are
             // drawn smaller and with less contrast than lane endpoints.
             var corners = _tool.CornerAnchors;
@@ -205,8 +213,13 @@ namespace ILM.Systems.Tool
             if (hoverIdx >= 0 && hoverIdx < endpoints.Count && hoverIdx != sourceIdx)
             {
                 var dst = endpoints[hoverIdx];
-                var bezier = BuildSmoothCurve(src.position, src.tangent, dst.position, dst.tangent);
-                buf.DrawCurve(kColPreviewCurve, bezier, kPreviewCurveWidth);
+                // Lines touching a free point start straight (see TogglePair), so preview them so.
+                bool straight = MarkingEndpointExtractor.KindOf(src.gapIndex) == MarkingEndpointExtractor.AnchorKind.Free
+                    || MarkingEndpointExtractor.KindOf(dst.gapIndex) == MarkingEndpointExtractor.AnchorKind.Free;
+                if (straight)
+                    buf.DrawLine(kColPreviewCurve, new Line3.Segment(src.position, dst.position), kPreviewCurveWidth);
+                else
+                    buf.DrawCurve(kColPreviewCurve, BuildSmoothCurve(src.position, src.tangent, dst.position, dst.tangent), kPreviewCurveWidth);
             }
             else
             {

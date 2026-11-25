@@ -90,6 +90,10 @@ namespace ILM.Localization
                 { _setting.GetOptionDescLocaleID(nameof(ILMSetting.CycleAreaStyleBinding)),
                     "При активном инструменте листает стиль заливки для СЛЕДУЮЩЕЙ замкнутой области (бетон → вафельная разметка → белая штриховка → жёлтая штриховка → велополоса → автобусная полоса → сначала). По умолчанию U. Стили G87 без установленного мода G87 заменяются бетоном." },
 
+                { _setting.GetOptionLabelLocaleID(nameof(ILMSetting.ToggleFreeDrawBinding)), "Свободное рисование (клавиша)" },
+                { _setting.GetOptionDescLocaleID(nameof(ILMSetting.ToggleFreeDrawBinding)),
+                    "При активном инструменте включает свободное рисование: кликните в любом месте перекрёстка или его дорог, чтобы поставить точку и продолжить линию от неё; правый клик по свободной точке удаляет её. По умолчанию F." },
+
                 { _setting.GetEnumValueLocaleID(ILMSetting.EdgeLineStyleEnum.WhiteSolid), "Белая сплошная" },
                 { _setting.GetEnumValueLocaleID(ILMSetting.EdgeLineStyleEnum.WhiteSolidThick), "Белая сплошная (толстая)" },
                 { _setting.GetEnumValueLocaleID(ILMSetting.EdgeLineStyleEnum.WhiteDashed), "Белый пунктир" },
