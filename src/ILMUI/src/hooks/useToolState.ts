@@ -72,6 +72,8 @@ export interface ToolStateVM {
   vanillaHidden: boolean;
   // Free draw: clicks on bare road place free points and continue the line (F hotkey).
   freeDraw: boolean;
+  // The selection is a road stretch (mid-road editing) rather than a junction.
+  selectedIsRoad: boolean;
   // User-placed free points on the selected node.
   freePointCount: number;
   lines: LineVM[];
@@ -91,6 +93,7 @@ const EMPTY: ToolStateVM = {
   hoveredAreaInGame: -1,
   vanillaHidden: false,
   freeDraw: false,
+  selectedIsRoad: false,
   freePointCount: 0,
   lines: [],
   areas: [],

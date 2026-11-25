@@ -75,7 +75,9 @@ namespace ILM.Systems.Emission
 
             _nodesWithLines = GetEntityQuery(new EntityQueryDesc
             {
-                All = new[] { ComponentType.ReadOnly<MarkingLine>(), ComponentType.ReadOnly<MarkingSegment>(), ComponentType.ReadOnly<Node>() },
+                All = new[] { ComponentType.ReadOnly<MarkingLine>(), ComponentType.ReadOnly<MarkingSegment>() },
+                // Junctions, or road stretches edited mid-road.
+                Any = new[] { ComponentType.ReadOnly<Node>(), ComponentType.ReadOnly<Game.Net.Edge>() },
                 None = new[] { ComponentType.ReadOnly<Deleted>(), ComponentType.ReadOnly<Temp>() },
             });
             _ourSubLanes = GetEntityQuery(new EntityQueryDesc

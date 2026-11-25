@@ -68,11 +68,13 @@ namespace ILM.Systems.Topology
             base.OnCreate();
             // Temp nodes are the road tool's preview copies, buffers included. Writing to them or
             // tagging them Updated while the tool applies crashes the game in native code.
-            _nodesWithLines = GetEntityQuery(
-                ComponentType.ReadOnly<MarkingLine>(),
-                ComponentType.ReadOnly<Node>(),
-                ComponentType.Exclude<Temp>(),
-                ComponentType.Exclude<Deleted>());
+            // Owners are junctions (Node) or road stretches edited mid-road (Edge).
+            _nodesWithLines = GetEntityQuery(new EntityQueryDesc
+            {
+                All = new[] { ComponentType.ReadOnly<MarkingLine>() },
+                Any = new[] { ComponentType.ReadOnly<Node>(), ComponentType.ReadOnly<Edge>() },
+                None = new[] { ComponentType.ReadOnly<Temp>(), ComponentType.ReadOnly<Deleted>() },
+            });
             // GetEntityQuery returns the cached query for an identical component set, so a
             // change-filtered query must differ from the unfiltered ones or the filter lands on both.
             _changedLines = GetEntityQuery(
@@ -86,12 +88,12 @@ namespace ILM.Systems.Topology
                 ComponentType.Exclude<Temp>(),
                 ComponentType.Exclude<Deleted>());
             _changedStates.SetChangedVersionFilter(ComponentType.ReadOnly<MarkingTopologyState>());
-            _nodesWithoutState = GetEntityQuery(
-                ComponentType.ReadOnly<MarkingLine>(),
-                ComponentType.ReadOnly<Node>(),
-                ComponentType.Exclude<MarkingTopologyState>(),
-                ComponentType.Exclude<Temp>(),
-                ComponentType.Exclude<Deleted>());
+            _nodesWithoutState = GetEntityQuery(new EntityQueryDesc
+            {
+                All = new[] { ComponentType.ReadOnly<MarkingLine>() },
+                Any = new[] { ComponentType.ReadOnly<Node>(), ComponentType.ReadOnly<Edge>() },
+                None = new[] { ComponentType.ReadOnly<MarkingTopologyState>(), ComponentType.ReadOnly<Temp>(), ComponentType.ReadOnly<Deleted>() },
+            });
             RequireForUpdate(_nodesWithLines);
         }
 

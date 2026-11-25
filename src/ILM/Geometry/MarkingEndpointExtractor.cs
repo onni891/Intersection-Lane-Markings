@@ -171,6 +171,8 @@ namespace ILM.Geometry
 
         public static AnchorKind KindOf(int gapIndex)
         {
+            if (gapIndex >= MarkingEdgeAnchors.kEdgeRowGapBase)
+                return MarkingEdgeAnchors.IsLaneCentreGap(gapIndex) ? AnchorKind.LaneCentre : AnchorKind.Main;
             if (gapIndex >= kFreePointGapBase) return AnchorKind.Free;
             if (gapIndex >= kSetbackNearGapBase) return AnchorKind.ExtraSetback;
             if (gapIndex >= kLaneCentreGapBase) return AnchorKind.LaneCentre;
@@ -342,6 +344,14 @@ namespace ILM.Geometry
         {
             var results = new List<MarkingEndpoint>(16);
             if (node == Entity.Null) return results;
+            // A road stretch edited on its own (mid-road markings): rows of points along it.
+            if (MarkingEdgeAnchors.IsEdgeOwner(em, node))
+            {
+                MarkingEdgeAnchors.Extract(em, node, results);
+                MarkingFreePointGeometry.AppendFreePoints(em, node, results);
+                if (log) Mod.log.Debug($"extractor: road #{node.Index} — {results.Count} endpoints");
+                return results;
+            }
             if (!em.HasBuffer<ConnectedEdge>(node)) return results;
 
             var connected = em.GetBuffer<ConnectedEdge>(node, isReadOnly: true);

@@ -229,6 +229,7 @@ namespace ILM.Systems.UI
                 hoveredLineInGame = _tool.HoveredLineInGame,
                 hoveredAreaInGame = _tool.HoveredAreaInGame,
                 freeDraw = _tool.FreeDraw,
+                selectedIsRoad = node != Entity.Null && _tool.SelectedIsRoad,
                 freePointCount = node != Entity.Null && EntityManager.HasBuffer<MarkingFreePoint>(node)
                     ? EntityManager.GetBuffer<MarkingFreePoint>(node, isReadOnly: true).Length : 0,
             };

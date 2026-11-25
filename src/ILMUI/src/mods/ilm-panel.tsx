@@ -726,7 +726,7 @@ const ILMPanelInner = () => {
 
         {/* Node settings sit at the bottom: the vanilla toggle is a setting, not an action,
             and the full reset is rare and destructive. */}
-        <SectionTitle>{t("section.node")}</SectionTitle>
+        <SectionTitle>{state.selectedIsRoad ? t("section.road") : t("section.node")}</SectionTitle>
         <ToggleRow>
           <FieldLabel>{t("node.vanilla.label")}</FieldLabel>
           <Tooltip content={t("vanilla.tooltip")}>
@@ -741,7 +741,11 @@ const ILMPanelInner = () => {
         {(state.lines.length > 0 || state.areas.length > 0 || state.vanillaHidden || state.freePointCount > 0) && (
           <ResetNodeButton />
         )}
-        <NodeIdText>{t("panel.title", { n: state.selectedNodeIndex })}</NodeIdText>
+        <NodeIdText>
+          {state.selectedIsRoad
+            ? t("panel.title.road", { n: state.selectedNodeIndex })
+            : t("panel.title", { n: state.selectedNodeIndex })}
+        </NodeIdText>
 
         <HotkeysFoldout />
       </ILMWindow>

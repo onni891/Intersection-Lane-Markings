@@ -60,9 +60,11 @@ namespace ILM.Systems.Tool
             _terrainSystem = World.GetOrCreateSystemManaged<TerrainSystem>();
             // Nodes with a MarkingLine buffer, for the "has custom markings" ring. Few nodes
             // carry the buffer, so the query stays cheap.
-            _nodesWithPairsQuery = GetEntityQuery(
-                ComponentType.ReadOnly<Node>(),
-                ComponentType.ReadOnly<MarkingLine>());
+            _nodesWithPairsQuery = GetEntityQuery(new EntityQueryDesc
+            {
+                All = new[] { ComponentType.ReadOnly<MarkingLine>() },
+                Any = new[] { ComponentType.ReadOnly<Node>(), ComponentType.ReadOnly<Edge>() },
+            });
         }
 
         protected override void OnUpdate()
@@ -416,11 +418,24 @@ namespace ILM.Systems.Tool
             }
         }
 
+        /// <summary>Ring around a junction; for a road stretch, its two kerb lines instead.</summary>
         private void DrawNodeRing(OverlayRenderSystem.Buffer buf, Entity node, Color ringColor, float diameter, float outlineWidth)
         {
-            if (!EntityManager.HasComponent<Node>(node)) return;
-            float3 pos = EntityManager.GetComponentData<Node>(node).m_Position;
-            DrawDot(buf, pos, diameter, kColTransparent, ringColor, outlineWidth);
+            if (EntityManager.HasComponent<Node>(node))
+            {
+                float3 pos = EntityManager.GetComponentData<Node>(node).m_Position;
+                DrawDot(buf, pos, diameter, kColTransparent, ringColor, outlineWidth);
+                return;
+            }
+            if (EntityManager.HasComponent<Edge>(node) && EntityManager.HasComponent<EdgeGeometry>(node))
+            {
+                var g = EntityManager.GetComponentData<EdgeGeometry>(node);
+                float w = outlineWidth * 1.5f;
+                buf.DrawCurve(ringColor, g.m_Start.m_Left, w);
+                buf.DrawCurve(ringColor, g.m_Start.m_Right, w);
+                buf.DrawCurve(ringColor, g.m_End.m_Left, w);
+                buf.DrawCurve(ringColor, g.m_End.m_Right, w);
+            }
         }
 
         /// <summary>Flat circle at <paramref name="position"/>, projected onto the terrain unless

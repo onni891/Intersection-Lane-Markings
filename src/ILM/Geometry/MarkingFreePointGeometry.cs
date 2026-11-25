@@ -23,9 +23,31 @@ namespace ILM.Geometry
         /// stay undrawn, like lines on any missing dot).</summary>
         public static void AppendFreePoints(EntityManager em, Entity node, List<MarkingEndpoint> outList)
         {
-            if (!em.HasBuffer<MarkingFreePoint>(node) || !em.HasComponent<Node>(node)) return;
+            if (!em.HasBuffer<MarkingFreePoint>(node)) return;
             var points = em.GetBuffer<MarkingFreePoint>(node, isReadOnly: true);
             if (points.Length == 0) return;
+
+            // Road-stretch owner: t runs 0..2 over the whole edge (see MarkingEdgeAnchors).
+            if (MarkingEdgeAnchors.IsEdgeOwner(em, node))
+            {
+                if (!MarkingEndpointExtractor.IsEdgeExtractionReady(em, node)) return;
+                var eg = em.GetComponentData<EdgeGeometry>(node);
+                for (int i = 0; i < points.Length; i++)
+                {
+                    var p = points[i];
+                    MarkingEdgeAnchors.Locate(eg, p.t, out var l, out var r, out var tl, out var tr);
+                    outList.Add(new MarkingEndpoint
+                    {
+                        edge = node,
+                        gapIndex = MarkingEndpointExtractor.kFreePointGapBase + p.id,
+                        position = math.lerp(l, r, p.lateral),
+                        tangent = math.normalizesafe(math.lerp(tl, tr, p.lateral).xz),
+                    });
+                }
+                return;
+            }
+
+            if (!em.HasComponent<Node>(node)) return;
             float3 nodePos = em.GetComponentData<Node>(node).m_Position;
 
             for (int i = 0; i < points.Length; i++)
@@ -51,6 +73,7 @@ namespace ILM.Geometry
         public static bool TryCreate(EntityManager em, Entity node, float3 cursor, int id, out MarkingFreePoint point)
         {
             point = default;
+            if (MarkingEdgeAnchors.IsEdgeOwner(em, node)) return TryCreateOnRoad(em, node, cursor, id, out point);
             if (!em.HasComponent<Node>(node) || !em.HasBuffer<ConnectedEdge>(node)) return false;
             float3 nodePos = em.GetComponentData<Node>(node).m_Position;
             var connected = em.GetBuffer<ConnectedEdge>(node, isReadOnly: true);
@@ -127,6 +150,48 @@ namespace ILM.Geometry
                 }
             }
             return false;
+        }
+
+        /// <summary>Free point on a road-stretch owner: (t in 0..2 over both geometry halves,
+        /// lateral fraction). The edge field holds the road itself.</summary>
+        private static bool TryCreateOnRoad(EntityManager em, Entity road, float3 cursor, int id, out MarkingFreePoint point)
+        {
+            point = default;
+            if (!MarkingEndpointExtractor.IsEdgeExtractionReady(em, road)) return false;
+            var geom = em.GetComponentData<EdgeGeometry>(road);
+            float bestDist = float.MaxValue;
+            float bestU = 0f, bestLat = 0f;
+            for (int half = 0; half < 2; half++)
+            {
+                var left = half == 0 ? geom.m_Start.m_Left : geom.m_End.m_Left;
+                var right = half == 0 ? geom.m_Start.m_Right : geom.m_End.m_Right;
+                for (int s = 0; s <= kSamples; s++)
+                {
+                    float t = s / (float)kSamples;
+                    if (!ProjectOnChord(left, right, t, cursor, out float lat, out float d) || d >= bestDist) continue;
+                    bestDist = d; bestU = half + t; bestLat = lat;
+                }
+            }
+            if (bestDist == float.MaxValue) return false;
+            // Refine around the best sample within its half.
+            int h = bestU > 1f ? 1 : 0;
+            var lc = h == 0 ? geom.m_Start.m_Left : geom.m_End.m_Left;
+            var rc = h == 0 ? geom.m_Start.m_Right : geom.m_End.m_Right;
+            float tt = bestU - h;
+            float step = 1f / kSamples;
+            for (int iter = 0; iter < 12; iter++)
+            {
+                step *= 0.5f;
+                foreach (float cand in new[] { tt - step, tt + step })
+                {
+                    float c = math.saturate(cand);
+                    if (ProjectOnChord(lc, rc, c, cursor, out float lat, out float d) && d < bestDist)
+                    { bestDist = d; tt = c; bestLat = lat; }
+                }
+            }
+            if (bestDist >= 1.0f) return false;
+            point = new MarkingFreePoint { id = id, edge = road, t = h + tt, lateral = bestLat };
+            return true;
         }
 
         /// <summary>Lateral fraction and perpendicular XZ distance of the click from the

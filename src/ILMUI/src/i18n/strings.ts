@@ -14,7 +14,7 @@ const enUS = {
   "panel.appTitle":           "Intersection & Lane Markings",
   "panel.title":              "Node #{n}",
   "panel.close.tooltip":      "Close the marking tool",
-  "panel.hint.selectNode":    "Click a junction to edit its markings.",
+  "panel.hint.selectNode":    "Click a junction, or the middle of a road, to edit its markings.",
   "panel.error.title":        "Panel error",
   "panel.error.retry":        "Retry",
 
@@ -28,6 +28,8 @@ const enUS = {
   // Section headers
   "section.drawing":          "Drawing",
   "section.node":             "Junction",
+  "section.road":             "Road",
+  "panel.title.road":         "Road #{n}",
 
   // Node block
   "node.vanilla.label":       "Game markings",
@@ -150,7 +152,7 @@ const ruRU: LocaleDict = {
   "panel.appTitle":           "Разметка перекрёстков и полос",
   "panel.title":              "Узел #{n}",
   "panel.close.tooltip":      "Закрыть инструмент разметки",
-  "panel.hint.selectNode":    "Кликните по перекрёстку на карте, чтобы редактировать его разметку.",
+  "panel.hint.selectNode":    "Кликните по перекрёстку или середине дороги, чтобы редактировать разметку.",
   "panel.error.title":        "Ошибка панели",
   "panel.error.retry":        "Повторить",
 
@@ -164,6 +166,8 @@ const ruRU: LocaleDict = {
   // Section headers
   "section.drawing":          "Рисование",
   "section.node":             "Перекрёсток",
+  "section.road":             "Дорога",
+  "panel.title.road":         "Дорога #{n}",
 
   // Node block
   "node.vanilla.label":       "Ванильная разметка",

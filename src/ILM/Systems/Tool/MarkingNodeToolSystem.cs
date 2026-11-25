@@ -219,8 +219,10 @@ namespace ILM.Systems.Tool
         {
             bool hitSomething = GetRaycastResult(out Entity hitEntity, out RaycastHit hit);
             bool hitNode = hitSomething && EntityManager.HasComponent<Node>(hitEntity);
+            // A road stretch: selectable for mid-road markings.
+            bool hitEdge = hitSomething && !hitNode && MarkingEdgeAnchors.IsEdgeOwner(EntityManager, hitEntity);
             _cursorWorldPos = hitSomething ? hit.m_HitPosition : float3.zero;
-            _hoveredNode = hitNode ? hitEntity : Entity.Null;
+            _hoveredNode = hitNode || hitEdge ? hitEntity : Entity.Null;
             _hoverIdx = (_state != MarkingToolState.Default && _state != MarkingToolState.AreaSelecting && hitSomething) ? FindHoveredEndpoint(_cursorWorldPos) : -1;
             // Lines can change from the panel while an area is being drawn.
             if (_state == MarkingToolState.AreaSelecting) RefreshIntersectionAnchorsIfStale();
@@ -294,7 +296,7 @@ namespace ILM.Systems.Tool
             }
 
             if (applyAction.WasPressedThisFrame())
-                HandleApply(hitSomething, hitNode, hitEntity);
+                HandleApply(hitSomething, hitNode, hitEdge, hitEntity);
 
             return inputDeps;
         }
@@ -339,7 +341,7 @@ namespace ILM.Systems.Tool
             }
         }
 
-        private void HandleApply(bool hitSomething, bool hitNode, Entity hitEntity)
+        private void HandleApply(bool hitSomething, bool hitNode, bool hitEdge, Entity hitEntity)
         {
             int hitIndex = hitSomething ? hitEntity.Index : -1;
             // Tells apart a missing apply event, a click with no raycast hit, and a hit on
@@ -348,7 +350,7 @@ namespace ILM.Systems.Tool
             switch (_state)
             {
                 case MarkingToolState.Default:
-                    if (hitNode)
+                    if (hitNode || hitEdge)
                         SelectNode(hitEntity);
                     else
                         log.Debug($"tool: click in Default ignored (hit #{hitIndex}, no Node)");
@@ -362,6 +364,13 @@ namespace ILM.Systems.Tool
                         log.Debug($"tool: source endpoint chosen — idx={_sourceIdx} edge=#{_endpoints[_sourceIdx].edge.Index} gap={_endpoints[_sourceIdx].gapIndex}");
                     }
                     else if (hitNode && hitEntity != _selectedNode)
+                    {
+                        SelectNode(hitEntity);
+                    }
+                    // Another road stretch. Roads leading into the selected junction stay part of
+                    // its editing area (free draw places points on them), so only unrelated roads
+                    // switch the selection; Esc first to pick one of those.
+                    else if (hitEdge && hitEntity != _selectedNode && !_freeDraw && !IsRoadOfSelectedJunction(hitEntity))
                     {
                         SelectNode(hitEntity);
                     }
@@ -494,6 +503,17 @@ namespace ILM.Systems.Tool
                 + $"src(edge=#{src.edge.Index} gap={src.gapIndex}) → "
                 + $"dst(edge=#{dst.edge.Index} gap={dst.gapIndex})");
         }
+
+        /// <summary>The road is connected to the selected junction.</summary>
+        private bool IsRoadOfSelectedJunction(Entity road)
+        {
+            if (!EntityManager.HasComponent<Node>(_selectedNode) || !EntityManager.HasComponent<Edge>(road)) return false;
+            var e = EntityManager.GetComponentData<Edge>(road);
+            return e.m_Start == _selectedNode || e.m_End == _selectedNode;
+        }
+
+        /// <summary>The selection is a road stretch rather than a junction.</summary>
+        public bool SelectedIsRoad => MarkingEdgeAnchors.IsEdgeOwner(EntityManager, _selectedNode);
 
         private static bool IsFree(MarkingEndpoint ep)
             => MarkingEndpointExtractor.KindOf(ep.gapIndex) == MarkingEndpointExtractor.AnchorKind.Free;

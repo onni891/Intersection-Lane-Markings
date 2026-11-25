@@ -28,6 +28,8 @@ namespace ILM.Systems.UI
         public int hoveredLineInGame = -1;
         public int hoveredAreaInGame = -1;
         public bool freeDraw;
+        // The selection is a road stretch (mid-road editing), not a junction.
+        public bool selectedIsRoad;
         public int freePointCount;
         public LineVM[] lines = Array.Empty<LineVM>();
         public AreaVM[] areas = Array.Empty<AreaVM>();

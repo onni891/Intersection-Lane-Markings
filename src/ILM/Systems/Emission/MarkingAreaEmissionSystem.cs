@@ -130,7 +130,9 @@ namespace ILM.Systems.Emission
             _terrainSystem = World.GetOrCreateSystemManaged<TerrainSystem>();
             _nodesWithAreas = GetEntityQuery(new EntityQueryDesc
             {
-                All = new[] { ComponentType.ReadOnly<MarkingArea>(), ComponentType.ReadOnly<Game.Net.Node>() },
+                All = new[] { ComponentType.ReadOnly<MarkingArea>() },
+                // Junctions, or road stretches edited mid-road.
+                Any = new[] { ComponentType.ReadOnly<Game.Net.Node>(), ComponentType.ReadOnly<Game.Net.Edge>() },
                 None = new[] { ComponentType.ReadOnly<Deleted>(), ComponentType.ReadOnly<Temp>() },
             });
             _ourAreas = GetEntityQuery(new EntityQueryDesc

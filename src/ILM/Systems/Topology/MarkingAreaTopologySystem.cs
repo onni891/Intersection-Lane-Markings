@@ -51,20 +51,22 @@ namespace ILM.Systems.Topology
             base.OnCreate();
             // Temp nodes are the road tool's preview copies, buffers included; writing to them
             // while the tool applies crashes the game (same as in MarkingTopologySystem).
-            _nodesWithAreas = GetEntityQuery(
-                ComponentType.ReadOnly<MarkingArea>(),
-                ComponentType.ReadOnly<Node>(),
-                ComponentType.Exclude<Temp>(),
-                ComponentType.Exclude<Deleted>());
+            // Owners are junctions (Node) or road stretches edited mid-road (Edge).
+            _nodesWithAreas = GetEntityQuery(new EntityQueryDesc
+            {
+                All = new[] { ComponentType.ReadOnly<MarkingArea>() },
+                Any = new[] { ComponentType.ReadOnly<Node>(), ComponentType.ReadOnly<Edge>() },
+                None = new[] { ComponentType.ReadOnly<Temp>(), ComponentType.ReadOnly<Deleted>() },
+            });
             _spawnedAreas = GetEntityQuery(
                 ComponentType.ReadOnly<ILMAreaLink>(),
                 ComponentType.Exclude<Deleted>());
-            _nodesWithoutState = GetEntityQuery(
-                ComponentType.ReadOnly<MarkingArea>(),
-                ComponentType.ReadOnly<Node>(),
-                ComponentType.Exclude<MarkingAreaTopologyState>(),
-                ComponentType.Exclude<Temp>(),
-                ComponentType.Exclude<Deleted>());
+            _nodesWithoutState = GetEntityQuery(new EntityQueryDesc
+            {
+                All = new[] { ComponentType.ReadOnly<MarkingArea>() },
+                Any = new[] { ComponentType.ReadOnly<Node>(), ComponentType.ReadOnly<Edge>() },
+                None = new[] { ComponentType.ReadOnly<MarkingAreaTopologyState>(), ComponentType.ReadOnly<Temp>(), ComponentType.ReadOnly<Deleted>() },
+            });
             _changeWatchers = new[]
             {
                 ChangedQuery(ComponentType.ReadOnly<MarkingArea>()),
@@ -169,6 +171,9 @@ namespace ILM.Systems.Topology
                     }
                 }
             }
+            // A road-stretch owner waits for its own geometry the same way.
+            if (MarkingEndpointExtractor.IsEdgeAliveButUnready(EntityManager, node))
+                return false;
             _deferredTicks.Remove(node);
 
             // Copy the buffers first: structural changes below invalidate the handles.
