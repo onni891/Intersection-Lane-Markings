@@ -1,0 +1,8 @@
+// All styling lives in styled-components (src/mods/panel.styles.ts), which avoids cohtml's
+// CSS quirks with nested var(), gap and calc. This file only keeps a CSS asset in the build
+// for CSSPresencePlugin and the game's loader.
+
+.ilm-anchor {
+  // Unused placeholder so the emitted CSS file is not empty.
+  display: none;
+}

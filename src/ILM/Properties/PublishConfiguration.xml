@@ -1,0 +1,117 @@
+﻿<Publish>
+	<!--Id must be set in order to update existed mod. it is not required for publishing mod for the first time-->
+	<ModId Value="" />
+	<!--Name of the mod to display to players-->
+	<DisplayName Value="Intersection &amp; Lane Markings" />
+	<!--Short description of the mod-->
+	<ShortDescription Value="Road-marking editor: draw lines and area fills on any intersection, plus automatic edge and parking markings for town roads" />
+	<!--Long description of the mod. Single line or multi line. Supports minimal markdown subset-->
+	<LongDescription>
+# Intersection &amp; Lane Markings
+
+A road-marking editor for intersections plus automatic lane markings for ordinary town roads.
+
+## Marking editor
+Click any intersection and draw your own markings:
+- **Lines** between anchor dots — solid, dashed (short / normal / long), double solid, a vanilla yellow set (solid / dashed / double / solid + dashed), G87 white or yellow styles, and a curb line, with adjustable curvature and per-segment visibility. Dots sit on every lane boundary, on the carriageway edge (including past parking lanes), and in a second "setback" row 8 m before the junction — for the solid no-lane-change stretch in front of the stop line.
+- **Area fills** over any polygon you outline — points snap to lane endpoints, kerb corners and line crossings, edges follow line curvature. Junction box (yellow box / waffle), white or yellow hatching, green bike lane, red bus lane, concrete, grass, sand, pavement, tiles, asphalt patch (needs the separate "G87 Vanilla Asphalt Pavement" mod).
+- **Hide vanilla markings** per intersection to start from a clean slate.
+- **Pin favourite styles** — star any entry in a style dropdown to keep it at the top of every list.
+- Full in-game panel (English + Russian) and hotkeys: **Ctrl+M** toggle tool, **Y** cycle line style, **A** area mode, **U** cycle area fill.
+
+## Automatic markings
+Ordinary city roads with 3 m lanes get proper edge lane markings — the same way highways do — so parking, sidewalks and stops react correctly. Parking lane markings included. In North American-theme cities, one-way and divided roads (highways included) also get the US-style yellow line along the left, median-side edge — optional, on by default; European themes are unaffected.
+
+## Known limitations
+- **The mod is purely visual.** Markings never affect how vehicles actually drive. To change real lane behavior use the Traffic mod (by krzychu124) — set up lane connections and directions there first, then draw your markings to match. The two mods don't sync automatically.
+- **Everything snaps to anchor dots — by design.** The dots sit on real road geometry (lane boundaries, carriageway edges, kerb corners, line crossings, plus the setback row 8 m before the junction), which is why markings land exactly on the lanes in a few clicks. There is no freehand placement: for fully freehand markings place the G87 packs' decals and net-lanes by hand — this mod is the fast-and-precise layer for junctions on top of them.
+- Nearly-tangent line contacts (well under ~8°) are treated as a graze rather than a crossing — no anchor dot appears at such touch points (by design; prevents jittery duplicate anchors).
+- Stretched junction connections (highway ramps/merges and other junctions where the road/junction boundary is not perpendicular to the road) can misplace the anchor dots relative to the painted lines. Fix: normalize the junction with the Node Controller mod so the connection cross-lines run perpendicular to the road — strongly recommended. The setback dot row 8 m before the junction also stays usable.
+- Area fill edges curve along a line only when that line was drawn with this mod. The game's own markings are not traced — along them the fill edge stays a straight segment between its points.
+- After moving or reshaping a road with Move It, line markings adapt to the new geometry, but area fills may not — delete and redraw them.
+
+## How it works
+- The mod replaces the game's lane-marking generator (SecondaryLaneSystem) with a copy that adds its features; vehicles and traffic lanes are untouched. Mods that patch or replace the same system conflict with it; mods that add markings as their own decals or net-lanes (such as the G87 packs) do not.
+- After every game update the copy is compared with the new vanilla system before the next release (1.6.2 required no changes).
+- AI tools (Claude) are among the tools used to develop the mod; every release is tested in-game before publishing. Full source on GitHub.
+
+## Requirements
+The G87 marking packs and the [G87] Vanilla Curb pack ship as dependencies and install automatically — they supply the line styles, area fills and the curb texture. Huge thanks to G87 for the assets!
+
+---
+
+# Intersection &amp; Lane Markings — дорожная разметка
+
+Редактор дорожной разметки для перекрёстков + автоматическая разметка обычных городских дорог.
+
+## Редактор разметки
+Кликните по любому перекрёстку и нарисуйте свою разметку:
+- **Линии** между точками-якорями — сплошная, пунктир (короткий / обычный / длинный), двойная сплошная, ванильный жёлтый набор (сплошная / пунктир / двойная / сплошная + пунктир), белые и жёлтые стили G87, бордюр; настраиваемая кривизна и видимость отдельных сегментов. Точки стоят на каждой границе полос, на краю проезжей части (в том числе за парковочными полосами) и вторым рядом за 8 м до перекрёстка — для сплошной перед стоп-линией, запрещающей перестроение.
+- **Заливки областей** по обведённому полигону — точки цепляются к концам полос, углам бордюров и пересечениям линий, рёбра повторяют кривизну линий. Вафельная разметка, белая и жёлтая штриховка, зелёная велополоса, красная автобусная полоса, бетон, трава, песок, тротуарная плитка, плитка, асфальтовая заплатка (нужен отдельный мод «G87 Vanilla Asphalt Pavement»).
+- **Скрытие ванильной разметки** на отдельном перекрёстке, чтобы начать с чистого листа.
+- **Пины любимых стилей** — звёздочка в любом дропдауне стилей закрепляет стиль наверху всех списков.
+- Полноценная панель в игре (английский + русский) и горячие клавиши: **Ctrl+M** — инструмент, **Y** — стиль линии, **A** — режим области, **U** — заливка области.
+
+## Автоматическая разметка
+Обычные городские дороги с полосами 3 м получают краевую разметку — как на шоссе, — поэтому парковка, тротуары и остановки работают корректно. Разметка парковочных полос включена. В городах с североамериканской темой односторонние и разделённые дороги (включая шоссе) дополнительно получают жёлтую линию вдоль левого края, со стороны медианы, — по американской конвенции; опция включена по умолчанию, европейские темы не затрагиваются.
+
+## Известные ограничения
+- **Мод чисто визуальный.** Разметка не влияет на реальное движение машин. Управлять полосами нужно модом Traffic (от krzychu124): сначала настройте там направления и соединения полос, затем нарисуйте разметку под них. Автоматической синхронизации между модами нет.
+- **Всё цепляется к точкам-якорям — намеренно.** Точки стоят на реальной геометрии дороги (границы полос, край проезжей части, углы бордюров, пересечения линий, плюс ряд за 8 м до перекрёстка) — поэтому разметка ложится точно по полосам за несколько кликов. Свободного размещения нет: для полностью ручного рисования ставьте декали и нет-лейны паков G87 вручную — этот мод поверх них как слой «быстро и точно» для перекрёстков.
+- Почти касательные контакты линий (заметно меньше ~8°) считаются скольжением, а не пересечением — точка-якорь в таком месте не появляется (намеренно: защита от дрожащих дублей-якорей).
+- Вытянутые соединения (съезды и слияния шоссе и другие узлы, где граница «дорога/перекрёсток» не перпендикулярна дороге) могут смещать точки-якоря относительно краски. Лечение: нормализуйте перекрёсток модом Node Controller, чтобы поперечные линии соединений стали перпендикулярны дороге, — настоятельно рекомендуется. Второй ряд точек за 8 м до перекрёстка тоже остаётся пригодным.
+- Рёбра заливок изгибаются вдоль линии, только если линия нарисована этим модом. Ванильную разметку заливка не огибает — вдоль неё ребро остаётся прямым отрезком между точками.
+- После перемещения или изменения дороги через Move It линии подстраиваются под новую геометрию, а заливки областей — не всегда: удалите их и нарисуйте заново.
+
+## Как устроен мод
+- Мод заменяет игровой генератор разметки полос (SecondaryLaneSystem) копией со своими дополнениями; машины и полосы движения он не трогает. Моды, которые патчат или заменяют ту же систему, с ним конфликтуют; моды, добавляющие разметку своими декалями или net-lane (например, паки G87), — нет.
+- После каждого обновления игры копия сверяется с новой ванильной системой до выхода следующей версии (1.6.2 правок не потребовал).
+- При разработке мода в том числе используются ИИ-инструменты (Claude); каждая версия перед публикацией проверяется в игре. Исходный код — на GitHub.
+
+## Зависимости
+Паки разметки G87 и пак «[G87] Vanilla Curb» подключены как зависимости и ставятся автоматически — они дают стили линий, заливки и текстуру бордюра. Спасибо G87 за ассеты!
+	</LongDescription>
+	<!--Thumbnail-->
+	<Thumbnail Value="Properties/Thumbnail.jpg" />
+	<!--Screenshot, can be set multiple times-->
+	<!-- Screenshot filenames carry a content hash: the PDX CDN caches by name, so re-publishing
+	     under a reused name can serve the stale image. New content = new name, always fresh. -->
+	<Screenshot Value="Properties/Screenshots/ILM_2ecbc8fe.jpg" />
+	<Screenshot Value="Properties/Screenshots/ILM_9c1107eb.jpg" />
+	<Screenshot Value="Properties/Screenshots/ILM_9f56d721.jpg" />
+	<Screenshot Value="Properties/Screenshots/ILM_f43d4d3e.jpg" />
+	<Screenshot Value="Properties/Screenshots/ILM_7f19dcc1.jpg" />
+	<Screenshot Value="Properties/Screenshots/ILM_332a9cfc.jpg" />
+	<Screenshot Value="Properties/Screenshots/ILM_a051f879.jpg" />
+	<Screenshot Value="Properties/Screenshots/ILM_4996f529.jpg" />
+	<!--Tag, can be set multiple times-->
+	<Tag Value="Code Mod" />
+	<!--Link to the forum post where the mod can be discussed-->
+	<!--<ForumLink Value="" />-->
+	<!--Version of the mod-->
+	<ModVersion Value="1.0.0" />
+	<!--Recommended version of the base game to use the mod-->
+	<GameVersion Value="1.6.*" />
+	<!--Dependency for the mod, can be set multiple times.
+	    The G87 packs supply the render prefabs our styles reference:
+	    97828 = [G87] Road Markings (includes UK Set)  - line styles, junction box, bike/bus fills
+	    98624 = [G87] Road Markings: Stripes and Chevrons - stripe area fills
+	    99062 = [G87] Vanilla Curb - the Curb line style's netlane mesh (<1 MB)
+	    The mod degrades gracefully without them (vanilla/concrete fallbacks), but the styles
+	    need them, so they ship as hard deps for install-and-it-works.-->
+	<Dependency Id="97828" />
+	<Dependency Id="98624" />
+	<Dependency Id="99062" />
+	<!--Required DLC, can be set multiple times. Supported values are "Landmark Buildings", "San Fransisco Set", "Beach Properties", "Urban Promenades", "Modern Architecture"-->
+	<RequiredDLC Value="" />
+	<!--Change log for new version. Single line or multi line. Supports minimal markdown subset-->
+	<ChangeLog>
+# 1.0.0 — first release
+
+First release of Intersection &amp; Lane Markings (ILM), based on Town Road Lane 2.5.0 by mxerf (GPL-3.0).
+	</ChangeLog>
+	<!--External link, can be set multiple times. supported types are "discord", "github", "youtube", "twitch", "x", "paypal", "patreon", "buymeacoffee", "kofi", "crowdin", "gitlab", "gofundme"-->
+	<!--TODO: add your GitHub repo once it exists: <ExternalLink Type="github" Url="https://github.com/YOU/REPO" />-->
+	<!--Supported values Public, Private, Unlisted-->
+	<AccessLevel Value="Public" />
+</Publish>

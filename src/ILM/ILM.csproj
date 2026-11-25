@@ -1,0 +1,135 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<Configurations>Debug;Release</Configurations>
+
+		<!--The file where mod information which is required for publishing mod on PDX mods are stored-->
+		<PublishConfigurationPath>Properties\PublishConfiguration.xml</PublishConfigurationPath>
+	</PropertyGroup>
+
+	<!--Imports must be after PropertyGroup block-->
+	<!-- Windows: the game's modding toolchain (references, Burst post-processing, deploy).
+	     Elsewhere: LocalRefs.props compiles against a local copy of the game assemblies
+	     (_managed/) for type checking only, without Burst or deploy. -->
+	<Import Project="$([System.Environment]::GetEnvironmentVariable('CSII_TOOLPATH', 'EnvironmentVariableTarget.User'))\Mod.props" Condition="'$(OS)' == 'Windows_NT'" />
+	<Import Project="$([System.Environment]::GetEnvironmentVariable('CSII_TOOLPATH', 'EnvironmentVariableTarget.User'))\Mod.targets" Condition="'$(OS)' == 'Windows_NT'" />
+	<Import Project="LocalRefs.props" Condition="'$(OS)' != 'Windows_NT'" />
+
+	<!-- Overrides LangVersion 9.0 from Mod.props: the decompiled vanilla code uses C# 10
+	     file-scoped namespaces and C# 12 primary constructors on structs. The runtime is still
+	     net48 / Mono; only the syntax is newer. -->
+	<PropertyGroup>
+		<LangVersion>latest</LangVersion>
+		<!-- The .pdb ships next to the .dll, so build-machine paths would show up in users'
+		     stack traces. PathMap keeps file:line but replaces the local path with a neutral
+		     prefix. SourceLink is off because its JSON map would still contain the local path. -->
+		<PathMap>$(MSBuildProjectDirectory)=ILM</PathMap>
+		<EnableSourceLink>false</EnableSourceLink>
+		<!-- No git hash in the informational version: the Windows build tree is a file copy,
+		     so its HEAD does not match the sources being built. -->
+		<IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Reference Include="Game">
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="Colossal.Core">
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="Colossal.Mathematics">
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="Colossal.Logging">
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="Colossal.IO.AssetDatabase">
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="Colossal.UI">
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="Colossal.UI.Binding">
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="Colossal.Localization">
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="Unity.InputSystem">
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="UnityEngine.CoreModule">
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="Unity.Burst">
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="Unity.Collections">
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="Unity.Entities">
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="Unity.Mathematics">
+			<Private>false</Private>
+		</Reference>
+	</ItemGroup>
+
+	<ItemGroup>
+		<Reference Update="System">
+			<Private>false</Private>
+		</Reference>
+		<Reference Update="System.Core">
+			<Private>false</Private>
+		</Reference>
+		<Reference Update="System.Data">
+			<Private>false</Private>
+		</Reference>
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="$(ModPropsFile)" Link="Properties\Mod.props" />
+		<None Include="$(ModTargetsFile)" Link="Properties\Mod.targets" />
+	</ItemGroup>
+
+	<!-- Developer-only prefab surveys and dumps: compiled in Debug, never shipped.
+	     Registration sites are under #if DEBUG in Mod.cs. -->
+	<ItemGroup Condition="'$(Configuration)' == 'Release'">
+		<Compile Remove="Diagnostics\RoadPrefabDumpSystem.cs" />
+		<Compile Remove="Diagnostics\AreasPrototypeSystem.cs" />
+		<Compile Remove="Diagnostics\ParkingPairDumpSystem.cs" />
+		<Compile Remove="Diagnostics\UserPairEmissionDumpSystem.cs" />
+	</ItemGroup>
+
+	<!-- ModVersion in PublishConfiguration.xml is the single version source: it sets the
+	     assembly version here, and webpack.config.js puts it in the UI module banner. -->
+	<Target Name="VersionFromPublishConfiguration" BeforeTargets="GetAssemblyVersion">
+		<XmlPeek XmlInputPath="$(PublishConfigurationPath)" Query="/Publish/ModVersion/@Value">
+			<Output TaskParameter="Result" PropertyName="Version" />
+		</XmlPeek>
+	</Target>
+
+	<!-- Builds the UI bundle and copies it into $(OutDir) before Mod.targets' AfterBuild deploy
+	     step, which mirrors OutDir into the mod folder. Skipped until `npm install` has been run
+	     in the UI project. Modelled on the BuildFrontend target of TrafficToolEssentials. -->
+	<Target Name="BuildFrontend" BeforeTargets="AfterBuild" Condition="'$(OS)' == 'Windows_NT' And Exists('..\ILMUI\node_modules')">
+		<Message Text="[BuildFrontend] Running webpack in ..\ILMUI\" Importance="high" />
+		<Exec Command="npm run build" WorkingDirectory="..\ILMUI\" ContinueOnError="false" />
+		<Copy SourceFiles="..\ILMUI\dist\ILM.mjs" DestinationFolder="$(OutDir)" />
+		<Copy SourceFiles="..\ILMUI\dist\ILM.css" DestinationFolder="$(OutDir)" Condition="Exists('..\ILMUI\dist\ILM.css')" />
+		<!-- Static UI assets from dist/images/. The game serves the deployed mod folder as
+		     coui://ui-mods/, so keeping the images/ subfolder is enough. -->
+		<ItemGroup>
+			<ILMUIImageFiles Include="..\ILMUI\dist\images\**\*.*" />
+		</ItemGroup>
+		<Copy SourceFiles="@(ILMUIImageFiles)" DestinationFiles="@(ILMUIImageFiles->'$(OutDir)images\%(RecursiveDir)%(Filename)%(Extension)')" Condition="'@(ILMUIImageFiles)' != ''" />
+		<!-- The game reads the UI module manifest from the .mjs banner, not from mod.json;
+		     mod.json ships only to match the usual UI mod layout. -->
+		<Copy SourceFiles="..\ILMUI\mod.json" DestinationFolder="$(OutDir)" />
+		<Message Text="[BuildFrontend] Copied UI bundle + manifest into $(OutDir)" Importance="high" />
+	</Target>
+	<Target Name="BuildFrontendMissingWarn" BeforeTargets="AfterBuild" Condition="'$(OS)' == 'Windows_NT' And !Exists('..\ILMUI\node_modules')">
+		<Message Text="[BuildFrontend] Skipping — ..\ILMUI\node_modules not found. Run `npm install` inside src\ILMUI\ to enable the UI bundle build." Importance="high" />
+	</Target>
+
+</Project>
