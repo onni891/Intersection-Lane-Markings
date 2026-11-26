@@ -57,6 +57,7 @@ namespace ILM.Systems.UI
                 h.Add(points[i].id);
                 h.Add(CountLines(node, points[i]));
                 h.Add(CountAreas(node, points[i]));
+                h.Add(CountCrosswalks(node, points[i]));
             }
         }
 
@@ -74,6 +75,7 @@ namespace ILM.Systems.UI
                     onJunction = p.IsInterior(node),
                     lineCount = CountLines(node, p),
                     areaCount = CountAreas(node, p),
+                    crosswalkCount = CountCrosswalks(node, p),
                 };
             }
             return result;
@@ -82,7 +84,7 @@ namespace ILM.Systems.UI
         /// <summary>The panel tab: what edit mode works on (0 lines, 1 areas, 2 points).</summary>
         private void OnSetEditTarget(int target)
         {
-            if (target < 0 || target > (int)MarkingNodeToolSystem.EditTarget.Points) return;
+            if (target < 0 || target > (int)MarkingNodeToolSystem.EditTarget.Crosswalks) return;
             _tool.SetEditTarget((MarkingNodeToolSystem.EditTarget)target);
         }
 
@@ -111,7 +113,7 @@ namespace ILM.Systems.UI
             if (!TryGetSelectedBuffer<MarkingFreePoint>("RemoveUnusedPoints", out var node, out var points)) return;
             _pointIdScratch.Clear();
             for (int i = 0; i < points.Length; i++)
-                if (CountLines(node, points[i]) == 0 && CountAreas(node, points[i]) == 0) _pointIdScratch.Add(i);
+                if (CountLines(node, points[i]) == 0 && CountAreas(node, points[i]) == 0 && CountCrosswalks(node, points[i]) == 0) _pointIdScratch.Add(i);
             // Remove back to front so the indices stay valid.
             for (int k = _pointIdScratch.Count - 1; k >= 0; k--)
             {

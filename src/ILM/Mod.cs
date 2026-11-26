@@ -60,7 +60,6 @@ namespace ILM
             Settings.RegisterKeyBindings();
             Settings.RegisterInOptionsUI();
             GameManager.instance.localizationManager.AddSource("en-US", new LocaleEN(Settings));
-            GameManager.instance.localizationManager.AddSource("ru-RU", new LocaleRU(Settings));
             AssetDatabase.global.LoadSettings(nameof(ILM), Settings, settingDefaults);
             // A decode failure silently falls back to SetDefaults(), so log what the load actually
             // produced; user reports then show the real state.
@@ -141,12 +140,15 @@ namespace ILM
             updateSystem.UpdateAt<MarkingPairMigrationSystem>(SystemUpdatePhase.Modification1);
             updateSystem.UpdateAt<MarkingTopologySystem>(SystemUpdatePhase.Modification1);
             updateSystem.UpdateAt<MarkingSegmentEmissionSystem>(SystemUpdatePhase.Modification1);
+            updateSystem.UpdateAt<MarkingCrosswalkEmissionSystem>(SystemUpdatePhase.Modification1);
             updateSystem.UpdateAt<MarkingAreaTopologySystem>(SystemUpdatePhase.Modification1);
             updateSystem.UpdateAt<MarkingAreaEmissionSystem>(SystemUpdatePhase.Modification1);
             // Runs after vanilla Game.Areas.GeometrySystem (Modification2B) and replaces its
             // shrink-and-budget ear clipping, which can leave fills invisible, with a full
             // triangulation of the real outline.
             updateSystem.UpdateAt<MarkingAreaTriangulationSystem>(SystemUpdatePhase.Modification2B);
+            // After GeometrySystem (Modification4): rebuilds markings whose road moved (Move It).
+            updateSystem.UpdateAt<MarkingGeometryWatchSystem>(SystemUpdatePhase.Modification5);
 
             updateSystem.UpdateAt<ILMUISystem>(SystemUpdatePhase.UIUpdate);
         }

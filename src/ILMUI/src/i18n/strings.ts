@@ -40,6 +40,37 @@ const enUS = {
   "tab.lines":                "Lines",
   "tab.areas":                "Areas",
   "tab.points":               "Points",
+  "tab.crosswalks":           "Crossings",
+  "tool.lines.tooltip":       "Lines: draw between the road's dots or freely, or edit their curves.",
+  "tool.areas.tooltip":       "Areas: outline fills such as hatching, bike lanes or grass, or edit their shape.",
+  "tool.crosswalks.tooltip":  "Crosswalks: one click puts a crosswalk across a road; edit its ends, width and position.",
+  "tool.points.tooltip":      "Points: all the points you placed. Move or remove them without touching anything else.",
+  "undo.tooltip":             "Undo (Ctrl+Z)",
+  "redo.tooltip":             "Redo (Ctrl+Y)",
+  "action.draw":              "Draw",
+  "action.draw.tooltip":      "Create new markings with the chosen tool.",
+  "action.edit.tooltip":      "Change markings of the chosen tool: click one to show its handles. Only that kind can be picked.",
+  "lines.edit.hint":          "Click a line to show its curve handles. Drag the handles or a white point; right-click a white point to remove it.",
+  "status.cw.place":          "Click a road to put a crosswalk across it · RMB on a crosswalk removes it",
+  "status.cw.pick":           "Click a crosswalk to change it",
+  "status.cw.open":           "Drag the ends, the blue side handles (width) or the middle (slide) · RMB removes",
+  "section.crosswalks":       "Crosswalks",
+  "cw.next.style":            "Style",
+  "cw.next.width":            "Width",
+  "cw.place.hint":            "Click a road near the junction: the crosswalk goes across it from kerb to kerb. Right-click a crosswalk to remove it.",
+  "cw.edit.hint":             "Click a crosswalk to open it. Drag its white end points to move them, the blue side handles to change the width, and the green middle handle to slide it along the road. Right-click removes it.",
+  "cw.empty":                 "No crosswalks yet. Switch to Draw and click a road.",
+  "cw.title":                 "Crosswalk #{n}",
+  "cw.style":                 "Style",
+  "cw.width":                 "Width",
+  "cw.width.step":            "0.5 m (Shift: 0.1 m)",
+  "cw.delete":                "Delete crosswalk",
+  "cw.style.0":               "Zebra",
+  "cw.style.1":               "Ladder (zebra with borders)",
+  "cw.style.2":               "Two lines",
+  "cw.style.3":               "Zebra, thin bars",
+  "point.crosswalks":         "{n} crosswalk(s)",
+  "hotkeys.undo":             "undo / redo (Ctrl+Y)",
   "snap.label":               "Snapping",
   "snap.all.on":              "Turn all snapping on",
   "snap.all.off":             "Turn all snapping off",
@@ -186,198 +217,17 @@ const enUS = {
   "style.yellowDashed":       "Yellow dashed",
   "style.yellowDoubleSolid":  "Yellow double solid",
   "style.yellowSolidDashed":  "Yellow solid + dashed",
+  "style.wide30":             "Wide line 30 cm (stop line)",
+  "style.wide60":             "Wide line 60 cm",
   "style.unknown":            "?",
 } as const;
 
-type LocaleDict = { readonly [K in keyof typeof enUS]: string };
-
-const ruRU: LocaleDict = {
-  // Toolbar
-  "toolbar.toggle.label":     "Дорожная разметка",
-  "toolbar.toggle.tooltip":   "Включить инструмент разметки ILM (Ctrl+M)",
-
-  // Panel chrome
-  "panel.appTitle":           "Разметка перекрёстков и полос",
-  "panel.title":              "Узел #{n}",
-  "panel.close.tooltip":      "Закрыть инструмент разметки",
-  "panel.hint.selectNode":    "Кликните по перекрёстку или середине дороги, чтобы редактировать разметку.",
-  "panel.error.title":        "Ошибка панели",
-  "panel.error.retry":        "Повторить",
-
-  // Tool status (MarkingNodeToolSystem.State)
-  "status.line.first":        "Кликните первую точку линии",
-  "status.line.second":       "Кликните вторую точку — линия завершится",
-  "status.area":              "Режим области — точек: {n}",
-  "status.free.first":        "Кликните в любом месте дороги, чтобы начать",
-  "status.free.next":         "Клик — добавить точку · Esc — закончить",
-  "status.edit.pick":         "Кликните линию, чтобы изменить её",
-  "status.edit.open":         "Тяните голубые ручки или белые точки · Esc — отпустить линию",
-
-  // Section headers
-  "section.drawing":          "Рисование",
-  "section.node":             "Перекрёсток",
-  "section.road":             "Дорога",
-  "panel.title.road":         "Дорога #{n}",
-
-  // Node block
-  "node.vanilla.label":       "Ванильная разметка",
-
-  // Tabs and sections
-  "tab.lines":                "Линии",
-  "tab.areas":                "Области",
-  "tab.points":               "Точки",
-  "snap.label":               "Привязка",
-  "snap.all.on":              "Включить всю привязку",
-  "snap.all.off":             "Выключить всю привязку",
-  "snap.existing":            "Привязка к существующей геометрии: точки, углы бордюров, пересечения и ваши линии",
-  "snap.angle":               "Привязка к 90°: вдоль или поперёк дороги либо под прямым углом к предыдущему отрезку",
-  "snap.side":                "Привязка к краю дороги (линии бордюра)",
-  "snap.guides":              "Привязка к направляющим: продолжения линий полос и линии вдоль и поперёк дороги через ваши точки",
-  "snap.length":              "Длина от предыдущей точки шагами по 0,5 м",
-  "tab.advanced":             "Ещё",
-  "status.advanced":          "Настройки выбранного объекта",
-  "status.points":            "Тяните белую точку, чтобы переместить · ПКМ — удалить",
-  "section.points":           "Ваши точки",
-  "points.hint":              "Все точки, поставленные свободным рисованием или как углы областей. Здесь выбираются только точки — линии и области не задеваются.",
-  "points.empty":             "Точек пока нет. Поставьте их свободным рисованием на вкладке «Линии».",
-  "points.removeUnused":      "Удалить неиспользуемые точки",
-  "points.removeUnused.tooltip": "Удаляет все точки, которые не использует ни одна линия или область.",
-  "point.title":              "Точка #{n}",
-  "point.onJunction":         "перекрёсток",
-  "point.onRoad":             "дорога",
-  "point.lines":              "линий: {n}",
-  "point.areas":              "областей: {n}",
-  "point.unused":             "не используется",
-  "point.delete.tooltip":     "Удалить точку. Её линии удаляются вместе с ней, области лишь теряют этот угол.",
-  "section.draw":             "Рисование",
-  "section.more":             "Другие настройки",
-  "mode.points":              "По точкам",
-  "lines.empty":              "Линий пока нет. Кликните точку на дороге, чтобы начать.",
-  "areas.empty":              "Областей пока нет. Кликайте точки, чтобы обвести область.",
-  "advanced.optionsHint":     "Доп. ряды точек, точки по центру полос и клавиши — в Настройки → Intersection & Lane Markings.",
-
-  // Mode switch
-  "mode.lines":               "Линии",
-  "mode.area":                "Область",
-  "mode.lines.tooltip":       "Рисование линий разметки между точками",
-  "mode.area.tooltip":        "Заливка полигона по опорным точкам (островки безопасности, штриховка)",
-  "mode.free":                "Свободно",
-  "mode.free.tooltip":        "Кликайте в любом месте перекрёстка или его дорог, чтобы ставить точки и рисовать через них (клавиша F). Правый клик по белой точке удаляет её.",
-  "mode.edit":                "Правка",
-  "mode.edit.tooltip":        "Правка нарисованных линий: кликните линию, чтобы показать ручки кривой, затем тяните ручки или белые точки. На этой вкладке выбираются только линии, области не задеваются (их правят на вкладке «Области»). Правый клик по белой точке удаляет её.",
-
-  // Area draft (AreaSelecting)
-  "area.draft.hint.add":      "ЛКМ в любом месте дороги — добавить угол (рядом с точкой — притягивается)",
-  "area.draft.hint.undo":     "ПКМ — убрать последний угол",
-  "area.draft.hint.close":    "Клик по первому углу — замкнуть (нужно 3+). Форму можно изменить в «Правке».",
-  "area.mode.draw":           "Рисовать",
-  "area.mode.draw.tooltip":   "Обвести новую область: кликайте по дороге, чтобы ставить углы, как при рисовании линии.",
-  "area.mode.edit.tooltip":   "Правка нарисованных областей: кликните область, тяните углы и голубые ручки, + добавляет угол, правый клик удаляет.",
-  "area.edit.pick":           "Кликните область (или раскройте строку ниже), чтобы изменить её форму.",
-  "area.edit.hint":           "Тяните углы и голубые ручки на дороге. Зелёный + добавляет угол, правый клик по углу удаляет его.",
-  "status.edit.area":         "Тяните углы или голубые ручки · + — новый угол · ПКМ — удалить",
-  "area.draft.cancel":        "Отменить область",
-
-  // Next-object style pickers
-  "next.lineStyle":           "Стиль новой линии",
-  "next.lineStyle.tooltip":   "Стиль СЛЕДУЮЩЕЙ линии, которую вы проведёте (хоткей Y листает по кругу)",
-  "next.areaStyle":           "Заливка новой области",
-  "next.areaStyle.tooltip":   "Заливка СЛЕДУЮЩЕЙ замкнутой области (хоткей U листает по кругу). Асфальту нужен отдельный мод «G87 Vanilla Asphalt Pavement» (G87 VA); недоступные стили откатываются к бетону. Звёздочка закрепляет любимые стили наверху.",
-
-  // Sections
-  "section.lines":            "Линии",
-  "section.areas":            "Области",
-
-  // Area rows
-  "area.title":               "Область #{n}",
-  "area.pieces":              "{visible}/{total}",
-  "area.meta.vertices":       "{n} тчк",
-  "area.hide.tooltip":        "Скрыть область",
-  "area.show.tooltip":        "Показать область",
-  "area.delete":              "Удалить область",
-  "area.style":               "Стиль заливки",
-
-  // Area fill styles (indexes match the C# kStyleSurfaceNames)
-  "areaStyle.0":              "Бетон",
-  "areaStyle.1":              "Вафельная разметка",
-  "areaStyle.2":              "Белая штриховка",
-  "areaStyle.3":              "Белая штриховка, редкая",
-  "areaStyle.4":              "Жёлтая штриховка",
-  "areaStyle.5":              "Зелёная велополоса",
-  "areaStyle.6":              "Красная автобусная полоса",
-  "areaStyle.14":             "Асфальт (G87 VA)",
-  "areaStyle.15":             "Трава",
-  "areaStyle.17":             "Трава тёмная",
-  "areaStyle.18":             "Песок",
-  "areaStyle.19":             "Тротуарная плитка",
-  "areaStyle.20":             "Плитка 1",
-  "areaStyle.21":             "Плитка 2",
-  "areaStyle.22":             "Плитка 3",
-
-  // Full node reset
-  "node.reset":               "Сбросить всю разметку",
-  "node.reset.tooltip":       "Удаляет все линии и области на этом узле и возвращает штатную разметку игры.",
-
-  // Hotkey hints footer
-  "hotkeys.title":            "Горячие клавиши",
-  "hotkeys.toggle":           "вкл/выкл инструмент",
-  "hotkeys.cycleLine":        "стиль новой линии",
-  "hotkeys.cycleArea":        "заливка новой области",
-  "hotkeys.areaMode":         "режим области",
-  "hotkeys.freeDraw":         "свободное рисование",
-  "hotkeys.rmb":              "ПКМ",
-  "hotkeys.rmb.desc":         "удалить точку / отмена",
-  "hotkeys.esc":              "Esc",
-  "hotkeys.esc.desc":         "шаг назад",
-
-  // Vanilla markings toggle
-  "vanilla.hide":             "Скрыть ванильную разметку",
-  "vanilla.show":             "Показать ванильную разметку",
-  "vanilla.tooltip":          "Убирает штатную разметку игры на этом перекрёстке. Узлы с нарисованными линиями скрывают её автоматически; этот переключатель работает и без линий.",
-
-  // Line row
-  "line.title":               "Линия #{n}",
-  "line.segCount":            "{visible}/{total}",
-  "line.delete":              "Удалить линию",
-  "line.delete.confirm":      "Удалить линию #{n}? Действие нельзя отменить.",
-  "line.delete.cancel":       "Отмена",
-  "line.delete.confirm.btn":  "Удалить",
-  "line.curvature":           "Кривизна",
-  "line.curvature.tooltip":   "Изгиб линии: 0% — прямая, 50% — стандартная дуга, 100% — максимальное скругление",
-  "line.curvature.reset":     "Вернуть стандартные 50%",
-  "line.curvature.step":      "Шаг 1 · Shift: 10 · Ctrl: 5",
-  "line.handles.hint":        "Тяните голубые ручки на дороге, чтобы изогнуть линию.",
-  "line.addPoint":            "Добавить точку",
-  "line.addPoint.tooltip":    "Разделить линию посередине новой точкой, которую можно перетаскивать (белая). Правый клик удаляет её.",
-  "line.editHint":            "Переключитесь в «Правка», чтобы изгибать линию ручками.",
-
-  // Segment row
-  "segment.label":            "Сегмент {n}",
-  "segment.length":           "{m} м",
-  "segment.hide.tooltip":     "Скрыть сегмент",
-  "segment.show.tooltip":     "Показать сегмент",
-
-  // Styles
-  "style.solid":              "Сплошная",
-  "style.dashed":             "Пунктир",
-  "style.g87Solid":           "G87 Сплошная",
-  "style.g87Dashed":          "G87 Пунктир",
-  "style.doubleSolid":        "Двойная сплошная",
-  "style.dashedDense":        "Пунктир, короткий",
-  "style.dashedLong":         "Пунктир, длинный",
-  "style.g87Yellow":          "G87 Жёлтая",
-  "style.g87YellowDashed":    "G87 Жёлтый пунктир",
-  "style.curb":               "Бордюр",
-  "style.yellowSolid":        "Жёлтая сплошная",
-  "style.yellowDashed":       "Жёлтый пунктир",
-  "style.yellowDoubleSolid":  "Двойная жёлтая",
-  "style.yellowSolidDashed":  "Жёлтая сплошная + пунктир",
-  "style.unknown":            "?",
-};
+// Shape every other locale must have: all of the English keys. To add a language, add a
+// dictionary of this type and list it in STRINGS; CS2 locales without one fall back to en-US.
+export type LocaleDict = { readonly [K in keyof typeof enUS]: string };
 
 export const STRINGS = {
   "en-US": enUS,
-  "ru-RU": ruRU,
 } as const;
 
 export type Locale = keyof typeof STRINGS;

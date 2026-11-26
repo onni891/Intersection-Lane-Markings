@@ -46,6 +46,15 @@ export interface FreePointVM {
   onJunction: boolean; // inside the junction rather than on one of its roads
   lineCount: number;
   areaCount: number;
+  crosswalkCount: number;
+}
+
+// A crosswalk on the selected node (Crosswalks tool).
+export interface CrosswalkVM {
+  index: number;
+  style: number; // CROSSWALK_STYLES value
+  widthCm: number;
+  lengthCm: number;
 }
 
 // Mirrors MarkingNodeToolSystem.EditTarget: what edit mode works on, set by the panel tab.
@@ -53,6 +62,7 @@ export const EDIT_TARGET = {
   Lines: 0,
   Areas: 1,
   Points: 2,
+  Crosswalks: 3,
 } as const;
 
 // Mirrors MarkingNodeToolSystem.State.
@@ -111,6 +121,17 @@ export interface ToolStateVM {
   // Free point id under the cursor in the world, -1 for none.
   hoveredPointInGame: number;
   points: FreePointVM[];
+  crosswalks: CrosswalkVM[];
+  currentCrosswalkStyle: number;
+  currentCrosswalkWidthCm: number;
+  // Crosswalk open in edit mode / under the cursor in the world, -1 for none.
+  editCrosswalk: number;
+  hoveredCrosswalkInGame: number;
+  // Crosswalk just placed or clicked in the world; the tick changes on every such event.
+  lastCrosswalk: number;
+  lastCrosswalkTick: number;
+  canUndo: boolean;
+  canRedo: boolean;
   lines: LineVM[];
   areas: AreaVM[];
 }
@@ -136,6 +157,15 @@ const EMPTY: ToolStateVM = {
   snapMask: 31,
   hoveredPointInGame: -1,
   points: [],
+  crosswalks: [],
+  currentCrosswalkStyle: 0,
+  currentCrosswalkWidthCm: 300,
+  editCrosswalk: -1,
+  hoveredCrosswalkInGame: -1,
+  lastCrosswalk: -1,
+  lastCrosswalkTick: 0,
+  canUndo: false,
+  canRedo: false,
   lines: [],
   areas: [],
 };
@@ -151,6 +181,7 @@ const normalizeToolState = (state: ToolStateVM | null | undefined): ToolStateVM 
         lines: Array.isArray(state.lines) ? state.lines : [],
         areas: Array.isArray(state.areas) ? state.areas : [],
         points: Array.isArray(state.points) ? state.points : [],
+        crosswalks: Array.isArray(state.crosswalks) ? state.crosswalks : [],
       }
     : EMPTY;
 
@@ -315,4 +346,50 @@ export const SNAP = {
 // The snap bar: which snap options are on (SNAP bits). Kept in the mod settings.
 export const cmdSetSnapMask = (mask: number) => {
   trigger(BINDING_GROUP, "SetSnapMask", mask);
+};
+
+// Mirrors CrosswalkStyle in C#.
+export const CROSSWALK_STYLES = [0, 1, 2, 3] as const;
+
+export const cmdSetCurrentCrosswalkStyle = (style: number) => {
+  trigger(BINDING_GROUP, "SetCurrentCrosswalkStyle", style);
+};
+
+export const cmdSetCurrentCrosswalkWidth = (widthCm: number) => {
+  trigger(BINDING_GROUP, "SetCurrentCrosswalkWidth", widthCm);
+};
+
+export const cmdSetCrosswalkStyle = (index: number, style: number) => {
+  trigger(BINDING_GROUP, "SetCrosswalkStyle", index, style);
+};
+
+export const cmdSetCrosswalkWidth = (index: number, widthCm: number) => {
+  trigger(BINDING_GROUP, "SetCrosswalkWidth", index, widthCm);
+};
+
+// Removes the crosswalk and the points it placed.
+export const cmdDeleteCrosswalk = (index: number) => {
+  trigger(BINDING_GROUP, "DeleteCrosswalk", index);
+};
+
+// The crosswalk row expanded in edit mode; the tool shows its handles. -1 for none.
+export const cmdSetEditCrosswalk = (index: number) => {
+  trigger(BINDING_GROUP, "SetEditCrosswalk", index);
+};
+
+export const cmdSetHoveredCrosswalk = (index: number) => {
+  trigger(BINDING_GROUP, "SetHoveredCrosswalk", index);
+};
+
+export const cmdClearHoveredCrosswalk = (index: number) => {
+  trigger(BINDING_GROUP, "ClearHoveredCrosswalk", index);
+};
+
+// Undo / redo on the selected junction or road (also Ctrl+Z / Ctrl+Y).
+export const cmdUndo = () => {
+  trigger(BINDING_GROUP, "Undo");
+};
+
+export const cmdRedo = () => {
+  trigger(BINDING_GROUP, "Redo");
 };

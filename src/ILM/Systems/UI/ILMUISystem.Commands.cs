@@ -63,6 +63,7 @@ namespace ILM.Systems.UI
             if (_uiHoveredAreaIndex == areaIndex)
                 _uiHoveredAreaIndex = -1;
             _uiHoveredPointId = -1;
+            _uiHoveredCrosswalk = -1;
         }
 
         /// <summary>Drops every UI hover index. Has to run on any structural change (deleting a
@@ -358,6 +359,8 @@ namespace ILM.Systems.UI
                 EntityManager.GetBuffer<MarkingAreaPieceVertex>(node).Clear();
             if (EntityManager.HasBuffer<MarkingFreePoint>(node))
                 EntityManager.GetBuffer<MarkingFreePoint>(node).Clear();
+            if (EntityManager.HasBuffer<MarkingCrosswalk>(node))
+                EntityManager.GetBuffer<MarkingCrosswalk>(node).Clear();
             if (EntityManager.HasComponent<MarkingOverride>(node))
                 EntityManager.RemoveComponent<MarkingOverride>(node);
             if (EntityManager.HasComponent<MarkingTopologyState>(node))

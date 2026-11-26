@@ -713,3 +713,88 @@ export const SnapLabel = styled.span`
   font-size: ${T.fontSizeSm};
   color: ${T.colorTextMuted};
 `;
+
+// Tool strip: the main tools as big icon buttons, then undo / redo / advanced on the right.
+export const ToolStrip = styled.div`
+  display: flex;
+  align-items: stretch;
+
+  > * {
+    margin-right: ${T.space1};
+  }
+  > *:last-child {
+    margin-right: 0;
+  }
+`;
+
+export const ToolBtn = styled.button<{ $active?: boolean }>`
+  flex: 1;
+  min-width: 0;
+  height: 48rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: ${(p) => (p.$active ? T.colorSelected : T.colorBtnBg)};
+  color: ${(p) => (p.$active ? T.colorTextPrimary : T.colorTextMuted)};
+  border: 0;
+  border-radius: ${T.radiusSm};
+  cursor: pointer;
+  pointer-events: auto;
+  padding: 0;
+  transition: background-color ${T.transitionFast}, color ${T.transitionFast};
+
+  &:hover {
+    background-color: ${(p) => (p.$active ? T.colorSelectedHover : T.colorBtnBgHover)};
+    color: ${T.colorTextPrimary};
+  }
+`;
+
+export const ToolLabel = styled.span`
+  margin-top: 3rem;
+  font-size: 10rem;
+  white-space: nowrap;
+  font-weight: ${T.fontWeightBold};
+  text-transform: uppercase;
+`;
+
+export const StripSpacer = styled.span`
+  flex: 1;
+`;
+
+// Small square buttons on the right of the strip, stacked two per column.
+export const StripSide = styled.div`
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+`;
+
+export const StripSideRow = styled.div`
+  display: flex;
+
+  > * {
+    margin-right: 2rem;
+  }
+  > *:last-child {
+    margin-right: 0;
+  }
+`;
+
+export const StripIconBtn = styled.button<{ $active?: boolean; $disabled?: boolean }>`
+  width: 23rem;
+  height: 23rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: ${(p) => (p.$active ? T.colorSelected : T.colorBtnBg)};
+  border: 0;
+  border-radius: ${T.radiusSm};
+  padding: 0;
+  cursor: ${(p) => (p.$disabled ? "default" : "pointer")};
+  opacity: ${(p) => (p.$disabled ? 0.35 : 1)};
+  pointer-events: auto;
+
+  &:hover {
+    background-color: ${(p) => (p.$disabled ? T.colorBtnBg : p.$active ? T.colorSelectedHover : T.colorBtnBgHover)};
+  }
+`;

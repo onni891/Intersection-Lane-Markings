@@ -14,6 +14,21 @@ namespace ILM.Utilities
     /// </summary>
     public static class MarkingEdits
     {
+        /// <summary>Removes a crosswalk, and its end points when nothing else uses them.</summary>
+        public static void DeleteCrosswalk(EntityManager em, Entity node, int index)
+        {
+            if (!em.HasBuffer<MarkingCrosswalk>(node)) return;
+            var cws = em.GetBuffer<MarkingCrosswalk>(node);
+            if (index < 0 || index >= cws.Length) return;
+            var cw = cws[index];
+            cws.RemoveAt(index);
+            if (MarkingEndpointExtractor.KindOf(cw.sourceGapIndex) == MarkingEndpointExtractor.AnchorKind.Free)
+                AreaEdits.RemoveFreePointIfUnused(em, node, cw.sourceEdge, cw.sourceGapIndex);
+            if (MarkingEndpointExtractor.KindOf(cw.targetGapIndex) == MarkingEndpointExtractor.AnchorKind.Free)
+                AreaEdits.RemoveFreePointIfUnused(em, node, cw.targetEdge, cw.targetGapIndex);
+            em.MarkUpdated(node);
+        }
+
         /// <summary>Removes the line, reindexing segment overrides and area anchors.</summary>
         public static void DeleteLine(EntityManager em, Entity node, int lineIndex)
         {
@@ -215,6 +230,13 @@ namespace ILM.Utilities
                              || (ln.targetEdge == edge && ln.targetGapIndex == gapIndex);
                     if (uses) DeleteLine(em, node, i);
                 }
+            }
+            // A crosswalk can't exist without both ends.
+            if (em.HasBuffer<MarkingCrosswalk>(node))
+            {
+                var cws = em.GetBuffer<MarkingCrosswalk>(node);
+                for (int i = cws.Length - 1; i >= 0; i--)
+                    if (cws[i].Uses(edge, gapIndex)) cws.RemoveAt(i);
             }
             em.MarkUpdated(node);
             return true;

@@ -1,7 +1,5 @@
 # Intersection & Lane Markings
 
-**English** | [Русский](README.ru.md)
-
 A road-marking mod for **Cities: Skylines II**: a manual marking editor for intersections plus automatic edge/parking lane markings for ordinary town roads.
 
 ![Intersection markings with curved area fills](src/ILM/Properties/Screenshots/Screenshot_04.jpg)
@@ -22,7 +20,11 @@ Click any intersection — or the middle of a road — and draw your own marking
 - **Snapping** like the game's own snap options — a snap bar with **All**, **existing geometry** (dots, kerb corners, line crossings, your lines), **90°** (along or across the road, or square to the previous segment), **road side** (the kerb), **guide lines** (lane lines continued straight, and lines along and across the road through your points) and **length** (0.5 m steps). Each one turns on and off on its own; where two cross, the point snaps to the crossing. Works in free draw, area drawing and when dragging points, corners and handles.
 - **Hide vanilla markings** per intersection to start from a clean slate.
 - **Pin favourite styles** — star any entry in a style dropdown to keep it at the top of every list.
-- **In-game panel** in the game's own style (English + Russian), with Lines / Areas / Points / Advanced tabs and a mode switch (snap to points / free draw / edit). Hotkeys: `Ctrl+M` toggle tool, `Y` cycle line style, `A` area mode, `U` cycle area fill, `F` free draw.
+- **Crosswalks** — pick the Crossings tool and click a road: a crosswalk goes across it from kerb to kerb. Styles: zebra, ladder (zebra with borders), two lines and thin-bar zebra, drawn from G87 wide-line decals, so any width from 1 to 12 m works. In Edit, drag its end points, drag the blue side handles to change the width, or slide it along the road with the middle handle; right-click removes it.
+- **Wide lines** (30 cm and 60 cm) as line styles, for stop lines.
+- **Undo / redo** — `Ctrl+Z` / `Ctrl+Y` or the panel buttons, per junction or road, for every edit (tool and panel).
+- **Move It support** — lines, line crossings, area fills and crosswalks follow a road that is moved or reshaped with Move It or the road tools.
+- **In-game panel** in the game's own style: a tool strip (Lines, Areas, Crossings, Points) with undo, redo and advanced settings beside it, one Draw / Edit switch for all tools, and below it only the chosen tool's options and list. Hotkeys: `Ctrl+M` toggle tool, `Y` cycle line style, `A` area mode, `U` cycle area fill, `F` free draw, `Ctrl+Z` / `Ctrl+Y` undo / redo.
 
 ![Area mode: outlining a traffic island between anchor dots](src/ILM/Properties/Screenshots/ILM_a3fa8fbf.jpg)
 
@@ -47,7 +49,6 @@ Ordinary city roads with 3 m lanes get proper edge lane markings — the same wa
 - **Nearly-tangent line contacts** (well under ~8°) are treated as a graze rather than a crossing — no anchor dot appears at such touch points (by design; prevents jittery duplicate anchors).
 - **Stretched junction connections** — highway ramps/merges and other junctions where the road/junction boundary is not perpendicular to the road — can misplace the anchor dots relative to the painted lines: the paint ends square to each lane, while the dots sit on the skewed boundary. Fix: normalize the junction with the **Node Controller** mod so the connection cross-lines run perpendicular to the road (strongly recommended). The setback dot row 8 m before the junction also stays usable.
 - **Area fill edges** follow a line automatically only when that line was drawn with this mod. The game's own markings are not traced — along them the edge stays straight until you curve it with its handles in Edit mode.
-- **Move It:** after moving or reshaping a road, line markings adapt to the new geometry, but area fills may not — delete and redraw them.
 
 ## How it works
 

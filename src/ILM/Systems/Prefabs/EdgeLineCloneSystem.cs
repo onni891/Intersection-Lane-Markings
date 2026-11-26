@@ -65,6 +65,8 @@ namespace ILM.Systems.Prefabs
         private const string kG87DashedMesh = kG87Prefix + "UK Carriageway Line White Dashed NetLaneDecal_RenderPrefab";
         private const string kG87YellowMesh = kG87Prefix + "UK Carriageway Line Yellow NetLaneDecal_RenderPrefab";
         private const string kG87YellowDashedMesh = kG87Prefix + "UK Carriageway Line Yellow Dashed NetLaneDecal_RenderPrefab";
+        private const string kG87Wide30Mesh = kG87Prefix + "RM Line White 30cm Wide NetLaneDecal_RenderPrefab";
+        private const string kG87Wide60Mesh = kG87Prefix + "RM Line White 60cm Wide NetLaneDecal_RenderPrefab";
         // From the "[G87] Vanilla Curb" pack, a dependency on Paradox Mods. Manual installs may lack
         // it; the clone then keeps the source prefab's mesh.
         private const string kCurbMesh = "G87 Vanilla Curb Misc G87 Vanilla Curb NetLane_RenderPrefab";
@@ -119,6 +121,11 @@ namespace ILM.Systems.Prefabs
             new() { style = MarkingStyle.YellowDoubleSolid, isNA = true,  sourcePrefabName = "NA Car Bay Line",      cloneName = "ILM NA City Yellow Double Solid Line", fallbackMesh = "Yellow Double Solid Line Mesh",        hostOnCityLanes = false },
             new() { style = MarkingStyle.YellowSolidDashed, isNA = false, sourcePrefabName = "EU Car Bay Line",      cloneName = "ILM EU City Yellow Solid Dashed Line", fallbackMesh = "Yellow Solid Dashed Line Mesh - Long", hostOnCityLanes = false },
             new() { style = MarkingStyle.YellowSolidDashed, isNA = true,  sourcePrefabName = "NA Car Bay Line",      cloneName = "ILM NA City Yellow Solid Dashed Line", fallbackMesh = "Yellow Solid Dashed Line Mesh - Long", hostOnCityLanes = false },
+            // G87 wide lines, from Car Bay Line like the other G87 styles. Also the crosswalk bars.
+            new() { style = MarkingStyle.Wide30, isNA = false, sourcePrefabName = "EU Car Bay Line", cloneName = "ILM EU City Wide 30 Line", fallbackMesh = kG87Wide30Mesh, hostOnCityLanes = false },
+            new() { style = MarkingStyle.Wide30, isNA = true,  sourcePrefabName = "NA Car Bay Line", cloneName = "ILM NA City Wide 30 Line", fallbackMesh = kG87Wide30Mesh, hostOnCityLanes = false },
+            new() { style = MarkingStyle.Wide60, isNA = false, sourcePrefabName = "EU Car Bay Line", cloneName = "ILM EU City Wide 60 Line", fallbackMesh = kG87Wide60Mesh, hostOnCityLanes = false },
+            new() { style = MarkingStyle.Wide60, isNA = true,  sourcePrefabName = "NA Car Bay Line", cloneName = "ILM NA City Wide 60 Line", fallbackMesh = kG87Wide60Mesh, hostOnCityLanes = false },
         };
 
         private PrefabSystem _prefabSystem;

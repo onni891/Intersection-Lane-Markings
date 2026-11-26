@@ -43,6 +43,18 @@ namespace ILM.Systems.UI
         // Free point id under the cursor in the world, -1 for none.
         public int hoveredPointInGame = -1;
         public FreePointVM[] points = Array.Empty<FreePointVM>();
+        public CrosswalkVM[] crosswalks = Array.Empty<CrosswalkVM>();
+        // Style and width (cm) for the next crosswalk placed.
+        public int currentCrosswalkStyle;
+        public int currentCrosswalkWidthCm = 300;
+        // Crosswalk open in edit mode, and under the cursor in the world; -1 for none.
+        public int editCrosswalk = -1;
+        public int hoveredCrosswalkInGame = -1;
+        // A crosswalk just placed or clicked in the world: the panel expands its row on every tick.
+        public int lastCrosswalk = -1;
+        public int lastCrosswalkTick;
+        public bool canUndo;
+        public bool canRedo;
         public LineVM[] lines = Array.Empty<LineVM>();
         public AreaVM[] areas = Array.Empty<AreaVM>();
     }
@@ -76,6 +88,15 @@ namespace ILM.Systems.UI
         public bool onJunction;
         public int lineCount;
         public int areaCount;
+        public int crosswalkCount;
+    }
+
+    public class CrosswalkVM
+    {
+        public int index;
+        public int style;
+        public int widthCm;
+        public int lengthCm;
     }
 
     public class AreaVM

@@ -94,6 +94,14 @@ namespace ILM.Localization
                 { _setting.GetOptionDescLocaleID(nameof(ILMSetting.ToggleFreeDrawBinding)),
                     "While the marking tool is active, switches free draw: click anywhere on the junction or its roads to place a point and keep drawing from it; right-click a free point to remove it. Default F." },
 
+                { _setting.GetOptionLabelLocaleID(nameof(ILMSetting.UndoMarkingBinding)), "Undo (hotkey)" },
+                { _setting.GetOptionDescLocaleID(nameof(ILMSetting.UndoMarkingBinding)),
+                    "While the marking tool is active, undoes the last marking change on the selected junction or road. Default Ctrl+Z." },
+
+                { _setting.GetOptionLabelLocaleID(nameof(ILMSetting.RedoMarkingBinding)), "Redo (hotkey)" },
+                { _setting.GetOptionDescLocaleID(nameof(ILMSetting.RedoMarkingBinding)),
+                    "While the marking tool is active, redoes the last undone marking change. Default Ctrl+Y." },
+
                 { _setting.GetEnumValueLocaleID(ILMSetting.EdgeLineStyleEnum.WhiteSolid), "White solid" },
                 { _setting.GetEnumValueLocaleID(ILMSetting.EdgeLineStyleEnum.WhiteSolidThick), "White solid (thick)" },
                 { _setting.GetEnumValueLocaleID(ILMSetting.EdgeLineStyleEnum.WhiteDashed), "White dashed" },

@@ -17,10 +17,10 @@ const BUS_RED = "#b04a38";
 
 // MarkingStyle values: 0 Solid, 1 Dashed, 2 G87 Solid, 3 G87 Dashed, 4 Double Solid,
 // 5 Dashed short, 6 G87 Yellow, 7 G87 Yellow Dashed, 8 Dashed long, 9 Curb, 10-13 vanilla
-// yellow (solid, dashed, double, solid+dashed). G87 variants draw the same preview as the
+// yellow (solid, dashed, double, solid+dashed). 14 and 15 are the G87 wide lines (30 / 60 cm). G87 variants draw the same preview as the
 // vanilla ones; callers add a "G87" text mark next to it.
 export const isG87LineStyle = (style: number): boolean =>
-  style === 2 || style === 3 || style === 6 || style === 7;
+  style === 2 || style === 3 || style === 6 || style === 7 || style === 14 || style === 15;
 
 // Slightly brighter than YELLOW, so a 2px line still reads as yellow on the dark panel.
 const PAINT_YELLOW = "#f5d05e";
@@ -40,6 +40,8 @@ export const LineStylePreview = ({
   const double = style === 4 || style === 12;
   const border = style === 9;
   const solidDashed = style === 13;
+  // 14 Wide 30 cm, 15 Wide 60 cm (G87): a thicker solid band.
+  const wide = style === 14 ? 3 : style === 15 ? 5 : 0;
   const paint =
     style === 6 || style === 7 || (style >= 10 && style <= 13) ? PAINT_YELLOW : PAINT;
   return (
@@ -86,6 +88,8 @@ export const LineStylePreview = ({
           <rect x="20" y="4" width="6" height="2" fill={paint} />
           <rect x="29.5" y="4" width="5.5" height="2" fill={paint} />
         </>
+      ) : wide > 0 ? (
+        <rect x="1" y={5 - wide / 2} width="34" height={wide} fill={paint} />
       ) : (
         <rect x="1" y="4" width="34" height="2" fill={paint} />
       )}

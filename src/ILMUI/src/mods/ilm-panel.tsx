@@ -30,6 +30,18 @@ import {
   cmdSetEditTarget,
   cmdSetSnapMask,
   SNAP,
+  cmdSetCurrentCrosswalkStyle,
+  cmdSetCurrentCrosswalkWidth,
+  cmdSetCrosswalkStyle,
+  cmdSetCrosswalkWidth,
+  cmdDeleteCrosswalk,
+  cmdSetEditCrosswalk,
+  cmdSetHoveredCrosswalk,
+  cmdClearHoveredCrosswalk,
+  cmdUndo,
+  cmdRedo,
+  CROSSWALK_STYLES,
+  CrosswalkVM,
   cmdDeleteFreePoint,
   cmdRemoveUnusedPoints,
   cmdSetHoveredPoint,
@@ -49,7 +61,7 @@ import {
 } from "../hooks/usePinnedStyles";
 import { registerSegmentAnchor, setAnchorExpanded, segKey, areaKey } from "../hooks/positionRegistry";
 import { useConfirm, useKeyedConfirm, Confirm } from "../hooks/useConfirm";
-import { ChevronRight, Eye, EyeOff, Trash, Cycle, SnapAll, SnapExisting, SnapAngle, SnapSide, SnapGuides, SnapLength } from "../components/icons";
+import { ChevronRight, Eye, EyeOff, Trash, Cycle, SnapAll, SnapExisting, SnapAngle, SnapSide, SnapGuides, SnapLength, ToolLines, ToolAreas, ToolCrosswalks, ToolPoints, Undo, Redo, Gear } from "../components/icons";
 import { LineStylePreview, AreaStylePreview, isG87LineStyle } from "../components/stylePreviews";
 import { Dropdown, DropdownOption } from "../components/Dropdown";
 import { TooltipProvider, Tooltip } from "../components/Tooltip";
@@ -61,8 +73,6 @@ import {
   WindowPosition,
   WindowBody,
   WindowFixed,
-  TabRow,
-  TabBtn,
   PanelStickyChrome,
   PanelTitle,
   StatusRow,
@@ -79,6 +89,12 @@ import {
   DraftHint,
   SnapRow,
   SnapLabel,
+  ToolStrip,
+  ToolBtn,
+  ToolLabel,
+  StripSide,
+  StripSideRow,
+  StripIconBtn,
   FieldRow,
   FieldLabel,
   SectionTitle,
@@ -141,7 +157,7 @@ const PanelErrorFallback = ({ error, onRetry }: { error: Error; onRetry: () => v
 };
 
 // MarkingStyle values from C#, in dropdown order.
-const STYLE_VALUES = [0, 1, 5, 8, 4, 10, 11, 13, 12, 2, 3, 6, 7, 9] as const;
+const STYLE_VALUES = [0, 1, 5, 8, 4, 10, 11, 13, 12, 2, 3, 6, 7, 14, 15, 9] as const;
 type StyleValue = typeof STYLE_VALUES[number];
 
 // STYLE_VALUES groups related looks for the dropdown (vanilla white, vanilla yellow, G87,
@@ -162,6 +178,8 @@ const STYLE_KEYS: Record<number, StringKey> = {
   11: "style.yellowDashed",
   12: "style.yellowDoubleSolid",
   13: "style.yellowSolidDashed",
+  14: "style.wide30",
+  15: "style.wide60",
 };
 
 const styleLabel = (t: ReturnType<typeof useT>, style: number): string =>
@@ -415,6 +433,7 @@ const HotkeysList = () => {
       <HintRow><HintKey>A</HintKey><span>{t("hotkeys.areaMode")}</span></HintRow>
       <HintRow><HintKey>U</HintKey><span>{t("hotkeys.cycleArea")}</span></HintRow>
       <HintRow><HintKey>F</HintKey><span>{t("hotkeys.freeDraw")}</span></HintRow>
+      <HintRow><HintKey>Ctrl+Z</HintKey><span>{t("hotkeys.undo")}</span></HintRow>
       <HintRow><HintKey>{t("hotkeys.rmb")}</HintKey><span>{t("hotkeys.rmb.desc")}</span></HintRow>
       <HintRow><HintKey>{t("hotkeys.esc")}</HintKey><span>{t("hotkeys.esc.desc")}</span></HintRow>
     </HintsBox>
@@ -439,7 +458,7 @@ const ILMWindow = ({ fixed, children }: { fixed?: ReactNode; children: ReactNode
   );
 };
 
-type PanelTab = "lines" | "areas" | "points" | "advanced";
+type PanelTab = "lines" | "areas" | "crosswalks" | "points" | "advanced";
 
 // The next step for the user in the current tool state.
 const toolStatus = (
@@ -554,10 +573,31 @@ const ILMPanelInner = () => {
       ? EDIT_TARGET.Areas
       : tab === "points"
         ? EDIT_TARGET.Points
-        : EDIT_TARGET.Lines;
+        : tab === "crosswalks"
+          ? EDIT_TARGET.Crosswalks
+          : EDIT_TARGET.Lines;
   useEffect(() => {
     if (state.isActive) cmdSetEditTarget(editTarget);
   }, [editTarget, state.isActive, state.selectedNodeIndex]);
+
+  // Crosswalks: the expanded row follows a crosswalk placed or clicked in the world, and in
+  // edit mode the expanded one gets its handles on the road.
+  const [expandedCw, setExpandedCw] = useState<number>(-1);
+  const [seenCwTick, setSeenCwTick] = useState<number | null>(null);
+  if (state.lastCrosswalkTick !== seenCwTick) {
+    setSeenCwTick(state.lastCrosswalkTick);
+    if (seenCwTick !== null) setExpandedCw(state.lastCrosswalk);
+  }
+  if (expandedCw >= state.crosswalks.length && expandedCw !== -1) setExpandedCw(-1);
+  const handleCw = state.isActive && tab === "crosswalks" && state.lineMode === LINE_MODE.Edit ? expandedCw : -1;
+  useEffect(() => {
+    cmdSetEditCrosswalk(handleCw);
+  }, [handleCw, state.selectedNodeIndex]);
+
+  // The draw sub-mode for lines (snap to dots or free), kept while editing so Draw returns
+  // to it.
+  const [lineDrawMode, setLineDrawMode] = useState<number>(LINE_MODE.Points);
+  if (state.lineMode !== LINE_MODE.Edit && state.lineMode !== lineDrawMode) setLineDrawMode(state.lineMode);
 
   // Panel shortcuts while a node is selected. Keys typed into text fields and combos with
   // Ctrl/Meta/Alt are left alone; those belong to the input or the game.
@@ -633,11 +673,13 @@ const ILMPanelInner = () => {
     if (next === "areas" && !inAreaMode && !editMode) cmdToggleAreaMode();
     if (next !== "areas" && inAreaMode) cmdToggleAreaMode();
   };
-  // The Areas tab's Draw / Edit switch.
-  const startAreaDrawing = () => {
-    if (!inAreaMode) cmdToggleAreaMode();
+  // The Draw / Edit switch under the tool strip. It is one mode for every tool, so switching
+  // tools keeps you drawing or editing. Drawing areas is the C# area mode.
+  const setDraw = () => {
+    if (editMode) cmdSetLineMode(lineDrawMode);
+    if (tab === "areas" && !inAreaMode) cmdToggleAreaMode();
   };
-  const startAreaEditing = () => {
+  const setEdit = () => {
     if (inAreaMode) cmdToggleAreaMode();
     cmdSetLineMode(LINE_MODE.Edit);
   };
@@ -669,27 +711,69 @@ const ILMPanelInner = () => {
       ? t("status.advanced")
       : shownTab === "points"
         ? t("status.points")
+      : shownTab === "crosswalks"
+        ? editMode
+          ? expandedCw >= 0 ? t("status.cw.open") : t("status.cw.pick")
+          : t("status.cw.place")
       : shownTab === "areas" && editMode && !inAreaMode
         ? popoverArea ? t("status.edit.area") : t("area.edit.pick")
         : toolStatus(t, state, popoverLine !== null);
   const areaStyleOptions = makeAreaStyleOptions(t, pinned.areaStyles);
+  const crosswalkStyleOptions = makeCrosswalkStyleOptions(t);
 
+  // Tool strip: one button per kind of marking, then undo / redo and the advanced gear.
+  // Draw / Edit below it applies to the chosen tool; Points is always editing.
+  const tools: { id: PanelTab; key: StringKey; tip: StringKey; Icon: (p: { size?: number }) => JSX.Element }[] = [
+    { id: "lines", key: "tab.lines", tip: "tool.lines.tooltip", Icon: ToolLines },
+    { id: "areas", key: "tab.areas", tip: "tool.areas.tooltip", Icon: ToolAreas },
+    { id: "crosswalks", key: "tab.crosswalks", tip: "tool.crosswalks.tooltip", Icon: ToolCrosswalks },
+    { id: "points", key: "tab.points", tip: "tool.points.tooltip", Icon: ToolPoints },
+  ];
+  const showDrawEdit = shownTab !== "points" && shownTab !== "advanced";
+  const drawing = shownTab === "areas" ? inAreaMode : !editMode;
   const fixed = (
     <>
-      <TabRow>
-        <TabBtn $active={shownTab === "lines"} onClick={() => openTab("lines")}>
-          {`${t("tab.lines")} · ${state.lines.length}`}
-        </TabBtn>
-        <TabBtn $active={shownTab === "areas"} onClick={() => openTab("areas")}>
-          {`${t("tab.areas")} · ${state.areas.length}`}
-        </TabBtn>
-        <TabBtn $active={shownTab === "points"} onClick={() => openTab("points")}>
-          {`${t("tab.points")} · ${state.points.length}`}
-        </TabBtn>
-        <TabBtn $active={shownTab === "advanced"} onClick={() => openTab("advanced")}>
-          {t("tab.advanced")}
-        </TabBtn>
-      </TabRow>
+      <ToolStrip>
+        {tools.map(({ id, key, tip, Icon }) => (
+          <Tooltip key={id} content={t(tip)}>
+            <ToolBtn $active={shownTab === id} onClick={() => openTab(id)}>
+              <Icon size={18} />
+              <ToolLabel>{t(key)}</ToolLabel>
+            </ToolBtn>
+          </Tooltip>
+        ))}
+        <StripSide>
+          <StripSideRow>
+            <Tooltip content={t("undo.tooltip")}>
+              <StripIconBtn $disabled={!state.canUndo} onClick={() => state.canUndo && cmdUndo()}>
+                <Undo size={13} />
+              </StripIconBtn>
+            </Tooltip>
+            <Tooltip content={t("redo.tooltip")}>
+              <StripIconBtn $disabled={!state.canRedo} onClick={() => state.canRedo && cmdRedo()}>
+                <Redo size={13} />
+              </StripIconBtn>
+            </Tooltip>
+          </StripSideRow>
+          <StripSideRow>
+            <Tooltip content={t("tab.advanced")}>
+              <StripIconBtn $active={shownTab === "advanced"} onClick={() => openTab(shownTab === "advanced" ? "lines" : "advanced")}>
+                <Gear size={13} />
+              </StripIconBtn>
+            </Tooltip>
+          </StripSideRow>
+        </StripSide>
+      </ToolStrip>
+      {showDrawEdit && (
+        <ModeRow>
+          <Tooltip content={t("action.draw.tooltip")}>
+            <ModeBtn $active={drawing} onClick={setDraw}>{t("action.draw")}</ModeBtn>
+          </Tooltip>
+          <Tooltip content={t("action.edit.tooltip")}>
+            <ModeBtn $active={!drawing && editMode} onClick={setEdit}>{t("mode.edit")}</ModeBtn>
+          </Tooltip>
+        </ModeRow>
+      )}
       <StatusRow>
         <StatusDot />
         <span>{statusText}</span>
@@ -702,24 +786,23 @@ const ILMPanelInner = () => {
       <ILMWindow fixed={fixed}>
         {shownTab === "lines" && (
           <>
-            <SectionTitle>{t("section.draw")}</SectionTitle>
-            <ModeRow>
-              <Tooltip content={t("mode.lines.tooltip")}>
-                <ModeBtn $active={state.lineMode === LINE_MODE.Points} onClick={() => cmdSetLineMode(LINE_MODE.Points)}>
-                  {t("mode.points")}
-                </ModeBtn>
-              </Tooltip>
-              <Tooltip content={t("mode.free.tooltip")}>
-                <ModeBtn $active={state.lineMode === LINE_MODE.Free} onClick={() => cmdSetLineMode(LINE_MODE.Free)}>
-                  {t("mode.free")}
-                </ModeBtn>
-              </Tooltip>
-              <Tooltip content={t("mode.edit.tooltip")}>
-                <ModeBtn $active={editMode} onClick={() => cmdSetLineMode(LINE_MODE.Edit)}>
-                  {t("mode.edit")}
-                </ModeBtn>
-              </Tooltip>
-            </ModeRow>
+            {/* Drawing: snap to the road's dots, or place points anywhere. */}
+            {!editMode ? (
+              <ModeRow>
+                <Tooltip content={t("mode.lines.tooltip")}>
+                  <ModeBtn $active={state.lineMode === LINE_MODE.Points} onClick={() => cmdSetLineMode(LINE_MODE.Points)}>
+                    {t("mode.points")}
+                  </ModeBtn>
+                </Tooltip>
+                <Tooltip content={t("mode.free.tooltip")}>
+                  <ModeBtn $active={state.lineMode === LINE_MODE.Free} onClick={() => cmdSetLineMode(LINE_MODE.Free)}>
+                    {t("mode.free")}
+                  </ModeBtn>
+                </Tooltip>
+              </ModeRow>
+            ) : (
+              <PanelHint>{t("lines.edit.hint")}</PanelHint>
+            )}
             {state.lineMode !== LINE_MODE.Points && <SnapBar mask={state.snapMask} />}
             {/* Edit mode draws nothing new, so the style for the next line doesn't apply. */}
             {!editMode && (
@@ -762,19 +845,6 @@ const ILMPanelInner = () => {
 
         {shownTab === "areas" && (
           <>
-            <SectionTitle>{t("section.draw")}</SectionTitle>
-            <ModeRow>
-              <Tooltip content={t("area.mode.draw.tooltip")}>
-                <ModeBtn $active={inAreaMode} onClick={startAreaDrawing}>
-                  {t("area.mode.draw")}
-                </ModeBtn>
-              </Tooltip>
-              <Tooltip content={t("area.mode.edit.tooltip")}>
-                <ModeBtn $active={editMode && !inAreaMode} onClick={startAreaEditing}>
-                  {t("mode.edit")}
-                </ModeBtn>
-              </Tooltip>
-            </ModeRow>
             <SnapBar mask={state.snapMask} />
             {inAreaMode ? (
               <>
@@ -821,6 +891,49 @@ const ILMPanelInner = () => {
           </>
         )}
 
+        {shownTab === "crosswalks" && (
+          <>
+            {!editMode ? (
+              <>
+                <FieldRow>
+                  <FieldLabel>{t("cw.next.style")}</FieldLabel>
+                  <Dropdown
+                    value={state.currentCrosswalkStyle}
+                    options={crosswalkStyleOptions}
+                    onChange={(s) => cmdSetCurrentCrosswalkStyle(s)}
+                  />
+                </FieldRow>
+                <WidthStepper
+                  label={t("cw.next.width")}
+                  widthCm={state.currentCrosswalkWidthCm}
+                  onChange={cmdSetCurrentCrosswalkWidth}
+                />
+                <PanelHint>{t("cw.place.hint")}</PanelHint>
+              </>
+            ) : (
+              <PanelHint>{t("cw.edit.hint")}</PanelHint>
+            )}
+            <SnapBar mask={state.snapMask} />
+            <SectionTitle>{`${t("section.crosswalks")} · ${state.crosswalks.length}`}</SectionTitle>
+            {state.crosswalks.length === 0 ? (
+              <PanelHint>{t("cw.empty")}</PanelHint>
+            ) : (
+              <PanelList>
+                {state.crosswalks.map((cw) => (
+                  <CrosswalkRow
+                    key={cw.index}
+                    cw={cw}
+                    options={crosswalkStyleOptions}
+                    isExpanded={expandedCw === cw.index}
+                    isGameHovered={state.hoveredCrosswalkInGame === cw.index}
+                    onToggleExpand={() => setExpandedCw(expandedCw === cw.index ? -1 : cw.index)}
+                  />
+                ))}
+              </PanelList>
+            )}
+          </>
+        )}
+
         {shownTab === "points" && (
           <>
             <PanelHint>{t("points.hint")}</PanelHint>
@@ -839,7 +952,7 @@ const ILMPanelInner = () => {
                     />
                   ))}
                 </PanelList>
-                {state.points.some((p) => p.lineCount === 0 && p.areaCount === 0) && (
+                {state.points.some((p) => p.lineCount === 0 && p.areaCount === 0 && p.crosswalkCount === 0) && (
                   <Tooltip content={t("points.removeUnused.tooltip")}>
                     <Btn $full onClick={cmdRemoveUnusedPoints}>
                       <Trash size={12} />
@@ -1070,16 +1183,112 @@ const SnapBar = ({ mask }: { mask: number }) => {
   );
 };
 
+// Crosswalk looks (CrosswalkStyle in C#), with a small preview of each.
+const CW_KEYS: Record<number, StringKey> = { 0: "cw.style.0", 1: "cw.style.1", 2: "cw.style.2", 3: "cw.style.3" };
+
+const CrosswalkPreview = ({ style }: { style: number }) => {
+  const bars = style === 2 ? [] : style === 3 ? [3, 8, 13, 18, 23, 28] : [4, 11, 18, 25];
+  const barW = style === 3 ? 2 : 4;
+  const borders = style === 1 || style === 2;
+  return (
+    <svg width={28} height={12} viewBox="0 0 32 14" fill="none">
+      {borders && <rect x="0.5" y="0.5" width="31" height="1.6" fill="rgba(240, 251, 255, 0.92)" />}
+      {borders && <rect x="0.5" y="11.9" width="31" height="1.6" fill="rgba(240, 251, 255, 0.92)" />}
+      {bars.map((x) => (
+        <rect key={x} x={x} y={borders ? 3 : 1} width={barW} height={borders ? 8 : 12} fill="rgba(240, 251, 255, 0.92)" />
+      ))}
+    </svg>
+  );
+};
+
+const makeCrosswalkStyleOptions = (t: ReturnType<typeof useT>): DropdownOption<number>[] =>
+  CROSSWALK_STYLES.map((s) => ({ value: s, label: t(CW_KEYS[s]), preview: <CrosswalkPreview style={s} /> }));
+
+// Width in 0.5 m steps (Shift: 0.1 m), 1 to 12 m.
+const WidthStepper = ({ label, widthCm, onChange }: { label: string; widthCm: number; onChange: (cm: number) => void }) => {
+  const t = useT();
+  const step = (dir: number, e: ReactMouseEvent<HTMLButtonElement>) =>
+    onChange(Math.max(100, Math.min(1200, Math.round((widthCm + dir * (e.shiftKey ? 10 : 50)) / 10) * 10)));
+  return (
+    <CurvRow>
+      <CurvLabel>{label}</CurvLabel>
+      <Tooltip content={t("cw.width.step")}>
+        <CurvStepBtn onClick={(e: ReactMouseEvent<HTMLButtonElement>) => step(-1, e)}>−</CurvStepBtn>
+      </Tooltip>
+      <CurvUnit>{(widthCm / 100).toFixed(1)}</CurvUnit>
+      <Tooltip content={t("cw.width.step")}>
+        <CurvStepBtn onClick={(e: ReactMouseEvent<HTMLButtonElement>) => step(1, e)}>+</CurvStepBtn>
+      </Tooltip>
+      <CurvUnit>m</CurvUnit>
+    </CurvRow>
+  );
+};
+
+const CrosswalkRow = ({
+  cw,
+  options,
+  isExpanded,
+  isGameHovered,
+  onToggleExpand,
+}: {
+  cw: CrosswalkVM;
+  options: DropdownOption<number>[];
+  isExpanded: boolean;
+  isGameHovered: boolean;
+  onToggleExpand: () => void;
+}) => {
+  const t = useT();
+  const deleteConfirm = useConfirm();
+  return (
+    <LineRowOuter
+      $expanded={isExpanded}
+      $gameHovered={isGameHovered}
+      onMouseEnter={() => cmdSetHoveredCrosswalk(cw.index)}
+      onMouseLeave={() => cmdClearHoveredCrosswalk(cw.index)}
+    >
+      <LineHeader onClick={onToggleExpand}>
+        <LineChevron $open={isExpanded}>
+          <ChevronRight size={10} />
+        </LineChevron>
+        <LineTitle>{t("cw.title", { n: cw.index + 1 })}</LineTitle>
+        <SwatchWrap>
+          <CrosswalkPreview style={cw.style} />
+        </SwatchWrap>
+        <LineSegCount>{`${(cw.widthCm / 100).toFixed(1)} × ${(cw.lengthCm / 100).toFixed(1)} m`}</LineSegCount>
+      </LineHeader>
+      <LineBody $open={isExpanded}>
+        <FieldRow style={{ marginTop: 0 }}>
+          <FieldLabel>{t("cw.style")}</FieldLabel>
+          <Dropdown value={cw.style} options={options} onChange={(s) => cmdSetCrosswalkStyle(cw.index, s)} />
+        </FieldRow>
+        <WidthStepper label={t("cw.width")} widthCm={cw.widthCm} onChange={(cm) => cmdSetCrosswalkWidth(cw.index, cm)} />
+        {!deleteConfirm.armed ? (
+          <Btn $danger $full onClick={deleteConfirm.arm}>
+            <Trash size={12} color={T.colorDanger} />
+            <span>{t("cw.delete")}</span>
+          </Btn>
+        ) : (
+          <ConfirmDeleteRow
+            onCancel={deleteConfirm.disarm}
+            onConfirm={() => deleteConfirm.confirm(() => cmdDeleteCrosswalk(cw.index))}
+          />
+        )}
+      </LineBody>
+    </LineRowOuter>
+  );
+};
+
 // One free point on the Points tab: where it sits, what uses it, and delete. Hovering the
 // row rings the point on the road; a point hovered on the road lights its row.
 const PointRow = ({ point, isGameHovered }: { point: FreePointVM; isGameHovered: boolean }) => {
   const t = useT();
   const deleteConfirm = useConfirm();
-  const used = point.lineCount > 0 || point.areaCount > 0;
+  const used = point.lineCount > 0 || point.areaCount > 0 || point.crosswalkCount > 0;
   const usage = used
     ? [
         point.lineCount > 0 ? t("point.lines", { n: point.lineCount }) : null,
         point.areaCount > 0 ? t("point.areas", { n: point.areaCount }) : null,
+        point.crosswalkCount > 0 ? t("point.crosswalks", { n: point.crosswalkCount }) : null,
       ]
         .filter((s) => s !== null)
         .join(" · ")

@@ -100,6 +100,7 @@ namespace ILM.Systems.UI
             CreateTrigger<int>("SetEditLine", OnSetEditLine);
             CreateTrigger<int>("SetEditTarget", OnSetEditTarget);
             CreateTrigger<int>("SetSnapMask", OnSetSnapMask);
+            RegisterCrosswalkTriggers();
             CreateTrigger<int>("DeleteFreePoint", OnDeleteFreePoint);
             CreateTrigger("RemoveUnusedPoints", OnRemoveUnusedPoints);
             CreateTrigger<int>("SetHoveredPoint", OnSetHoveredPoint);
@@ -177,6 +178,7 @@ namespace ILM.Systems.UI
             h.Add((int)_tool.Snap);
             h.Add(_tool.HoveredFreePointId);
             HashFreePoints(ref h, node);
+            HashCrosswalks(ref h, node);
 
             if (node != Entity.Null && EntityManager.HasBuffer<MarkingLine>(node))
             {
@@ -253,6 +255,15 @@ namespace ILM.Systems.UI
                 snapMask = (int)_tool.Snap,
                 hoveredPointInGame = _tool.HoveredFreePointId,
                 points = BuildFreePoints(node),
+                crosswalks = BuildCrosswalks(node),
+                currentCrosswalkStyle = (int)_tool.CurrentCrosswalkStyle,
+                currentCrosswalkWidthCm = (int)Unity.Mathematics.math.round(_tool.CurrentCrosswalkWidth * 100f),
+                editCrosswalk = _tool.EditCrosswalk,
+                hoveredCrosswalkInGame = _tool.HoveredCrosswalkInGame,
+                lastCrosswalk = _tool.LastCreatedCrosswalk,
+                lastCrosswalkTick = _tool.LastCreatedCrosswalkTick,
+                canUndo = _tool.CanUndo,
+                canRedo = _tool.CanRedo,
                 selectedIsRoad = node != Entity.Null && _tool.SelectedIsRoad,
                 freePointCount = node != Entity.Null && EntityManager.HasBuffer<MarkingFreePoint>(node)
                     ? EntityManager.GetBuffer<MarkingFreePoint>(node, isReadOnly: true).Length : 0,

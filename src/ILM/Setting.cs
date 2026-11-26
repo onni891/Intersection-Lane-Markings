@@ -25,6 +25,8 @@ namespace ILM
     [SettingsUIKeyboardAction(EnterAreaMode, Usages.kToolUsage)]
     [SettingsUIKeyboardAction(CycleAreaStyle, Usages.kToolUsage)]
     [SettingsUIKeyboardAction(ToggleFreeDraw, Usages.kToolUsage)]
+    [SettingsUIKeyboardAction(UndoMarking, Usages.kToolUsage)]
+    [SettingsUIKeyboardAction(RedoMarking, Usages.kToolUsage)]
     // The class name must be unique among all installed mods: ApplyAndSave() calls
     // AssetDatabase.SaveSpecificSetting(GetType().Name), which matches settings by bare type name
     // across every mod and takes the first hit. With the template name "Setting" and another
@@ -57,6 +59,10 @@ namespace ILM
 
         // Free draw on/off: clicks on bare road place free points.
         public const string ToggleFreeDraw = "ToggleFreeDraw";
+
+        // Undo / redo of marking edits on the selected junction or road.
+        public const string UndoMarking = "UndoMarking";
+        public const string RedoMarking = "RedoMarking";
 
         public ILMSetting(IMod mod) : base(mod) { }
 
@@ -204,6 +210,14 @@ namespace ILM
         [SettingsUISection(kSection, kKeybindGroup)]
         [SettingsUIKeyboardBinding(BindingKeyboard.F, ToggleFreeDraw)]
         public ProxyBinding ToggleFreeDrawBinding { get; set; }
+
+        [SettingsUISection(kSection, kKeybindGroup)]
+        [SettingsUIKeyboardBinding(BindingKeyboard.Z, UndoMarking, ctrl: true)]
+        public ProxyBinding UndoMarkingBinding { get; set; }
+
+        [SettingsUISection(kSection, kKeybindGroup)]
+        [SettingsUIKeyboardBinding(BindingKeyboard.Y, RedoMarking, ctrl: true)]
+        public ProxyBinding RedoMarkingBinding { get; set; }
 
         public bool IsEdgeDisabled() => !EdgeLineEnabled;
         public bool IsParkingDisabled() => !ParkingMarkingsEnabled;

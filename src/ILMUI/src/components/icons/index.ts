@@ -9,3 +9,4 @@ export { Cycle } from "./Cycle";
 export { Plus } from "./Plus";
 export { Road } from "./Road";
 export { SnapAll, SnapExisting, SnapAngle, SnapSide, SnapGuides, SnapLength } from "./Snap";
+export { ToolLines, ToolAreas, ToolCrosswalks, ToolPoints, Undo, Redo, Gear } from "./Tools";

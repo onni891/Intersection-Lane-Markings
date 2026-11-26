@@ -16,7 +16,7 @@ namespace ILM.Systems.Tool
     public partial class MarkingNodeToolSystem
     {
         // Area* drags act on the open area: a vertex, or a curve handle of edge _dragIndex.
-        public enum DragKind { None, HandleA, HandleB, FreePoint, AreaVertex, AreaHandleA, AreaHandleB }
+        public enum DragKind { None, HandleA, HandleB, FreePoint, AreaVertex, AreaHandleA, AreaHandleB, CrosswalkWidth, CrosswalkMove }
 
         // How far the cursor must move (XZ, metres) before a press counts as a drag. Pick radii
         // are in MarkingNodeToolSystem.EditHover.cs.
@@ -76,6 +76,8 @@ namespace ILM.Systems.Tool
                 {
                     if (kind == DragKind.AreaVertex || kind == DragKind.AreaHandleA || kind == DragKind.AreaHandleB)
                         CommitAreaDrag(kind, index);
+                    else if (kind == DragKind.CrosswalkWidth || kind == DragKind.CrosswalkMove)
+                        CommitCrosswalkDrag(kind);
                     else
                         CommitDrag(kind);
                 }
@@ -94,6 +96,8 @@ namespace ILM.Systems.Tool
                 case EditHoverKind.AreaHandleA: _drag = DragKind.AreaHandleA; _dragIndex = hi; break;
                 case EditHoverKind.AreaHandleB: _drag = DragKind.AreaHandleB; _dragIndex = hi; break;
                 case EditHoverKind.AreaVertex: _drag = DragKind.AreaVertex; _dragIndex = hi; break;
+                case EditHoverKind.CrosswalkWidth: _drag = DragKind.CrosswalkWidth; break;
+                case EditHoverKind.CrosswalkMove: _drag = DragKind.CrosswalkMove; break;
                 case EditHoverKind.FreePoint when hi >= 0 && hi < _endpoints.Count:
                     _drag = DragKind.FreePoint;
                     _dragPoint = _endpoints[hi];

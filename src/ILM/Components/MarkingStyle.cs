@@ -38,6 +38,9 @@ namespace ILM.Components
         YellowDashed = 11,
         YellowDoubleSolid = 12,
         YellowSolidDashed = 13,
+        // G87 wide white lines (30 and 60 cm): stop lines, and the bars and borders of crosswalks.
+        Wide30 = 14,
+        Wide60 = 15,
     }
 
     public static class MarkingStyleExtensions
@@ -53,6 +56,8 @@ namespace ILM.Components
             MarkingStyle.G87Dashed => 3,
             MarkingStyle.G87Yellow => 3,
             MarkingStyle.G87YellowDashed => 3,
+            MarkingStyle.Wide30 => 3,
+            MarkingStyle.Wide60 => 3,
             _ => 1,
         };
     }
