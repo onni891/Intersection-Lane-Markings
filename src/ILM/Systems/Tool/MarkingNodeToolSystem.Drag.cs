@@ -18,9 +18,8 @@ namespace ILM.Systems.Tool
         // Area* drags act on the open area: a vertex, or a curve handle of edge _dragIndex.
         public enum DragKind { None, HandleA, HandleB, FreePoint, AreaVertex, AreaHandleA, AreaHandleB }
 
-        // Pick radius for handles (XZ, metres), and how far the cursor must move before a
-        // press counts as a drag.
-        private const float kHandlePickRadiusSq = 1.2f * 1.2f;
+        // How far the cursor must move (XZ, metres) before a press counts as a drag. Pick radii
+        // are in MarkingNodeToolSystem.EditHover.cs.
         private const float kDragThresholdSq = 0.3f * 0.3f;
 
         private int _editLine = -1;
@@ -85,16 +84,19 @@ namespace ILM.Systems.Tool
             if (!EditMode || _state != MarkingToolState.NodeSelected || !hitSomething || !applyAction.WasPressedThisFrame())
                 return false;
 
-            if (TryGetEditCurve(out var c))
+            // Only what is highlighted under the cursor (UpdateEditHover) can be grabbed.
+            int hi = _editHoverIndex;
+            switch (_editHoverKind)
             {
-                if (math.distancesq(c.b.xz, _cursorWorldPos.xz) < kHandlePickRadiusSq) _drag = DragKind.HandleA;
-                else if (math.distancesq(c.c.xz, _cursorWorldPos.xz) < kHandlePickRadiusSq) _drag = DragKind.HandleB;
-            }
-            if (_drag == DragKind.None) TryStartAreaDrag();
-            if (_drag == DragKind.None && _hoverIdx >= 0 && IsFree(_endpoints[_hoverIdx]))
-            {
-                _drag = DragKind.FreePoint;
-                _dragPoint = _endpoints[_hoverIdx];
+                case EditHoverKind.LineHandleA: _drag = DragKind.HandleA; break;
+                case EditHoverKind.LineHandleB: _drag = DragKind.HandleB; break;
+                case EditHoverKind.AreaHandleA: _drag = DragKind.AreaHandleA; _dragIndex = hi; break;
+                case EditHoverKind.AreaHandleB: _drag = DragKind.AreaHandleB; _dragIndex = hi; break;
+                case EditHoverKind.AreaVertex: _drag = DragKind.AreaVertex; _dragIndex = hi; break;
+                case EditHoverKind.FreePoint when hi >= 0 && hi < _endpoints.Count:
+                    _drag = DragKind.FreePoint;
+                    _dragPoint = _endpoints[hi];
+                    break;
             }
             if (_drag == DragKind.None) return false;
             _dragStart = _cursorWorldPos;

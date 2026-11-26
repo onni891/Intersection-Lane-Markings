@@ -117,8 +117,9 @@ namespace ILM.Systems.Tool
         public int HoveredLineInGame => _hoveredLineInGame;
         public int HoveredAreaInGame => _hoveredAreaInGame;
         public LineMode Mode => _mode;
-        public bool FreeDraw => _mode == LineMode.Free;
-        public bool EditMode => _mode == LineMode.Edit;
+        // The Points tab always edits: points are placed in free draw on the Lines tab.
+        public bool FreeDraw => _mode == LineMode.Free && _editTarget != EditTarget.Points;
+        public bool EditMode => _mode == LineMode.Edit || _editTarget == EditTarget.Points;
 
         /// <summary>Turns free draw on or off (off goes back to snapping to points).</summary>
         public void SetFreeDraw(bool on) => SetMode(on ? LineMode.Free : LineMode.Points);
@@ -246,26 +247,36 @@ namespace ILM.Systems.Tool
             bool hitEdge = hitSomething && !hitNode && MarkingEdgeAnchors.IsEdgeOwner(EntityManager, hitEntity);
             _cursorWorldPos = hitSomething ? hit.m_HitPosition : float3.zero;
             _hoveredNode = hitNode || hitEdge ? hitEntity : Entity.Null;
-            // Edit mode only shows free points, so only those can be hovered.
-            _hoverIdx = (_state != MarkingToolState.Default && _state != MarkingToolState.AreaSelecting && hitSomething)
-                ? FindHoveredEndpoint(_cursorWorldPos, freeOnly: EditMode)
-                : -1;
-            // The open area's outline, handles and hover targets (edit mode only).
-            RefreshEditArea(hitSomething);
+            // The open area's outline and handles, then the one edit target under the cursor.
+            RefreshEditArea();
+            UpdateEditHover(hitSomething);
+            if (EditMode)
+                _hoverIdx = _editHoverKind == EditHoverKind.FreePoint ? _editHoverIndex : -1;
+            else
+                _hoverIdx = (_state != MarkingToolState.Default && _state != MarkingToolState.AreaSelecting && hitSomething)
+                    ? FindHoveredEndpoint(_cursorWorldPos)
+                    : -1;
             // Lines can change from the panel while an area is being drawn.
             if (_state == MarkingToolState.AreaSelecting) RefreshIntersectionAnchorsIfStale();
             _areaHover = (_state == MarkingToolState.AreaSelecting && hitSomething) ? FindHoveredAreaCandidate(_cursorWorldPos) : AreaCandidate.None;
 
             // Skipped in SourceSelected, where the cursor is aiming at a target dot and line
             // highlights would be noise.
-            _hoveredLineInGame = (_state == MarkingToolState.NodeSelected && _hoverIdx < 0 && hitSomething)
-                ? HitTestLines(_cursorWorldPos)
-                : -1;
+            // In edit mode only the edit hover counts, so a line under a handle isn't lit.
+            if (EditMode)
+                _hoveredLineInGame = _editHoverKind == EditHoverKind.Line ? _editHoverIndex : -1;
+            else
+                _hoveredLineInGame = (_state == MarkingToolState.NodeSelected && _hoverIdx < 0 && hitSomething)
+                    ? HitTestLines(_cursorWorldPos)
+                    : -1;
 
             // Dots and lines are more specific targets, so they take priority over areas.
-            _hoveredAreaInGame = (_state == MarkingToolState.NodeSelected && _hoverIdx < 0 && _hoveredLineInGame < 0 && hitSomething)
-                ? HitTestAreas(_cursorWorldPos)
-                : -1;
+            if (EditMode)
+                _hoveredAreaInGame = _editHoverKind == EditHoverKind.Area ? _editHoverIndex : -1;
+            else
+                _hoveredAreaInGame = (_state == MarkingToolState.NodeSelected && _hoverIdx < 0 && _hoveredLineInGame < 0 && hitSomething)
+                    ? HitTestAreas(_cursorWorldPos)
+                    : -1;
 
             LogHoverChange();
 
@@ -319,8 +330,8 @@ namespace ILM.Systems.Tool
             // removed by repeating the create gesture (see TogglePair) or from the panel.
             if (_state != MarkingToolState.Default && secondaryApplyAction.WasPressedThisFrame())
             {
-                if (!(EditMode && TryRemoveHoveredAreaVertex()))
-                    TryRemoveHoveredFreePoint();
+                if (EditMode && _editTarget == EditTarget.Areas) TryRemoveHoveredAreaVertex();
+                else TryRemoveHoveredFreePoint();
                 return inputDeps;
             }
 
@@ -492,41 +503,51 @@ namespace ILM.Systems.Tool
             }
         }
 
-        /// <summary>A click in edit mode that no handle or free-point drag took: open the line
-        /// under the cursor (its row expands in the panel and its handles appear), or put the
-        /// open one down on empty road. A click on another junction or an unrelated road
-        /// selects it, as in the draw modes.</summary>
+        /// <summary>A click in edit mode that no drag took. It acts only on the highlighted edit
+        /// target (see UpdateEditHover): a line opens it (Lines tab), an area opens it (Areas
+        /// tab), a "+" adds a vertex. A click on nothing editable selects another junction or
+        /// an unrelated road, or else puts the open line or area down.</summary>
         private void HandleEditClick(bool hitSomething, bool hitNode, bool hitEdge, Entity hitEntity)
         {
-            // The "+" on an edge of the open area adds a vertex there.
-            if (_editAreaHoverInsert >= 0)
+            switch (_editHoverKind)
             {
-                InsertAreaVertexAt(_editAreaHoverInsert);
-                return;
-            }
-            int clicked = hitSomething ? HitTestLines(_cursorWorldPos) : -1;
-            // Inside an area (and not on a line): open the area.
-            if (clicked < 0 && hitSomething)
-            {
-                int area = HitTestAreas(_cursorWorldPos);
-                if (area >= 0)
-                {
-                    OpenEditArea(area);
+                case EditHoverKind.AreaInsert:
+                    InsertAreaVertexAt(_editHoverIndex);
                     return;
-                }
+                case EditHoverKind.Area:
+                    if (_editHoverIndex != _editArea) OpenEditArea(_editHoverIndex);
+                    return;
+                case EditHoverKind.Line:
+                    SetClickedLine(_editHoverIndex);
+                    log.Debug($"tool: edit — opened line #{_editHoverIndex}");
+                    return;
+                case EditHoverKind.None:
+                    break;
+                default:
+                    // A handle, vertex or point pressed and released without moving: nothing.
+                    return;
             }
-            if (clicked < 0 && hitNode && hitEntity != _selectedNode)
+            if (!hitSomething) return;
+            if (hitNode && hitEntity != _selectedNode)
             {
                 SelectNode(hitEntity);
                 return;
             }
-            if (clicked < 0 && hitEdge && hitEntity != _selectedNode && !IsRoadOfSelectedJunction(hitEntity))
+            if (hitEdge && hitEntity != _selectedNode && !IsRoadOfSelectedJunction(hitEntity))
             {
                 SelectNode(hitEntity);
                 return;
             }
-            SetClickedLine(clicked);
-            log.Debug($"tool: edit — opened line #{clicked} (-1 = none)");
+            if (_editTarget == EditTarget.Areas)
+            {
+                if (_editArea >= 0) log.Debug($"tool: edit — closed area #{_editArea}");
+                _editArea = -1;
+            }
+            else if (_editTarget == EditTarget.Lines)
+            {
+                SetClickedLine(-1);
+                log.Debug("tool: edit — closed the open line");
+            }
         }
 
         /// <summary>Opens a line for editing from the world (-1 closes it). The panel follows

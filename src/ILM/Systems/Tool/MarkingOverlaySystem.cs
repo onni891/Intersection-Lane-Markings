@@ -123,14 +123,27 @@ namespace ILM.Systems.Tool
 
             // Edit mode shows only what can be edited: the lines, the open line's handles and
             // the free points. Anchor dots and corners can't be edited, so they are left out.
+            // Each panel tab shows only its own kind, so nothing else can be mistaken for a
+            // target: lines (Lines tab), areas (Areas tab) or free points (Points tab).
             if (_tool.EditMode)
             {
-                DrawEditableAreas(buf, node);
-                DrawEditableLines(buf, node, endpoints);
-                DrawCommittedLines(buf, node, endpoints);
-                DrawEditHandles(buf);
-                DrawEditFreePoints(buf, endpoints);
-                DrawOpenArea(buf);
+                switch (_tool.CurrentEditTarget)
+                {
+                    case MarkingNodeToolSystem.EditTarget.Lines:
+                        DrawEditableLines(buf, node, endpoints);
+                        DrawCommittedLines(buf, node, endpoints);
+                        DrawEditHandles(buf);
+                        DrawEditFreePoints(buf, endpoints);
+                        break;
+                    case MarkingNodeToolSystem.EditTarget.Areas:
+                        DrawEditableAreas(buf, node);
+                        DrawOpenArea(buf);
+                        break;
+                    default:
+                        DrawEditableLines(buf, node, endpoints, faint: true);
+                        DrawEditFreePoints(buf, endpoints);
+                        break;
+                }
                 return;
             }
 
@@ -320,16 +333,17 @@ namespace ILM.Systems.Tool
         /// <summary>Edit mode: a faint trace on every line so the user sees what can be clicked,
         /// and a solid one on the open line. Hover highlights come on top from
         /// <see cref="DrawCommittedLines"/>.</summary>
-        private void DrawEditableLines(OverlayRenderSystem.Buffer buf, Entity node, IReadOnlyList<MarkingEndpoint> endpoints)
+        private void DrawEditableLines(OverlayRenderSystem.Buffer buf, Entity node, IReadOnlyList<MarkingEndpoint> endpoints, bool faint = false)
         {
             if (node == Entity.Null || !EntityManager.HasBuffer<MarkingLine>(node)) return;
             var lines = EntityManager.GetBuffer<MarkingLine>(node, isReadOnly: true);
-            int open = _tool.EditLine;
+            int open = faint ? -1 : _tool.EditLine;
+            var color = faint ? WithAlpha(kColEditableLine, kColEditableLine.a * 0.5f) : kColEditableLine;
             for (int l = 0; l < lines.Length; l++)
             {
                 if (!MarkingCurveBuilder.TryBuild(endpoints, lines[l], out var curve)) continue;
                 if (l == open) buf.DrawCurve(kColEditSelectedLine, curve, kEditSelectedLineWidth);
-                else buf.DrawCurve(kColEditableLine, curve, kEditableLineWidth);
+                else buf.DrawCurve(color, curve, kEditableLineWidth);
             }
         }
 
@@ -374,8 +388,8 @@ namespace ILM.Systems.Tool
                 var e = edges[i];
                 buf.DrawLine(kColHandleStem, new Line3.Segment(e.a, e.b), kHandleStemWidth);
                 buf.DrawLine(kColHandleStem, new Line3.Segment(e.d, e.c), kHandleStemWidth);
-                DrawDot(buf, e.b, kAreaHandleDotDiameter, kColHandleFill, kColDotOutline, kDotOutlineWidth);
-                DrawDot(buf, e.c, kAreaHandleDotDiameter, kColHandleFill, kColDotOutline, kDotOutlineWidth);
+                DrawHandleDot(buf, e.b, kAreaHandleDotDiameter, IsHover(MarkingNodeToolSystem.EditHoverKind.AreaHandleA, i));
+                DrawHandleDot(buf, e.c, kAreaHandleDotDiameter, IsHover(MarkingNodeToolSystem.EditHoverKind.AreaHandleB, i));
                 if (drag != MarkingNodeToolSystem.DragKind.None) continue;
                 bool hovered = i == _tool.HoveredAreaInsert;
                 DrawDot(buf, MathUtils.Position(e, 0.5f), hovered ? kInsertDotDiameterHover : kInsertDotDiameter,
@@ -400,13 +414,21 @@ namespace ILM.Systems.Tool
         private void DrawEditFreePoints(OverlayRenderSystem.Buffer buf, IReadOnlyList<MarkingEndpoint> endpoints)
         {
             int hoverIdx = _tool.HoveredEndpointIndex;
+            int uiHoverGap = _uiSystem.UIHoveredPointId >= 0 ? MarkingEndpointExtractor.kFreePointGapBase + _uiSystem.UIHoveredPointId : -1;
             bool draggingPoint = _tool.Dragging == MarkingNodeToolSystem.DragKind.FreePoint;
             for (int i = 0; i < endpoints.Count; i++)
             {
                 var ep = endpoints[i];
-                if (MarkingEndpointExtractor.KindOf(ep.gapIndex) != MarkingEndpointExtractor.AnchorKind.Free) continue;
+                // Only points the current tab can edit (area corners belong to area editing).
+                if (!_tool.IsEditablePoint(ep)) continue;
                 if (_tool.IsDraggedPoint(ep))
                     DrawDot(buf, ep.position, kEditFreePointDiameter, WithAlpha(kColFreePoint, 0.25f), WithAlpha(kColFreePoint, 0.5f), kDotOutlineWidth);
+                else if (ep.gapIndex == uiHoverGap && !draggingPoint)
+                {
+                    // Row hovered on the Points tab: a halo makes it easy to find on the road.
+                    DrawDot(buf, ep.position, kSourceHaloDiameter, kColTransparent, kColHighlightedCurve, kSourceHaloOutlineWidth);
+                    DrawDot(buf, ep.position, kDotDiameterHover * 1.1f, kColFreePoint, kColDotOutline, kDotOutlineWidthHover);
+                }
                 else if (i == hoverIdx && !draggingPoint)
                     DrawDot(buf, ep.position, kDotDiameterHover * 1.1f, kColFreePoint, kColDotOutline, kDotOutlineWidthHover);
                 else
@@ -427,8 +449,19 @@ namespace ILM.Systems.Tool
                 buf.DrawCurve(kColPreviewCurve, c, kPreviewCurveWidth * 1.5f);
             buf.DrawLine(kColHandleStem, new Line3.Segment(c.a, c.b), kHandleStemWidth);
             buf.DrawLine(kColHandleStem, new Line3.Segment(c.d, c.c), kHandleStemWidth);
-            DrawDot(buf, c.b, kHandleDotDiameter, kColHandleFill, kColDotOutline, kDotOutlineWidth);
-            DrawDot(buf, c.c, kHandleDotDiameter, kColHandleFill, kColDotOutline, kDotOutlineWidth);
+            DrawHandleDot(buf, c.b, kHandleDotDiameter, IsHover(MarkingNodeToolSystem.EditHoverKind.LineHandleA, _tool.EditLine));
+            DrawHandleDot(buf, c.c, kHandleDotDiameter, IsHover(MarkingNodeToolSystem.EditHoverKind.LineHandleB, _tool.EditLine));
+        }
+
+        private bool IsHover(MarkingNodeToolSystem.EditHoverKind kind, int index)
+            => _tool.EditHover == kind && _tool.EditHoverIndex == index;
+
+        /// <summary>A curve-handle grab dot; the one under the cursor is drawn larger with a
+        /// white outline, so it is clear which handle a press will take.</summary>
+        private void DrawHandleDot(OverlayRenderSystem.Buffer buf, float3 p, float diameter, bool hovered)
+        {
+            if (hovered) DrawDot(buf, p, diameter * 1.35f, kColHandleFill, kColFreePoint, kDotOutlineWidthHover);
+            else DrawDot(buf, p, diameter, kColHandleFill, kColDotOutline, kDotOutlineWidth);
         }
 
         /// <summary>Outlines every piece of the hovered area, the area counterpart of the line

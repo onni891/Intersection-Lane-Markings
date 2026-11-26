@@ -62,6 +62,7 @@ namespace ILM.Systems.UI
         {
             if (_uiHoveredAreaIndex == areaIndex)
                 _uiHoveredAreaIndex = -1;
+            _uiHoveredPointId = -1;
         }
 
         /// <summary>Drops every UI hover index. Has to run on any structural change (deleting a

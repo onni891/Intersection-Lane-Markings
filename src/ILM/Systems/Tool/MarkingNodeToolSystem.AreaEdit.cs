@@ -23,21 +23,15 @@ namespace ILM.Systems.Tool
         private readonly List<MarkingAreaVertex> _editAreaVerts = new List<MarkingAreaVertex>();
         private readonly List<float3> _editAreaPos = new List<float3>();
         private readonly List<Bezier4x3> _editAreaEdges = new List<Bezier4x3>();
-        private int _editAreaHoverVertex = -1;
-        private int _editAreaHoverInsert = -1;
         private int _dragIndex = -1;
-
-        // Pick radius for the "+" insert markers, smaller than for vertices so they don't get
-        // in the way on short edges.
-        private const float kInsertPickRadiusSq = 0.9f * 0.9f;
 
         /// <summary>Area open for editing, -1 for none.</summary>
         public int EditArea => _editArea;
         public IReadOnlyList<MarkingAreaVertex> EditAreaVertices => _editAreaVerts;
         public IReadOnlyList<float3> EditAreaPositions => _editAreaPos;
         public IReadOnlyList<Bezier4x3> EditAreaEdges => _editAreaEdges;
-        public int HoveredAreaVertex => _editAreaHoverVertex;
-        public int HoveredAreaInsert => _editAreaHoverInsert;
+        public int HoveredAreaVertex => _editHoverKind == EditHoverKind.AreaVertex ? _editHoverIndex : -1;
+        public int HoveredAreaInsert => _editHoverKind == EditHoverKind.AreaInsert ? _editHoverIndex : -1;
         public int DragIndex => _dragIndex;
 
         /// <summary>The area row expanded in the panel (Areas tab in edit mode), -1 for none.</summary>
@@ -72,14 +66,12 @@ namespace ILM.Systems.Tool
 
         /// <summary>Resolves the open area and its hover targets for this frame. Closes the area
         /// when it no longer exists (deleted from the panel, say).</summary>
-        private void RefreshEditArea(bool hitSomething)
+        private void RefreshEditArea()
         {
             _editAreaVerts.Clear();
             _editAreaPos.Clear();
             _editAreaEdges.Clear();
-            _editAreaHoverVertex = -1;
-            _editAreaHoverInsert = -1;
-            if (!EditMode || _state != MarkingToolState.NodeSelected || _editArea < 0 || _selectedNode == Entity.Null) return;
+            if (_editTarget != EditTarget.Areas || !EditMode || _state != MarkingToolState.NodeSelected || _editArea < 0 || _selectedNode == Entity.Null) return;
             if (!AreaEdits.TryGetVertices(EntityManager, _selectedNode, _editArea, _editAreaVerts))
             {
                 _editArea = -1;
@@ -115,46 +107,13 @@ namespace ILM.Systems.Tool
                 if (i == _dragIndex && drag == DragKind.AreaHandleB) bez.c = _cursorWorldPos;
                 _editAreaEdges.Add(bez);
             }
-
-            if (!hitSomething || drag != DragKind.None) return;
-            float best = kDotPickRadiusSq;
-            for (int i = 0; i < n; i++)
-            {
-                float sq = PolygonUtils.DistSqXZ(_editAreaPos[i], _cursorWorldPos);
-                if (sq < best) { best = sq; _editAreaHoverVertex = i; }
-            }
-            if (_editAreaHoverVertex >= 0) return;
-            best = kInsertPickRadiusSq;
-            for (int i = 0; i < n; i++)
-            {
-                float sq = PolygonUtils.DistSqXZ(MathUtils.Position(_editAreaEdges[i], 0.5f), _cursorWorldPos);
-                if (sq < best) { best = sq; _editAreaHoverInsert = i; }
-            }
-        }
-
-        /// <summary>A press in edit mode on a handle or vertex of the open area starts a drag.</summary>
-        private bool TryStartAreaDrag()
-        {
-            for (int i = 0; i < _editAreaEdges.Count; i++)
-            {
-                var e = _editAreaEdges[i];
-                if (math.distancesq(e.b.xz, _cursorWorldPos.xz) < kHandlePickRadiusSq) { _drag = DragKind.AreaHandleA; _dragIndex = i; return true; }
-                if (math.distancesq(e.c.xz, _cursorWorldPos.xz) < kHandlePickRadiusSq) { _drag = DragKind.AreaHandleB; _dragIndex = i; return true; }
-            }
-            if (_editAreaHoverVertex >= 0)
-            {
-                _drag = DragKind.AreaVertex;
-                _dragIndex = _editAreaHoverVertex;
-                return true;
-            }
-            return false;
         }
 
         /// <summary>Writes a finished area drag. Called after the drag state was cleared, so the
         /// refresh below resolves the outline as stored.</summary>
         private void CommitAreaDrag(DragKind kind, int index)
         {
-            RefreshEditArea(hitSomething: false);
+            RefreshEditArea();
             int n = _editAreaVerts.Count;
             if (index < 0 || index >= n) return;
 
@@ -210,15 +169,16 @@ namespace ILM.Systems.Tool
         /// three-vertex area is deleted). A free point nothing else uses goes with it.</summary>
         private bool TryRemoveHoveredAreaVertex()
         {
-            if (_editArea < 0 || _editAreaHoverVertex < 0 || _editAreaHoverVertex >= _editAreaVerts.Count) return false;
-            var v = _editAreaVerts[_editAreaHoverVertex];
+            int vi = HoveredAreaVertex;
+            if (_editArea < 0 || vi < 0 || vi >= _editAreaVerts.Count) return false;
+            var v = _editAreaVerts[vi];
             bool deletesArea = _editAreaVerts.Count <= 3;
-            AreaEdits.RemoveVertex(EntityManager, _selectedNode, _editArea, _editAreaHoverVertex);
+            AreaEdits.RemoveVertex(EntityManager, _selectedNode, _editArea, vi);
             if (IsFreeVertex(v)) AreaEdits.RemoveFreePointIfUnused(EntityManager, _selectedNode, v.refEdgeA, v.refGap);
             RefreshEndpoints();
-            log.Debug($"tool: area#{_editArea} vertex {_editAreaHoverVertex} removed{(deletesArea ? " (area deleted)" : "")}");
+            log.Debug($"tool: area#{_editArea} vertex {vi} removed{(deletesArea ? " (area deleted)" : "")}");
             if (deletesArea) _editArea = -1;
-            _editAreaHoverVertex = -1;
+            _editHoverKind = EditHoverKind.None;
             return true;
         }
     }

@@ -64,6 +64,10 @@ namespace ILM.Systems.UI
         private int _uiHoveredAreaIndex = -1;
         public int UIHoveredAreaIndex => _uiHoveredAreaIndex;
 
+        // Free point id hovered on the Points tab; the overlay rings that point.
+        private int _uiHoveredPointId = -1;
+        public int UIHoveredPointId => _uiHoveredPointId;
+
         protected override void OnCreate()
         {
             base.OnCreate();
@@ -94,6 +98,11 @@ namespace ILM.Systems.UI
             CreateTrigger<int>("SetLineMode", OnSetLineMode);
             CreateTrigger<int>("SetEditArea", OnSetEditArea);
             CreateTrigger<int>("SetEditLine", OnSetEditLine);
+            CreateTrigger<int>("SetEditTarget", OnSetEditTarget);
+            CreateTrigger<int>("DeleteFreePoint", OnDeleteFreePoint);
+            CreateTrigger("RemoveUnusedPoints", OnRemoveUnusedPoints);
+            CreateTrigger<int>("SetHoveredPoint", OnSetHoveredPoint);
+            CreateTrigger<int>("ClearHoveredPoint", OnClearHoveredPoint);
             CreateTrigger<int>("SplitLine", OnSplitLine);
             CreateTrigger<int, int>("SetAreaStyle", OnSetAreaStyle);
             CreateTrigger<int>("ToggleAreaVisible", OnToggleAreaVisible);
@@ -163,8 +172,9 @@ namespace ILM.Systems.UI
             h.Add(_tool.HoveredAreaInGame);
             h.Add((int)_tool.Mode);
             h.Add(_tool.EditArea);
-            h.Add(node != Entity.Null && EntityManager.HasBuffer<MarkingFreePoint>(node)
-                ? EntityManager.GetBuffer<MarkingFreePoint>(node, isReadOnly: true).Length : 0);
+            h.Add((int)_tool.CurrentEditTarget);
+            h.Add(_tool.HoveredFreePointId);
+            HashFreePoints(ref h, node);
 
             if (node != Entity.Null && EntityManager.HasBuffer<MarkingLine>(node))
             {
@@ -237,6 +247,9 @@ namespace ILM.Systems.UI
                 freeDraw = _tool.FreeDraw,
                 lineMode = (int)_tool.Mode,
                 editArea = _tool.EditArea,
+                editTarget = (int)_tool.CurrentEditTarget,
+                hoveredPointInGame = _tool.HoveredFreePointId,
+                points = BuildFreePoints(node),
                 selectedIsRoad = node != Entity.Null && _tool.SelectedIsRoad,
                 freePointCount = node != Entity.Null && EntityManager.HasBuffer<MarkingFreePoint>(node)
                     ? EntityManager.GetBuffer<MarkingFreePoint>(node, isReadOnly: true).Length : 0,

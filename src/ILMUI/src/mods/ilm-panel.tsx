@@ -27,11 +27,18 @@ import {
   cmdToggleAreaVisible,
   cmdDeleteArea,
   cmdResetNode,
+  cmdSetEditTarget,
+  cmdDeleteFreePoint,
+  cmdRemoveUnusedPoints,
+  cmdSetHoveredPoint,
+  cmdClearHoveredPoint,
   TOOL_STATE,
   LINE_MODE,
+  EDIT_TARGET,
   LineVM,
   SegmentVM,
   AreaVM,
+  FreePointVM,
 } from "../hooks/useToolState";
 import {
   usePinnedStyles,
@@ -428,7 +435,7 @@ const ILMWindow = ({ fixed, children }: { fixed?: ReactNode; children: ReactNode
   );
 };
 
-type PanelTab = "lines" | "areas" | "advanced";
+type PanelTab = "lines" | "areas" | "points" | "advanced";
 
 // The next step for the user in the current tool state.
 const toolStatus = (
@@ -498,8 +505,6 @@ const ILMPanelInner = () => {
       setSeenClickTick(state.lastClickedTick);
       if (state.lastClickedLine >= 0 && state.lastClickedLine < state.lines.length) {
         next = state.lastClickedLine;
-        // A line opened in the world while editing areas: show it on the Lines tab.
-        if (tab === "areas" && state.lineMode === LINE_MODE.Edit) setTab("lines");
       } else if (state.lastClickedTick > 0 && state.lastClickedLine === -1) {
         next = -1;
       }
@@ -507,18 +512,13 @@ const ILMPanelInner = () => {
     if (next !== expandedLine) setExpandedLine(next);
   }
 
-  // Edit mode: an area opened (or closed) in the world expands (or collapses) its row, and
-  // opening one shows the Areas tab.
+  // Edit mode on the Areas tab: an area opened (or closed) in the world expands (or collapses)
+  // its row. Areas can only be opened from the Areas tab, lines only from the Lines tab.
   const [seenEditArea, setSeenEditArea] = useState<number | null>(null);
   if (state.editArea !== seenEditArea) {
     setSeenEditArea(state.editArea);
-    if (seenEditArea !== null && state.lineMode === LINE_MODE.Edit) {
-      if (state.editArea >= 0) {
-        setExpandedArea(state.editArea);
-        if (tab !== "areas") setTab("areas");
-      } else if (tab === "areas") {
-        setExpandedArea(-1);
-      }
+    if (seenEditArea !== null && tab === "areas" && state.lineMode === LINE_MODE.Edit) {
+      setExpandedArea(state.editArea);
     }
   }
 
@@ -542,6 +542,18 @@ const ILMPanelInner = () => {
   useEffect(() => {
     cmdSetEditArea(handleArea);
   }, [handleArea, state.selectedNodeIndex]);
+
+  // The tab decides what edit mode works on, so a click while editing lines never opens an
+  // area and the other way round. The Points tab edits free points only.
+  const editTarget =
+    drawingArea || (tab === "areas" && state.lineMode === LINE_MODE.Edit)
+      ? EDIT_TARGET.Areas
+      : tab === "points"
+        ? EDIT_TARGET.Points
+        : EDIT_TARGET.Lines;
+  useEffect(() => {
+    if (state.isActive) cmdSetEditTarget(editTarget);
+  }, [editTarget, state.isActive, state.selectedNodeIndex]);
 
   // Panel shortcuts while a node is selected. Keys typed into text fields and combos with
   // Ctrl/Meta/Alt are left alone; those belong to the input or the game.
@@ -651,6 +663,8 @@ const ILMPanelInner = () => {
   const statusText =
     shownTab === "advanced"
       ? t("status.advanced")
+      : shownTab === "points"
+        ? t("status.points")
       : shownTab === "areas" && editMode && !inAreaMode
         ? popoverArea ? t("status.edit.area") : t("area.edit.pick")
         : toolStatus(t, state, popoverLine !== null);
@@ -664,6 +678,9 @@ const ILMPanelInner = () => {
         </TabBtn>
         <TabBtn $active={shownTab === "areas"} onClick={() => openTab("areas")}>
           {`${t("tab.areas")} · ${state.areas.length}`}
+        </TabBtn>
+        <TabBtn $active={shownTab === "points"} onClick={() => openTab("points")}>
+          {`${t("tab.points")} · ${state.points.length}`}
         </TabBtn>
         <TabBtn $active={shownTab === "advanced"} onClick={() => openTab("advanced")}>
           {t("tab.advanced")}
@@ -794,6 +811,36 @@ const ILMPanelInner = () => {
                   />
                 ))}
               </PanelList>
+            )}
+          </>
+        )}
+
+        {shownTab === "points" && (
+          <>
+            <PanelHint>{t("points.hint")}</PanelHint>
+            <SectionTitle>{`${t("section.points")} · ${state.points.length}`}</SectionTitle>
+            {state.points.length === 0 ? (
+              <PanelHint>{t("points.empty")}</PanelHint>
+            ) : (
+              <>
+                <PanelList>
+                  {state.points.map((point) => (
+                    <PointRow
+                      key={point.id}
+                      point={point}
+                      isGameHovered={state.hoveredPointInGame === point.id}
+                    />
+                  ))}
+                </PanelList>
+                {state.points.some((p) => p.lineCount === 0 && p.areaCount === 0) && (
+                  <Tooltip content={t("points.removeUnused.tooltip")}>
+                    <Btn $full onClick={cmdRemoveUnusedPoints}>
+                      <Trash size={12} />
+                      <span>{t("points.removeUnused")}</span>
+                    </Btn>
+                  </Tooltip>
+                )}
+              </>
             )}
           </>
         )}
@@ -980,6 +1027,48 @@ const AreaRow = ({
           />
         )}
       </LineBody>
+    </LineRowOuter>
+  );
+};
+
+// One free point on the Points tab: where it sits, what uses it, and delete. Hovering the
+// row rings the point on the road; a point hovered on the road lights its row.
+const PointRow = ({ point, isGameHovered }: { point: FreePointVM; isGameHovered: boolean }) => {
+  const t = useT();
+  const deleteConfirm = useConfirm();
+  const used = point.lineCount > 0 || point.areaCount > 0;
+  const usage = used
+    ? [
+        point.lineCount > 0 ? t("point.lines", { n: point.lineCount }) : null,
+        point.areaCount > 0 ? t("point.areas", { n: point.areaCount }) : null,
+      ]
+        .filter((s) => s !== null)
+        .join(" · ")
+    : t("point.unused");
+  // An unused point goes at once; one with lines or areas asks first.
+  const onDelete = () => (used ? deleteConfirm.arm() : cmdDeleteFreePoint(point.id));
+  return (
+    <LineRowOuter
+      $expanded={deleteConfirm.armed}
+      $gameHovered={isGameHovered}
+      onMouseEnter={() => cmdSetHoveredPoint(point.id)}
+      onMouseLeave={() => cmdClearHoveredPoint(point.id)}
+    >
+      <LineHeader>
+        <LineTitle>{t("point.title", { n: point.id + 1 })}</LineTitle>
+        <LineSegCount>{`${point.onJunction ? t("point.onJunction") : t("point.onRoad")} · ${usage}`}</LineSegCount>
+        <Tooltip content={t("point.delete.tooltip")}>
+          <IconToggleBtn onClick={onDelete}>
+            <Trash size={12} color={T.colorDanger} />
+          </IconToggleBtn>
+        </Tooltip>
+      </LineHeader>
+      {deleteConfirm.armed && (
+        <ConfirmDeleteRow
+          onCancel={deleteConfirm.disarm}
+          onConfirm={() => deleteConfirm.confirm(() => cmdDeleteFreePoint(point.id))}
+        />
+      )}
     </LineRowOuter>
   );
 };

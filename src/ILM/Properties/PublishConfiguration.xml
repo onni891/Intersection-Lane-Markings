@@ -20,7 +20,7 @@ Click any intersection — or the middle of a road — and draw your own marking
 - **Area fills** over any polygon you outline — points snap to lane endpoints, kerb corners and line crossings, edges follow line curvature. Junction box (yellow box / waffle), white or yellow hatching, green bike lane, red bus lane, concrete, grass, sand, pavement, tiles, asphalt patch (needs the separate "G87 Vanilla Asphalt Pavement" mod). Area mode stays on after closing an area, so you can outline the next one straight away.
 - **Hide vanilla markings** per intersection to start from a clean slate.
 - **Pin favourite styles** — star any entry in a style dropdown to keep it at the top of every list.
-- In-game panel in the game's own style (English + Russian) with Lines / Areas / Advanced tabs, and hotkeys: **Ctrl+M** toggle tool, **Y** cycle line style, **A** area mode, **U** cycle area fill, **F** free draw.
+- In-game panel in the game's own style (English + Russian) with Lines / Areas / Points / Advanced tabs, and hotkeys: **Ctrl+M** toggle tool, **Y** cycle line style, **A** area mode, **U** cycle area fill, **F** free draw.
 
 ## Automatic markings
 Ordinary city roads with 3 m lanes get proper edge lane markings — the same way highways do — so parking, sidewalks and stops react correctly. Parking lane markings included. In North American-theme cities, one-way and divided roads (highways included) also get the US-style yellow line along the left, median-side edge — optional, on by default; European themes are unaffected.
@@ -57,7 +57,7 @@ The G87 marking packs and the [G87] Vanilla Curb pack ship as dependencies and i
 - **Заливки областей** по обведённому полигону — точки цепляются к концам полос, углам бордюров и пересечениям линий, рёбра повторяют кривизну линий. Вафельная разметка, белая и жёлтая штриховка, зелёная велополоса, красная автобусная полоса, бетон, трава, песок, тротуарная плитка, плитка, асфальтовая заплатка (нужен отдельный мод «G87 Vanilla Asphalt Pavement»). После замыкания области режим не выключается — можно сразу обводить следующую.
 - **Скрытие ванильной разметки** на отдельном перекрёстке, чтобы начать с чистого листа.
 - **Пины любимых стилей** — звёздочка в любом дропдауне стилей закрепляет стиль наверху всех списков.
-- Панель в игре в стиле самой игры (английский + русский) с вкладками «Линии» / «Области» / «Ещё» и горячие клавиши: **Ctrl+M** — инструмент, **Y** — стиль линии, **A** — режим области, **U** — заливка области, **F** — свободное рисование.
+- Панель в игре в стиле самой игры (английский + русский) с вкладками «Линии» / «Области» / «Точки» / «Ещё» и горячие клавиши: **Ctrl+M** — инструмент, **Y** — стиль линии, **A** — режим области, **U** — заливка области, **F** — свободное рисование.
 
 ## Автоматическая разметка
 Обычные городские дороги с полосами 3 м получают краевую разметку — как на шоссе, — поэтому парковка, тротуары и остановки работают корректно. Разметка парковочных полос включена. В городах с североамериканской темой односторонние и разделённые дороги (включая шоссе) дополнительно получают жёлтую линию вдоль левого края, со стороны медианы, — по американской конвенции; опция включена по умолчанию, европейские темы не затрагиваются.
@@ -121,21 +121,23 @@ First release of Intersection &amp; Lane Markings (ILM), based on Town Road Lane
 New since Town Road Lane:
 - **Free draw** (F / panel): place your own points anywhere on the junction or its roads and draw through them; right-click a point to remove it.
 - **Mid-road editing**: click the middle of a road to draw lines, areas and free points along it, with anchor rows every 10 m.
-- **Edit mode** with curve handles: click a line and drag its two handles to shape it, drag free points to move them; **Add point** splits a line through a movable point. Only editable things are shown while editing.
+- **Edit mode** with curve handles: click a line and drag its two handles to shape it, drag free points to move them; **Add point** splits a line through a movable point. Only editable things are shown while editing, and only what the open tab edits can be picked: lines on the Lines tab, areas on the Areas tab, so you never grab the wrong one. Exactly what is highlighted under the cursor is what a click takes.
 - **New area drawing**: click anywhere on the road to place corners (they snap to nearby dots), then shape the area in Edit mode: drag corners, curve each side with handles, + adds a corner, right-click removes one.
 - **Point removal**: right-click a free point in any mode; areas using it only lose that corner instead of being deleted.
+- **Points tab**: a list of every free point you placed, with what uses it; hover a row to find the point on the road, remove points one by one or all unused ones at once. Points are dragged there without touching lines or areas.
 - **More anchor points**: lane centre points and extra setback rows at 4 m and 16 m (both optional in Options, on by default).
-- **New panel** in the game's own style: Lines / Areas / Advanced tabs, a scrolling body, a three-way mode switch, and new lines and areas open automatically. Area drawing continues after closing an area.
+- **New panel** in the game's own style: Lines / Areas / Points / Advanced tabs, a scrolling body, a three-way mode switch, and new lines and areas open automatically. Area drawing continues after closing an area.
 - Fixed a log flood in segment emission; the log level is now set explicitly (Debug only with VerboseLogging).
 
 Первый выпуск ILM на основе Town Road Lane 2.5.0 (mxerf, GPL-3.0). Новое по сравнению с Town Road Lane:
 - **Свободное рисование** (F / панель): свои точки в любом месте перекрёстка и его дорог; правый клик удаляет точку.
 - **Разметка посреди дороги**: клик по середине дороги — линии, области и точки вдоль неё, ряды точек каждые 10 м.
-- **Режим правки** с ручками кривой: кликните линию и тяните ручки, перетаскивайте свободные точки; «Добавить точку» делит линию подвижной точкой. При правке показано только то, что можно изменить.
+- **Режим правки** с ручками кривой: кликните линию и тяните ручки, перетаскивайте свободные точки; «Добавить точку» делит линию подвижной точкой. При правке показано только то, что можно изменить, и выбирается только то, что правит открытая вкладка: линии на «Линиях», области на «Областях». Клик берёт ровно то, что подсвечено под курсором.
 - **Новое рисование областей**: кликайте в любом месте дороги, чтобы ставить углы (рядом с точками они притягиваются), затем меняйте форму в «Правке»: тяните углы, изгибайте стороны ручками, + добавляет угол, ПКМ удаляет.
 - **Удаление точек**: правый клик по свободной точке в любом режиме; области с ней теряют только этот угол, а не удаляются целиком.
+- **Вкладка «Точки»**: список всех ваших свободных точек и того, что их использует; наведите на строку, чтобы найти точку на дороге, удаляйте точки по одной или все неиспользуемые сразу. Там точки перетаскиваются, не задевая линии и области.
 - **Больше точек-якорей**: центры полос и ряды за 4 м и 16 м (опционально, включено по умолчанию).
-- **Новая панель** в стиле игры: вкладки «Линии» / «Области» / «Ещё», прокрутка, переключатель режима; новые линии и области раскрываются сами, рисование областей продолжается после замыкания.
+- **Новая панель** в стиле игры: вкладки «Линии» / «Области» / «Точки» / «Ещё», прокрутка, переключатель режима; новые линии и области раскрываются сами, рисование областей продолжается после замыкания.
 - Исправлен поток сообщений в логе при выводе сегментов.
 	</ChangeLog>
 	<!--External link, can be set multiple times. supported types are "discord", "github", "youtube", "twitch", "x", "paypal", "patreon", "buymeacoffee", "kofi", "crowdin", "gitlab", "gofundme"-->

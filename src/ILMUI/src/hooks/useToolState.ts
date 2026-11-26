@@ -40,6 +40,21 @@ export interface AreaVM {
   visiblePieces: number;
 }
 
+// A user-placed free point on the selected node (Points tab).
+export interface FreePointVM {
+  id: number;
+  onJunction: boolean; // inside the junction rather than on one of its roads
+  lineCount: number;
+  areaCount: number;
+}
+
+// Mirrors MarkingNodeToolSystem.EditTarget: what edit mode works on, set by the panel tab.
+export const EDIT_TARGET = {
+  Lines: 0,
+  Areas: 1,
+  Points: 2,
+} as const;
+
 // Mirrors MarkingNodeToolSystem.State.
 export const TOOL_STATE = {
   Default: 0,
@@ -89,6 +104,11 @@ export interface ToolStateVM {
   selectedIsRoad: boolean;
   // User-placed free points on the selected node.
   freePointCount: number;
+  // EDIT_TARGET value.
+  editTarget: number;
+  // Free point id under the cursor in the world, -1 for none.
+  hoveredPointInGame: number;
+  points: FreePointVM[];
   lines: LineVM[];
   areas: AreaVM[];
 }
@@ -110,6 +130,9 @@ const EMPTY: ToolStateVM = {
   editArea: -1,
   selectedIsRoad: false,
   freePointCount: 0,
+  editTarget: 0,
+  hoveredPointInGame: -1,
+  points: [],
   lines: [],
   areas: [],
 };
@@ -124,6 +147,7 @@ const normalizeToolState = (state: ToolStateVM | null | undefined): ToolStateVM 
         ...state,
         lines: Array.isArray(state.lines) ? state.lines : [],
         areas: Array.isArray(state.areas) ? state.areas : [],
+        points: Array.isArray(state.points) ? state.points : [],
       }
     : EMPTY;
 
@@ -248,4 +272,29 @@ export const cmdSetHoveredArea = (areaIndex: number) => {
 // cohtml can deliver the next row's mouseenter before this row's mouseleave.
 export const cmdClearHoveredArea = (areaIndex: number) => {
   trigger(BINDING_GROUP, "ClearHoveredArea", areaIndex);
+};
+
+// What edit mode works on: an EDIT_TARGET value, sent when the panel tab changes.
+export const cmdSetEditTarget = (target: number) => {
+  trigger(BINDING_GROUP, "SetEditTarget", target);
+};
+
+// Removes the free point with its lines; areas only lose that corner.
+export const cmdDeleteFreePoint = (id: number) => {
+  trigger(BINDING_GROUP, "DeleteFreePoint", id);
+};
+
+// Removes every free point no line or area uses.
+export const cmdRemoveUnusedPoints = () => {
+  trigger(BINDING_GROUP, "RemoveUnusedPoints");
+};
+
+// Point row hovered on the Points tab: the overlay rings that point on the road.
+export const cmdSetHoveredPoint = (id: number) => {
+  trigger(BINDING_GROUP, "SetHoveredPoint", id);
+};
+
+// Clears only while that point is still the hovered one (see cmdClearHoveredArea).
+export const cmdClearHoveredPoint = (id: number) => {
+  trigger(BINDING_GROUP, "ClearHoveredPoint", id);
 };

@@ -35,6 +35,11 @@ namespace ILM.Systems.UI
         // The selection is a road stretch (mid-road editing), not a junction.
         public bool selectedIsRoad;
         public int freePointCount;
+        // MarkingNodeToolSystem.EditTarget, set by the panel tab: 0 lines, 1 areas, 2 points.
+        public int editTarget;
+        // Free point id under the cursor in the world, -1 for none.
+        public int hoveredPointInGame = -1;
+        public FreePointVM[] points = Array.Empty<FreePointVM>();
         public LineVM[] lines = Array.Empty<LineVM>();
         public AreaVM[] areas = Array.Empty<AreaVM>();
     }
@@ -58,6 +63,16 @@ namespace ILM.Systems.UI
         public bool visible;
         public int style;
         public float lengthM;
+    }
+
+    /// <summary>A user-placed free point, for the Points tab.</summary>
+    public class FreePointVM
+    {
+        public int id;
+        // Inside the junction rather than on one of its roads.
+        public bool onJunction;
+        public int lineCount;
+        public int areaCount;
     }
 
     public class AreaVM
