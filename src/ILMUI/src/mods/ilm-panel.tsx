@@ -19,14 +19,16 @@ import {
   cmdSetCurrentStyle,
   cmdSetCurrentAreaStyle,
   cmdToggleAreaMode,
-  cmdToggleFreeDraw,
+  cmdSetLineMode,
   cmdSetEditLine,
+  cmdSetEditArea,
   cmdSplitLine,
   cmdSetAreaStyle,
   cmdToggleAreaVisible,
   cmdDeleteArea,
   cmdResetNode,
   TOOL_STATE,
+  LINE_MODE,
   LineVM,
   SegmentVM,
   AreaVM,
@@ -429,9 +431,16 @@ const ILMWindow = ({ fixed, children }: { fixed?: ReactNode; children: ReactNode
 type PanelTab = "lines" | "areas" | "advanced";
 
 // The next step for the user in the current tool state.
-const toolStatus = (t: ReturnType<typeof useT>, state: { toolState: number; areaVertexCount: number; freeDraw: boolean }): string => {
+const toolStatus = (
+  t: ReturnType<typeof useT>,
+  state: { toolState: number; areaVertexCount: number; freeDraw: boolean; lineMode: number },
+  lineOpen: boolean,
+): string => {
   if (state.toolState === TOOL_STATE.AreaSelecting) {
     return t("status.area", { n: state.areaVertexCount });
+  }
+  if (state.lineMode === LINE_MODE.Edit) {
+    return lineOpen ? t("status.edit.open") : t("status.edit.pick");
   }
   if (state.freeDraw) {
     return state.toolState === TOOL_STATE.SourceSelected ? t("status.free.next") : t("status.free.first");
@@ -489,11 +498,28 @@ const ILMPanelInner = () => {
       setSeenClickTick(state.lastClickedTick);
       if (state.lastClickedLine >= 0 && state.lastClickedLine < state.lines.length) {
         next = state.lastClickedLine;
+        // A line opened in the world while editing areas: show it on the Lines tab.
+        if (tab === "areas" && state.lineMode === LINE_MODE.Edit) setTab("lines");
       } else if (state.lastClickedTick > 0 && state.lastClickedLine === -1) {
         next = -1;
       }
     }
     if (next !== expandedLine) setExpandedLine(next);
+  }
+
+  // Edit mode: an area opened (or closed) in the world expands (or collapses) its row, and
+  // opening one shows the Areas tab.
+  const [seenEditArea, setSeenEditArea] = useState<number | null>(null);
+  if (state.editArea !== seenEditArea) {
+    setSeenEditArea(state.editArea);
+    if (seenEditArea !== null && state.lineMode === LINE_MODE.Edit) {
+      if (state.editArea >= 0) {
+        setExpandedArea(state.editArea);
+        if (tab !== "areas") setTab("areas");
+      } else if (tab === "areas") {
+        setExpandedArea(-1);
+      }
+    }
   }
 
   // Drop the expanded area row when the list shrinks below it.
@@ -505,11 +531,17 @@ const ILMPanelInner = () => {
     else if (expandedArea >= state.areas.length) setExpandedArea(-1);
   }
 
-  // The open line gets drag handles on the road (only on the Lines tab).
-  const handleLine = state.isActive && !(state.toolState === TOOL_STATE.AreaSelecting) && tab !== "advanced" ? expandedLine : -1;
+  // The open line or area gets drag handles on the road: lines from the Lines tab, areas from
+  // the Areas tab in edit mode. The tool ignores both outside edit mode.
+  const drawingArea = state.toolState === TOOL_STATE.AreaSelecting;
+  const handleLine = state.isActive && !drawingArea && tab === "lines" ? expandedLine : -1;
   useEffect(() => {
     cmdSetEditLine(handleLine);
   }, [handleLine, state.selectedNodeIndex]);
+  const handleArea = state.isActive && !drawingArea && tab === "areas" && state.lineMode === LINE_MODE.Edit ? expandedArea : -1;
+  useEffect(() => {
+    cmdSetEditArea(handleArea);
+  }, [handleArea, state.selectedNodeIndex]);
 
   // Panel shortcuts while a node is selected. Keys typed into text fields and combos with
   // Ctrl/Meta/Alt are left alone; those belong to the input or the game.
@@ -573,13 +605,25 @@ const ILMPanelInner = () => {
   if (!state.isActive) return null;
 
   const inAreaMode = state.toolState === TOOL_STATE.AreaSelecting;
-  const shownTab: PanelTab = inAreaMode ? "areas" : tab === "areas" ? "lines" : tab;
+  const editMode = state.lineMode === LINE_MODE.Edit;
+  // The Areas tab is either drawing (the C# AreaSelecting state) or editing areas (edit mode).
+  // Area drawing that ended on its own outside edit mode falls back to the Lines tab.
+  const shownTab: PanelTab = inAreaMode ? "areas" : tab === "areas" && !editMode ? "lines" : tab;
 
-  // Tabs drive the C# drawing state: Areas enters area drawing, the others leave it.
+  // Tabs drive the C# drawing state: Areas enters area drawing (unless editing), the others
+  // leave it.
   const openTab = (next: PanelTab) => {
     setTab(next);
-    if (next === "areas" && !inAreaMode) cmdToggleAreaMode();
+    if (next === "areas" && !inAreaMode && !editMode) cmdToggleAreaMode();
     if (next !== "areas" && inAreaMode) cmdToggleAreaMode();
+  };
+  // The Areas tab's Draw / Edit switch.
+  const startAreaDrawing = () => {
+    if (!inAreaMode) cmdToggleAreaMode();
+  };
+  const startAreaEditing = () => {
+    if (inAreaMode) cmdToggleAreaMode();
+    cmdSetLineMode(LINE_MODE.Edit);
   };
 
   // No node selected yet: a short "how to start" card, so activating the tool gives
@@ -604,6 +648,12 @@ const ILMPanelInner = () => {
   const popoverArea = state.areas.find((a) => a.areaIndex === expandedArea) ?? null;
 
   const lineStyleOptions = makeLineStyleOptions(t, pinned.lineStyles);
+  const statusText =
+    shownTab === "advanced"
+      ? t("status.advanced")
+      : shownTab === "areas" && editMode && !inAreaMode
+        ? popoverArea ? t("status.edit.area") : t("area.edit.pick")
+        : toolStatus(t, state, popoverLine !== null);
   const areaStyleOptions = makeAreaStyleOptions(t, pinned.areaStyles);
 
   const fixed = (
@@ -621,7 +671,7 @@ const ILMPanelInner = () => {
       </TabRow>
       <StatusRow>
         <StatusDot />
-        <span>{shownTab === "advanced" ? t("status.advanced") : toolStatus(t, state)}</span>
+        <span>{statusText}</span>
       </StatusRow>
     </>
   );
@@ -634,27 +684,35 @@ const ILMPanelInner = () => {
             <SectionTitle>{t("section.draw")}</SectionTitle>
             <ModeRow>
               <Tooltip content={t("mode.lines.tooltip")}>
-                <ModeBtn $active={!state.freeDraw} onClick={() => { if (state.freeDraw) cmdToggleFreeDraw(); }}>
+                <ModeBtn $active={state.lineMode === LINE_MODE.Points} onClick={() => cmdSetLineMode(LINE_MODE.Points)}>
                   {t("mode.points")}
                 </ModeBtn>
               </Tooltip>
               <Tooltip content={t("mode.free.tooltip")}>
-                <ModeBtn $active={state.freeDraw} onClick={() => { if (!state.freeDraw) cmdToggleFreeDraw(); }}>
+                <ModeBtn $active={state.lineMode === LINE_MODE.Free} onClick={() => cmdSetLineMode(LINE_MODE.Free)}>
                   {t("mode.free")}
                 </ModeBtn>
               </Tooltip>
-            </ModeRow>
-            <FieldRow>
-              <Tooltip content={t("next.lineStyle.tooltip")}>
-                <FieldLabel>{t("next.lineStyle")}</FieldLabel>
+              <Tooltip content={t("mode.edit.tooltip")}>
+                <ModeBtn $active={editMode} onClick={() => cmdSetLineMode(LINE_MODE.Edit)}>
+                  {t("mode.edit")}
+                </ModeBtn>
               </Tooltip>
-              <Dropdown
-                value={state.currentStyle as StyleValue}
-                options={lineStyleOptions}
-                onChange={(s) => cmdSetCurrentStyle(s)}
-                onTogglePin={cmdTogglePinLineStyle}
-              />
-            </FieldRow>
+            </ModeRow>
+            {/* Edit mode draws nothing new, so the style for the next line doesn't apply. */}
+            {!editMode && (
+              <FieldRow>
+                <Tooltip content={t("next.lineStyle.tooltip")}>
+                  <FieldLabel>{t("next.lineStyle")}</FieldLabel>
+                </Tooltip>
+                <Dropdown
+                  value={state.currentStyle as StyleValue}
+                  options={lineStyleOptions}
+                  onChange={(s) => cmdSetCurrentStyle(s)}
+                  onTogglePin={cmdTogglePinLineStyle}
+                />
+              </FieldRow>
+            )}
 
             <SectionTitle>{`${t("section.lines")} · ${state.lines.length}`}</SectionTitle>
             {state.lines.length === 0 ? (
@@ -668,6 +726,7 @@ const ILMPanelInner = () => {
                     isExpanded={expandedLine === line.lineIndex}
                     isGameHovered={state.hoveredLineInGame === line.lineIndex}
                     isPendingDelete={keyDelete.armed === line.lineIndex}
+                    editMode={editMode}
                     onToggleExpand={() =>
                       setExpandedLine(expandedLine === line.lineIndex ? -1 : line.lineIndex)
                     }
@@ -682,22 +741,40 @@ const ILMPanelInner = () => {
         {shownTab === "areas" && (
           <>
             <SectionTitle>{t("section.draw")}</SectionTitle>
-            <FieldRow>
-              <Tooltip content={t("next.areaStyle.tooltip")}>
-                <FieldLabel>{t("next.areaStyle")}</FieldLabel>
+            <ModeRow>
+              <Tooltip content={t("area.mode.draw.tooltip")}>
+                <ModeBtn $active={inAreaMode} onClick={startAreaDrawing}>
+                  {t("area.mode.draw")}
+                </ModeBtn>
               </Tooltip>
-              <Dropdown
-                value={state.currentAreaStyle}
-                options={areaStyleOptions}
-                onChange={(s) => cmdSetCurrentAreaStyle(s)}
-                onTogglePin={cmdTogglePinAreaStyle}
-              />
-            </FieldRow>
-            <DraftBox>
-              <DraftHint>{t("area.draft.hint.add")}</DraftHint>
-              <DraftHint>{t("area.draft.hint.undo")}</DraftHint>
-              <DraftHint>{t("area.draft.hint.close")}</DraftHint>
-            </DraftBox>
+              <Tooltip content={t("area.mode.edit.tooltip")}>
+                <ModeBtn $active={editMode && !inAreaMode} onClick={startAreaEditing}>
+                  {t("mode.edit")}
+                </ModeBtn>
+              </Tooltip>
+            </ModeRow>
+            {inAreaMode ? (
+              <>
+                <FieldRow>
+                  <Tooltip content={t("next.areaStyle.tooltip")}>
+                    <FieldLabel>{t("next.areaStyle")}</FieldLabel>
+                  </Tooltip>
+                  <Dropdown
+                    value={state.currentAreaStyle}
+                    options={areaStyleOptions}
+                    onChange={(s) => cmdSetCurrentAreaStyle(s)}
+                    onTogglePin={cmdTogglePinAreaStyle}
+                  />
+                </FieldRow>
+                <DraftBox>
+                  <DraftHint>{t("area.draft.hint.add")}</DraftHint>
+                  <DraftHint>{t("area.draft.hint.undo")}</DraftHint>
+                  <DraftHint>{t("area.draft.hint.close")}</DraftHint>
+                </DraftBox>
+              </>
+            ) : (
+              <PanelHint>{t("area.edit.hint")}</PanelHint>
+            )}
 
             <SectionTitle>{`${t("section.areas")} · ${state.areas.length}`}</SectionTitle>
             {state.areas.length === 0 ? (
@@ -767,6 +844,7 @@ const LineRow = ({
   isExpanded,
   isGameHovered,
   isPendingDelete,
+  editMode,
   onToggleExpand,
   onCancelPendingDelete,
 }: {
@@ -774,6 +852,8 @@ const LineRow = ({
   isExpanded: boolean;
   isGameHovered: boolean;
   isPendingDelete: boolean;
+  // Handles and Add point belong to edit mode; the draw modes only point there.
+  editMode: boolean;
   onToggleExpand: () => void;
   onCancelPendingDelete: () => void;
 }) => {
@@ -805,12 +885,18 @@ const LineRow = ({
       <LineBody $open={isExpanded}>
         <StyleSelector line={line} />
         <CurvatureInput line={line} />
-        <PanelHint>{t("line.handles.hint")}</PanelHint>
-        <Tooltip content={t("line.addPoint.tooltip")}>
-          <Btn $full onClick={() => cmdSplitLine(line.lineIndex)}>
-            <span>{t("line.addPoint")}</span>
-          </Btn>
-        </Tooltip>
+        {editMode ? (
+          <>
+            <PanelHint>{t("line.handles.hint")}</PanelHint>
+            <Tooltip content={t("line.addPoint.tooltip")}>
+              <Btn $full onClick={() => cmdSplitLine(line.lineIndex)}>
+                <span>{t("line.addPoint")}</span>
+              </Btn>
+            </Tooltip>
+          </>
+        ) : (
+          <PanelHint>{t("line.editHint")}</PanelHint>
+        )}
         {line.segments.map((seg) => (
           <SegmentRowComponent key={`${seg.lineIndex}-${seg.segmentIndex}`} seg={seg} />
         ))}

@@ -171,8 +171,9 @@ namespace ILM.Utilities
             return true;
         }
 
-        /// <summary>Removes a free point together with every line ending on it and every area
-        /// with a vertex on it, so nothing is left pointing at a missing anchor.</summary>
+        /// <summary>Removes a free point together with every line ending on it. Areas only lose
+        /// the vertex on it (an area left with fewer than three vertices is deleted), so
+        /// nothing is left pointing at a missing anchor.</summary>
         public static bool RemoveFreePoint(EntityManager em, Entity node, Entity edge, int gapIndex)
         {
             if (!em.HasBuffer<MarkingFreePoint>(node)) return false;
@@ -186,21 +187,22 @@ namespace ILM.Utilities
 
             if (em.HasBuffer<MarkingArea>(node) && em.HasBuffer<MarkingAreaVertex>(node))
             {
-                var areas = em.GetBuffer<MarkingArea>(node, isReadOnly: true);
-                for (int a = areas.Length - 1; a >= 0; a--)
+                for (int a = em.GetBuffer<MarkingArea>(node).Length - 1; a >= 0; a--)
                 {
-                    areas = em.GetBuffer<MarkingArea>(node, isReadOnly: true);
-                    var verts = em.GetBuffer<MarkingAreaVertex>(node, isReadOnly: true);
-                    var area = areas[a];
-                    bool uses = false;
-                    for (int v = 0; v < area.vertexCount && !uses; v++)
+                    // Walk backwards so removals don't shift the vertices still to check.
+                    for (int v = em.GetBuffer<MarkingArea>(node)[a].vertexCount - 1; v >= 0; v--)
                     {
+                        var area = em.GetBuffer<MarkingArea>(node)[a];
+                        if (v >= area.vertexCount) continue;
+                        var verts = em.GetBuffer<MarkingAreaVertex>(node, isReadOnly: true);
                         int idx = area.firstVertex + v;
                         if (idx < 0 || idx >= verts.Length) continue;
                         var av = verts[idx];
-                        uses = av.kind == AreaAnchorKind.LaneEndpoint && av.refEdgeA == edge && av.refGap == gapIndex;
+                        if (av.kind != AreaAnchorKind.LaneEndpoint || av.refEdgeA != edge || av.refGap != gapIndex) continue;
+                        bool deletesArea = area.vertexCount <= 3;
+                        AreaEdits.RemoveVertex(em, node, a, v);
+                        if (deletesArea) break; // slot a now holds the next area, already checked
                     }
-                    if (uses) DeleteArea(em, node, a);
                 }
             }
 

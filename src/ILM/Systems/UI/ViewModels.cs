@@ -28,6 +28,10 @@ namespace ILM.Systems.UI
         public int hoveredLineInGame = -1;
         public int hoveredAreaInGame = -1;
         public bool freeDraw;
+        // MarkingNodeToolSystem.LineMode: 0 snap to points, 1 free draw, 2 edit.
+        public int lineMode;
+        // Area open in edit mode (handles and vertices shown), -1 for none.
+        public int editArea = -1;
         // The selection is a road stretch (mid-road editing), not a junction.
         public bool selectedIsRoad;
         public int freePointCount;

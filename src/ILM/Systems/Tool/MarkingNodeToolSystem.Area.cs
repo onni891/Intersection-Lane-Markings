@@ -8,9 +8,35 @@ using ILM.Utilities;
 
 namespace ILM.Systems.Tool
 {
-    // Area mode: placing the vertices of an area polygon and committing it to the node.
+    // Area mode: outlining an area polygon and committing it to the node. Drawing works like
+    // free draw: a click on bare road places a new point there, and a click near an existing
+    // dot, kerb corner or line crossing snaps to it. Edges start straight (or follow a line
+    // both ends lie on) and are shaped afterwards in edit mode.
     public partial class MarkingNodeToolSystem
     {
+        // Free points placed while outlining. They are removed again when the outline is
+        // undone or cancelled, so an abandoned outline leaves nothing behind.
+        private readonly List<(Entity edge, int gap)> _draftFreePoints = new List<(Entity, int)>();
+
+        /// <summary>Area mode click that hit no anchor: a new free point becomes the next vertex.</summary>
+        private void AreaPlaceFreeVertex()
+        {
+            int idx = PlaceFreePoint(_cursorWorldPos);
+            if (idx < 0) return;
+            var ep = _endpoints[idx];
+            _draftFreePoints.Add((ep.edge, ep.gapIndex));
+            AreaAddVertex(new AreaCandidate { kind = AreaAnchorKind.LaneEndpoint, refIndex = idx });
+        }
+
+        /// <summary>Removes the outline's own free points that ended up unused.</summary>
+        private void DiscardDraftPoints()
+        {
+            if (_draftFreePoints.Count == 0 || _selectedNode == Entity.Null) { _draftFreePoints.Clear(); return; }
+            foreach (var (edge, gap) in _draftFreePoints)
+                AreaEdits.RemoveFreePointIfUnused(EntityManager, _selectedNode, edge, gap);
+            _draftFreePoints.Clear();
+            RefreshEndpoints();
+        }
         /// <summary>Panel "Area" button. Drops a half-picked line first, so it works from any
         /// state with a selected node; returns false in Default.</summary>
         public bool TryEnterAreaMode()
@@ -44,6 +70,7 @@ namespace ILM.Systems.Tool
         private void LeaveAreaSelecting()
         {
             _areaPolygon.Clear();
+            DiscardDraftPoints();
             _areaHover = AreaCandidate.None;
             _state = MarkingToolState.NodeSelected;
         }
@@ -245,7 +272,20 @@ namespace ILM.Systems.Tool
         {
             if (_areaPolygon.Count > 0)
             {
+                var popped = _areaPolygon[_areaPolygon.Count - 1];
                 _areaPolygon.RemoveAt(_areaPolygon.Count - 1);
+                // A point the outline placed itself goes away with its vertex.
+                if (popped.kind == AreaAnchorKind.LaneEndpoint && popped.refIndex >= 0 && popped.refIndex < _endpoints.Count)
+                {
+                    var ep = _endpoints[popped.refIndex];
+                    int d = _draftFreePoints.IndexOf((ep.edge, ep.gapIndex));
+                    if (d >= 0 && !_areaPolygon.Exists(v => v.kind == AreaAnchorKind.LaneEndpoint && v.refIndex == popped.refIndex))
+                    {
+                        _draftFreePoints.RemoveAt(d);
+                        AreaEdits.RemoveFreePointIfUnused(EntityManager, _selectedNode, ep.edge, ep.gapIndex);
+                        RefreshEndpoints();
+                    }
+                }
                 log.Debug($"area: popped last vertex, {_areaPolygon.Count} remaining");
             }
             else
@@ -297,6 +337,8 @@ namespace ILM.Systems.Tool
 
             log.Debug($"area: closed with {_areaPolygon.Count} vertices on node #{_selectedNode.Index} — buffer now has {areas.Length} area(s)");
             // Stay in area drawing for the next area (the panel's Areas tab follows this state).
+            // The outline's free points now belong to the area.
+            _draftFreePoints.Clear();
             _areaPolygon.Clear();
             _areaHover = AreaCandidate.None;
         }

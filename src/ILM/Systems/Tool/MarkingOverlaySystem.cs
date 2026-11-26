@@ -121,11 +121,22 @@ namespace ILM.Systems.Tool
             if (hoveredArea >= 0 && node != Entity.Null)
                 DrawHoveredAreaOutline(buf, node, hoveredArea);
 
+            // Edit mode shows only what can be edited: the lines, the open line's handles and
+            // the free points. Anchor dots and corners can't be edited, so they are left out.
+            if (_tool.EditMode)
+            {
+                DrawEditableAreas(buf, node);
+                DrawEditableLines(buf, node, endpoints);
+                DrawCommittedLines(buf, node, endpoints);
+                DrawEditHandles(buf);
+                DrawEditFreePoints(buf, endpoints);
+                DrawOpenArea(buf);
+                return;
+            }
+
             DrawCommittedLines(buf, node, endpoints);
             DrawDragPreview(buf, endpoints);
             DrawEndpointDots(buf, node, endpoints);
-
-            DrawEditHandles(buf);
 
             // Free draw: a ghost dot under the cursor shows where a click would place a point.
             if (_tool.FreeDraw && _tool.HoveredEndpointIndex < 0
@@ -306,21 +317,112 @@ namespace ILM.Systems.Tool
 
         private static Color WithAlpha(Color c, float alpha) => new Color(c.r, c.g, c.b, alpha);
 
-        /// <summary>Curve handles of the line open in the panel: a stem from each end to its
-        /// control point and a grab dot there. While a handle is dragged the reshaped curve is
-        /// previewed; while a free point is dragged, its new spot.</summary>
-        private void DrawEditHandles(OverlayRenderSystem.Buffer buf)
+        /// <summary>Edit mode: a faint trace on every line so the user sees what can be clicked,
+        /// and a solid one on the open line. Hover highlights come on top from
+        /// <see cref="DrawCommittedLines"/>.</summary>
+        private void DrawEditableLines(OverlayRenderSystem.Buffer buf, Entity node, IReadOnlyList<MarkingEndpoint> endpoints)
         {
-            var state = _tool.ToolState;
-            if (state != MarkingToolState.NodeSelected && state != MarkingToolState.SourceSelected) return;
+            if (node == Entity.Null || !EntityManager.HasBuffer<MarkingLine>(node)) return;
+            var lines = EntityManager.GetBuffer<MarkingLine>(node, isReadOnly: true);
+            int open = _tool.EditLine;
+            for (int l = 0; l < lines.Length; l++)
+            {
+                if (!MarkingCurveBuilder.TryBuild(endpoints, lines[l], out var curve)) continue;
+                if (l == open) buf.DrawCurve(kColEditSelectedLine, curve, kEditSelectedLineWidth);
+                else buf.DrawCurve(kColEditableLine, curve, kEditableLineWidth);
+            }
+        }
+
+        /// <summary>Edit mode: a faint outline on every area so it reads as clickable. The open
+        /// area is drawn on top by <see cref="DrawOpenArea"/>.</summary>
+        private void DrawEditableAreas(OverlayRenderSystem.Buffer buf, Entity node)
+        {
+            if (node == Entity.Null || !EntityManager.HasBuffer<MarkingAreaPiece>(node)
+                || !EntityManager.HasBuffer<MarkingAreaPieceVertex>(node)) return;
+            var pieces = EntityManager.GetBuffer<MarkingAreaPiece>(node, isReadOnly: true);
+            var verts = EntityManager.GetBuffer<MarkingAreaPieceVertex>(node, isReadOnly: true);
+            for (int p = 0; p < pieces.Length; p++)
+            {
+                var pd = pieces[p];
+                if (pd.areaIndex == _tool.EditArea || pd.vertexCount < 3) continue;
+                for (int v = 0; v < pd.vertexCount; v++)
+                {
+                    int i0 = pd.firstVertex + v;
+                    int i1 = pd.firstVertex + (v + 1) % pd.vertexCount;
+                    if (i0 >= verts.Length || i1 >= verts.Length) break;
+                    buf.DrawLine(kColEditableLine, new Line3.Segment(verts[i0].position, verts[i1].position), kEditableLineWidth);
+                }
+            }
+        }
+
+        /// <summary>The area open in edit mode: its outline, a stem and grab dot for both handles
+        /// of every edge, a small "+" marker in the middle of each edge, and the vertices on
+        /// top (white for free points, yellow for vertices sitting on a road dot).</summary>
+        private void DrawOpenArea(OverlayRenderSystem.Buffer buf)
+        {
+            var pos = _tool.EditAreaPositions;
+            var edges = _tool.EditAreaEdges;
+            var verts = _tool.EditAreaVertices;
+            if (pos.Count < 3 || edges.Count != pos.Count) return;
 
             var drag = _tool.Dragging;
-            if (drag == MarkingNodeToolSystem.DragKind.FreePoint)
+            for (int i = 0; i < edges.Count; i++)
+                buf.DrawCurve(kColEditSelectedLine, edges[i], kEditSelectedLineWidth);
+
+            for (int i = 0; i < edges.Count; i++)
             {
-                DrawDot(buf, _tool.CursorWorldPos, kDotDiameterHover, kColFreePoint, kColDotOutline, kDotOutlineWidthHover);
-                return;
+                var e = edges[i];
+                buf.DrawLine(kColHandleStem, new Line3.Segment(e.a, e.b), kHandleStemWidth);
+                buf.DrawLine(kColHandleStem, new Line3.Segment(e.d, e.c), kHandleStemWidth);
+                DrawDot(buf, e.b, kAreaHandleDotDiameter, kColHandleFill, kColDotOutline, kDotOutlineWidth);
+                DrawDot(buf, e.c, kAreaHandleDotDiameter, kColHandleFill, kColDotOutline, kDotOutlineWidth);
+                if (drag != MarkingNodeToolSystem.DragKind.None) continue;
+                bool hovered = i == _tool.HoveredAreaInsert;
+                DrawDot(buf, MathUtils.Position(e, 0.5f), hovered ? kInsertDotDiameterHover : kInsertDotDiameter,
+                    hovered ? kColInsertFill : WithAlpha(kColInsertFill, 0.55f), kColDotOutline, kDotOutlineWidth);
             }
+
+            for (int i = 0; i < pos.Count; i++)
+            {
+                bool free = verts[i].kind == AreaAnchorKind.LaneEndpoint
+                    && MarkingEndpointExtractor.KindOf(verts[i].refGap) == MarkingEndpointExtractor.AnchorKind.Free;
+                Color fill = free ? kColFreePoint : kColAreaCandRing;
+                bool big = i == _tool.HoveredAreaVertex
+                    || (drag == MarkingNodeToolSystem.DragKind.AreaVertex && i == _tool.DragIndex);
+                DrawDot(buf, pos[i], big ? kDotDiameterHover * 1.1f : kEditFreePointDiameter, fill, kColDotOutline,
+                    big ? kDotOutlineWidthHover : kDotOutlineWidth);
+            }
+        }
+
+        /// <summary>Edit mode: free points are the only dots, since they are the only ones that
+        /// can be moved. The hovered one is drawn larger; the one being dragged stays faint at
+        /// its old spot with a solid copy under the cursor.</summary>
+        private void DrawEditFreePoints(OverlayRenderSystem.Buffer buf, IReadOnlyList<MarkingEndpoint> endpoints)
+        {
+            int hoverIdx = _tool.HoveredEndpointIndex;
+            bool draggingPoint = _tool.Dragging == MarkingNodeToolSystem.DragKind.FreePoint;
+            for (int i = 0; i < endpoints.Count; i++)
+            {
+                var ep = endpoints[i];
+                if (MarkingEndpointExtractor.KindOf(ep.gapIndex) != MarkingEndpointExtractor.AnchorKind.Free) continue;
+                if (_tool.IsDraggedPoint(ep))
+                    DrawDot(buf, ep.position, kEditFreePointDiameter, WithAlpha(kColFreePoint, 0.25f), WithAlpha(kColFreePoint, 0.5f), kDotOutlineWidth);
+                else if (i == hoverIdx && !draggingPoint)
+                    DrawDot(buf, ep.position, kDotDiameterHover * 1.1f, kColFreePoint, kColDotOutline, kDotOutlineWidthHover);
+                else
+                    DrawDot(buf, ep.position, kEditFreePointDiameter, kColFreePoint, kColDotOutline, kDotOutlineWidth);
+            }
+            if (draggingPoint)
+                DrawDot(buf, _tool.CursorWorldPos, kDotDiameterHover * 1.1f, kColFreePoint, kColDotOutline, kDotOutlineWidthHover);
+        }
+
+        /// <summary>Curve handles of the open line: a stem from each end to its control point
+        /// and a grab dot there. While a handle is dragged the reshaped curve is previewed.</summary>
+        private void DrawEditHandles(OverlayRenderSystem.Buffer buf)
+        {
+            if (_tool.ToolState != MarkingToolState.NodeSelected) return;
             if (!_tool.TryGetEditCurve(out var c)) return;
+            var drag = _tool.Dragging;
             if (drag == MarkingNodeToolSystem.DragKind.HandleA || drag == MarkingNodeToolSystem.DragKind.HandleB)
                 buf.DrawCurve(kColPreviewCurve, c, kPreviewCurveWidth * 1.5f);
             buf.DrawLine(kColHandleStem, new Line3.Segment(c.a, c.b), kHandleStemWidth);
@@ -363,14 +465,19 @@ namespace ILM.Systems.Tool
             var hover = _tool.AreaHover;
             float3 cursor = _tool.CursorWorldPos;
 
-            // 1. Candidates: lane endpoints, corner anchors and line crossings, all as hollow
-            //    rings so the junction doesn't drown in solid dots.
+            // 1. Snap candidates: lane endpoints, corner anchors and line crossings, as hollow
+            //    rings, and only those near the cursor. A click anywhere else places a new
+            //    point, so the whole junction doesn't need to be covered in rings.
+            bool cursorValid = math.lengthsq(cursor) > 0f;
             for (int i = 0; i < endpoints.Count; i++)
-                DrawAreaCandidate(buf, endpoints[i].position);
+                DrawAreaCandidateNear(buf, endpoints[i].position, cursor, cursorValid);
             for (int i = 0; i < corners.Count; i++)
-                DrawAreaCandidate(buf, corners[i].position);
+                DrawAreaCandidateNear(buf, corners[i].position, cursor, cursorValid);
             for (int i = 0; i < crossings.Count; i++)
-                DrawAreaCandidate(buf, crossings[i].position);
+                DrawAreaCandidateNear(buf, crossings[i].position, cursor, cursorValid);
+            // Nothing to snap to: a ghost dot shows where the click will place a point.
+            if (!hover.IsValid && cursorValid)
+                DrawDot(buf, cursor, kDotDiameter, WithAlpha(kColFreePoint, 0.25f), kColFreePoint, kDotOutlineWidth);
 
             // 2. Contour through the placed vertices. Edges that follow a line come back sampled
             //    along it, so the preview shows the arc the committed area will follow.
@@ -422,8 +529,17 @@ namespace ILM.Systems.Tool
                 DrawDot(buf, hp, kAreaHoverDotDiameter, kColAreaHoverFill, kColAreaCandOutline, kAreaCandDotOutlineWidth);
         }
 
-        private void DrawAreaCandidate(OverlayRenderSystem.Buffer buf, float3 position)
-            => DrawDot(buf, position, kAreaCandDotDiameter, kColAreaCandFill, kColAreaCandRing, kAreaCandDotOutlineWidth);
+        /// <summary>A snap candidate, drawn only within <see cref="kAreaCandShowRadius"/> of the
+        /// cursor and fading out towards that radius.</summary>
+        private void DrawAreaCandidateNear(OverlayRenderSystem.Buffer buf, float3 position, float3 cursor, bool cursorValid)
+        {
+            if (!cursorValid) return;
+            float d = math.distance(position.xz, cursor.xz);
+            if (d > kAreaCandShowRadius) return;
+            float fade = math.saturate(1.25f - d / kAreaCandShowRadius);
+            DrawDot(buf, position, kAreaCandDotDiameter, WithAlpha(kColAreaCandFill, kColAreaCandFill.a * fade),
+                WithAlpha(kColAreaCandRing, kColAreaCandRing.a * fade), kAreaCandDotOutlineWidth);
+        }
 
         private void DrawIntersectionMarker(OverlayRenderSystem.Buffer buf, float3 p)
             => DrawDot(buf, p, kIntersectionDotDiameter, kColIntersection, kColIntersectionOutline, kIntersectionDotOutlineWidth);

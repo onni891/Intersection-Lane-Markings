@@ -48,6 +48,13 @@ export const TOOL_STATE = {
   AreaSelecting: 3,
 } as const;
 
+// Mirrors MarkingNodeToolSystem.LineMode.
+export const LINE_MODE = {
+  Points: 0,
+  Free: 1,
+  Edit: 2,
+} as const;
+
 export interface ToolStateVM {
   isActive: boolean;
   // TOOL_STATE value. In AreaSelecting the panel shows the contour progress and a cancel
@@ -74,6 +81,10 @@ export interface ToolStateVM {
   vanillaHidden: boolean;
   // Free draw: clicks on bare road place free points and continue the line (F hotkey).
   freeDraw: boolean;
+  // LINE_MODE value: snap to points, free draw, or edit (handles and point dragging).
+  lineMode: number;
+  // Area open in edit mode, -1 for none. The panel expands its row.
+  editArea: number;
   // The selection is a road stretch (mid-road editing) rather than a junction.
   selectedIsRoad: boolean;
   // User-placed free points on the selected node.
@@ -95,6 +106,8 @@ const EMPTY: ToolStateVM = {
   hoveredAreaInGame: -1,
   vanillaHidden: false,
   freeDraw: false,
+  lineMode: 0,
+  editArea: -1,
   selectedIsRoad: false,
   freePointCount: 0,
   lines: [],
@@ -185,6 +198,16 @@ export const cmdSplitLine = (lineIndex: number) => {
 // Free draw on/off, like the F hotkey.
 export const cmdToggleFreeDraw = () => {
   trigger(BINDING_GROUP, "ToggleFreeDraw");
+};
+
+// The area row expanded in edit mode; the tool shows its vertices and handles. -1 for none.
+export const cmdSetEditArea = (areaIndex: number) => {
+  trigger(BINDING_GROUP, "SetEditArea", areaIndex);
+};
+
+// The mode switch: a LINE_MODE value.
+export const cmdSetLineMode = (mode: number) => {
+  trigger(BINDING_GROUP, "SetLineMode", mode);
 };
 
 export const cmdSetAreaStyle =(areaIndex: number, styleId: number) => {

@@ -70,10 +70,18 @@ namespace ILM.Systems.Tool
         private ProxyAction _cycleAreaStyleAction;
         private int _currentAreaStyle;
 
-        // Free draw: a click on bare road places a free point (MarkingFreePoint) and continues
-        // the line from the last point, so lines can go anywhere. Existing dots still snap;
-        // right-click on a free point removes it. Kept across node selections in a session.
-        private bool _freeDraw;
+        // Line mode, kept across node selections in a session:
+        //   Points: clicks on dots draw lines between them.
+        //   Free:   a click on bare road places a free point (MarkingFreePoint) and continues
+        //           the line from the last point, so lines can go anywhere. Existing dots still
+        //           snap; right-click on a free point removes it.
+        //   Edit:   nothing is drawn. Click a line to show its curve handles, drag the handles
+        //           or a free point; right-click a free point removes it. Only editable things
+        //           are shown, so the anchor dots are hidden.
+        // Handles and point dragging live only in Edit, so a click in the draw modes always
+        // draws.
+        public enum LineMode { Points = 0, Free = 1, Edit = 2 }
+        private LineMode _mode = LineMode.Points;
         private ProxyAction _freeDrawAction;
 
         // A click in NodeSelected that misses every dot is hit-tested against committed lines,
@@ -108,14 +116,22 @@ namespace ILM.Systems.Tool
         public int LastClickedTick => _lastClickedTick;
         public int HoveredLineInGame => _hoveredLineInGame;
         public int HoveredAreaInGame => _hoveredAreaInGame;
-        public bool FreeDraw => _freeDraw;
+        public LineMode Mode => _mode;
+        public bool FreeDraw => _mode == LineMode.Free;
+        public bool EditMode => _mode == LineMode.Edit;
 
-        /// <summary>Turns free draw on or off. Turning it off ends an open chain.</summary>
-        public void SetFreeDraw(bool on)
+        /// <summary>Turns free draw on or off (off goes back to snapping to points).</summary>
+        public void SetFreeDraw(bool on) => SetMode(on ? LineMode.Free : LineMode.Points);
+
+        /// <summary>Switches the line mode. Ends an open chain or line and any drag.</summary>
+        public void SetMode(LineMode mode)
         {
-            _freeDraw = on;
-            if (!on && _state == MarkingToolState.SourceSelected) DropSource();
-            log.Debug($"tool: free draw → {_freeDraw}");
+            if (mode == _mode) return;
+            _mode = mode;
+            if (_state == MarkingToolState.SourceSelected) DropSource();
+            _drag = DragKind.None;
+            _dragMoved = false;
+            log.Debug($"tool: line mode → {_mode}");
         }
 
         public override PrefabBase GetPrefab() => null;
@@ -191,6 +207,10 @@ namespace ILM.Systems.Tool
 
         private void ResetSelection()
         {
+            // An outline in progress leaves no stray points behind.
+            if (_selectedNode != Entity.Null && EntityManager.Exists(_selectedNode)) DiscardDraftPoints();
+            else _draftFreePoints.Clear();
+            _editArea = -1;
             _state = MarkingToolState.Default;
             _selectedNode = Entity.Null;
             _endpoints.Clear();
@@ -226,7 +246,12 @@ namespace ILM.Systems.Tool
             bool hitEdge = hitSomething && !hitNode && MarkingEdgeAnchors.IsEdgeOwner(EntityManager, hitEntity);
             _cursorWorldPos = hitSomething ? hit.m_HitPosition : float3.zero;
             _hoveredNode = hitNode || hitEdge ? hitEntity : Entity.Null;
-            _hoverIdx = (_state != MarkingToolState.Default && _state != MarkingToolState.AreaSelecting && hitSomething) ? FindHoveredEndpoint(_cursorWorldPos) : -1;
+            // Edit mode only shows free points, so only those can be hovered.
+            _hoverIdx = (_state != MarkingToolState.Default && _state != MarkingToolState.AreaSelecting && hitSomething)
+                ? FindHoveredEndpoint(_cursorWorldPos, freeOnly: EditMode)
+                : -1;
+            // The open area's outline, handles and hover targets (edit mode only).
+            RefreshEditArea(hitSomething);
             // Lines can change from the panel while an area is being drawn.
             if (_state == MarkingToolState.AreaSelecting) RefreshIntersectionAnchorsIfStale();
             _areaHover = (_state == MarkingToolState.AreaSelecting && hitSomething) ? FindHoveredAreaCandidate(_cursorWorldPos) : AreaCandidate.None;
@@ -287,14 +312,15 @@ namespace ILM.Systems.Tool
             }
 
             if (_freeDrawAction != null && _freeDrawAction.WasPerformedThisFrame())
-                SetFreeDraw(!_freeDraw);
+                SetFreeDraw(!FreeDraw);
 
-            // In free draw, right-click on a free point removes it with its lines and areas.
-            // Otherwise right-click does nothing: lines are removed by repeating the create
-            // gesture (see TogglePair).
-            if (_freeDraw && secondaryApplyAction.WasPressedThisFrame())
+            // Right-click removes a point: in edit mode a vertex of the open area (the area keeps
+            // its other vertices), otherwise the hovered free point with its lines. Lines are
+            // removed by repeating the create gesture (see TogglePair) or from the panel.
+            if (_state != MarkingToolState.Default && secondaryApplyAction.WasPressedThisFrame())
             {
-                TryRemoveHoveredFreePoint();
+                if (!(EditMode && TryRemoveHoveredAreaVertex()))
+                    TryRemoveHoveredFreePoint();
                 return inputDeps;
             }
 
@@ -333,6 +359,7 @@ namespace ILM.Systems.Tool
                 {
                     log.Debug($"area: Esc cleared the unfinished outline ({_areaPolygon.Count} vertices)");
                     _areaPolygon.Clear();
+                    DiscardDraftPoints();
                 }
                 else
                 {
@@ -344,6 +371,12 @@ namespace ILM.Systems.Tool
             {
                 log.Debug($"tool: cancel — clearing source #{_sourceIdx}");
                 DropSource();
+            }
+            else if (_state == MarkingToolState.NodeSelected && EditMode && (_editLine >= 0 || _editArea >= 0))
+            {
+                // Edit mode: the first Esc puts the open line or area down, the next deselects.
+                log.Debug($"tool: cancel — closing edit line #{_editLine} / area #{_editArea}");
+                SetClickedLine(-1);
             }
             else if (_state == MarkingToolState.NodeSelected)
             {
@@ -372,6 +405,10 @@ namespace ILM.Systems.Tool
                         log.Debug($"tool: click in Default ignored (hit #{hitIndex}, no Node)");
                     break;
 
+                case MarkingToolState.NodeSelected when EditMode:
+                    HandleEditClick(hitSomething, hitNode, hitEdge, hitEntity);
+                    break;
+
                 case MarkingToolState.NodeSelected:
                     if (_hoverIdx >= 0)
                     {
@@ -386,11 +423,11 @@ namespace ILM.Systems.Tool
                     // Another road stretch. Roads leading into the selected junction stay part of
                     // its editing area (free draw places points on them), so only unrelated roads
                     // switch the selection; Esc first to pick one of those.
-                    else if (hitEdge && hitEntity != _selectedNode && !_freeDraw && !IsRoadOfSelectedJunction(hitEntity))
+                    else if (hitEdge && hitEntity != _selectedNode && !FreeDraw && !IsRoadOfSelectedJunction(hitEntity))
                     {
                         SelectNode(hitEntity);
                     }
-                    else if (_freeDraw && hitSomething)
+                    else if (FreeDraw && hitSomething)
                     {
                         // Start a chain from a new free point.
                         int idx = PlaceFreePoint(_cursorWorldPos);
@@ -420,10 +457,10 @@ namespace ILM.Systems.Tool
                     {
                         TogglePair(_endpoints[_sourceIdx], _endpoints[_hoverIdx]);
                         // Free draw continues the chain from the dot just reached.
-                        if (_freeDraw) _sourceIdx = _hoverIdx;
+                        if (FreeDraw) _sourceIdx = _hoverIdx;
                         else DropSource();
                     }
-                    else if (_freeDraw && _hoverIdx < 0 && hitSomething)
+                    else if (FreeDraw && _hoverIdx < 0 && hitSomething)
                     {
                         var src = _endpoints[_sourceIdx];
                         int idx = PlaceFreePoint(_cursorWorldPos);
@@ -443,13 +480,63 @@ namespace ILM.Systems.Tool
 
                 case MarkingToolState.AreaSelecting:
                     if (!_areaHover.IsValid)
-                        log.Debug("area: LMB with no hovered candidate, ignored");
+                    {
+                        // Bare road: place a point there, as in free draw.
+                        if (hitSomething) AreaPlaceFreeVertex();
+                    }
                     else if (AreaCanCloseOn(_areaHover))
                         AreaClose();
                     else
                         AreaAddVertex(_areaHover);
                     break;
             }
+        }
+
+        /// <summary>A click in edit mode that no handle or free-point drag took: open the line
+        /// under the cursor (its row expands in the panel and its handles appear), or put the
+        /// open one down on empty road. A click on another junction or an unrelated road
+        /// selects it, as in the draw modes.</summary>
+        private void HandleEditClick(bool hitSomething, bool hitNode, bool hitEdge, Entity hitEntity)
+        {
+            // The "+" on an edge of the open area adds a vertex there.
+            if (_editAreaHoverInsert >= 0)
+            {
+                InsertAreaVertexAt(_editAreaHoverInsert);
+                return;
+            }
+            int clicked = hitSomething ? HitTestLines(_cursorWorldPos) : -1;
+            // Inside an area (and not on a line): open the area.
+            if (clicked < 0 && hitSomething)
+            {
+                int area = HitTestAreas(_cursorWorldPos);
+                if (area >= 0)
+                {
+                    OpenEditArea(area);
+                    return;
+                }
+            }
+            if (clicked < 0 && hitNode && hitEntity != _selectedNode)
+            {
+                SelectNode(hitEntity);
+                return;
+            }
+            if (clicked < 0 && hitEdge && hitEntity != _selectedNode && !IsRoadOfSelectedJunction(hitEntity))
+            {
+                SelectNode(hitEntity);
+                return;
+            }
+            SetClickedLine(clicked);
+            log.Debug($"tool: edit — opened line #{clicked} (-1 = none)");
+        }
+
+        /// <summary>Opens a line for editing from the world (-1 closes it). The panel follows
+        /// through lastClickedLine/Tick and expands or collapses the row.</summary>
+        private void SetClickedLine(int lineIndex)
+        {
+            _editLine = lineIndex;
+            _editArea = -1;
+            _lastClickedLine = lineIndex;
+            _lastClickedTick++;
         }
 
         private void SelectNode(Entity node)

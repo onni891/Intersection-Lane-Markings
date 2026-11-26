@@ -12,19 +12,23 @@
 A road-marking editor for intersections plus automatic lane markings for ordinary town roads.
 
 ## Marking editor
-Click any intersection and draw your own markings:
-- **Lines** between anchor dots — solid, dashed (short / normal / long), double solid, a vanilla yellow set (solid / dashed / double / solid + dashed), G87 white or yellow styles, and a curb line, with adjustable curvature and per-segment visibility. Dots sit on every lane boundary, on the carriageway edge (including past parking lanes), and in a second "setback" row 8 m before the junction — for the solid no-lane-change stretch in front of the stop line.
-- **Area fills** over any polygon you outline — points snap to lane endpoints, kerb corners and line crossings, edges follow line curvature. Junction box (yellow box / waffle), white or yellow hatching, green bike lane, red bus lane, concrete, grass, sand, pavement, tiles, asphalt patch (needs the separate "G87 Vanilla Asphalt Pavement" mod).
+Click any intersection — or the middle of a road — and draw your own markings:
+- **Lines** between anchor dots — solid, dashed (short / normal / long), double solid, a vanilla yellow set (solid / dashed / double / solid + dashed), G87 white or yellow styles, and a curb line, with adjustable curvature and per-segment visibility. Dots sit on every lane boundary, on the carriageway edge (including past parking lanes), and in a "setback" row 8 m before the junction — for the solid no-lane-change stretch in front of the stop line. Optional extras (on by default): a dot in the centre of every lane, and extra setback rows at 4 m and 16 m.
+- **Edit mode** — click a line and drag its two blue handles on the road to shape it, Move It-style; drag free points to move them. **Add point** splits a line in the middle with a new point you can drag. Only what can be edited is shown, so the anchor dots stay out of the way.
+- **Free draw** (**F**) — click anywhere on the junction or its roads to place your own points and draw through them. Right-click a free point to remove it.
+- **Mid-road editing** — click the middle of a road to draw lines, areas and free points along it, with anchor rows every 10 m.
+- **Area fills** over any polygon you outline — points snap to lane endpoints, kerb corners and line crossings, edges follow line curvature. Junction box (yellow box / waffle), white or yellow hatching, green bike lane, red bus lane, concrete, grass, sand, pavement, tiles, asphalt patch (needs the separate "G87 Vanilla Asphalt Pavement" mod). Area mode stays on after closing an area, so you can outline the next one straight away.
 - **Hide vanilla markings** per intersection to start from a clean slate.
 - **Pin favourite styles** — star any entry in a style dropdown to keep it at the top of every list.
-- Full in-game panel (English + Russian) and hotkeys: **Ctrl+M** toggle tool, **Y** cycle line style, **A** area mode, **U** cycle area fill.
+- In-game panel in the game's own style (English + Russian) with Lines / Areas / Advanced tabs, and hotkeys: **Ctrl+M** toggle tool, **Y** cycle line style, **A** area mode, **U** cycle area fill, **F** free draw.
 
 ## Automatic markings
 Ordinary city roads with 3 m lanes get proper edge lane markings — the same way highways do — so parking, sidewalks and stops react correctly. Parking lane markings included. In North American-theme cities, one-way and divided roads (highways included) also get the US-style yellow line along the left, median-side edge — optional, on by default; European themes are unaffected.
 
 ## Known limitations
 - **The mod is purely visual.** Markings never affect how vehicles actually drive. To change real lane behavior use the Traffic mod (by krzychu124) — set up lane connections and directions there first, then draw your markings to match. The two mods don't sync automatically.
-- **Everything snaps to anchor dots — by design.** The dots sit on real road geometry (lane boundaries, carriageway edges, kerb corners, line crossings, plus the setback row 8 m before the junction), which is why markings land exactly on the lanes in a few clicks. There is no freehand placement: for fully freehand markings place the G87 packs' decals and net-lanes by hand — this mod is the fast-and-precise layer for junctions on top of them.
+- **Markings snap to anchor dots by default.** The dots sit on real road geometry (lane boundaries, lane centres, carriageway edges, kerb corners, line crossings, plus the setback rows before the junction), which is why markings land exactly on the lanes in a few clicks. Free draw places points anywhere on the junction and its roads, but not off the road surface — for markings elsewhere place the G87 packs' decals and net-lanes by hand.
+- Lines drawn on the optional dots (lane centres, 4 m / 16 m rows) stay saved but are not drawn while that option is off.
 - Nearly-tangent line contacts (well under ~8°) are treated as a graze rather than a crossing — no anchor dot appears at such touch points (by design; prevents jittery duplicate anchors).
 - Stretched junction connections (highway ramps/merges and other junctions where the road/junction boundary is not perpendicular to the road) can misplace the anchor dots relative to the painted lines. Fix: normalize the junction with the Node Controller mod so the connection cross-lines run perpendicular to the road — strongly recommended. The setback dot row 8 m before the junction also stays usable.
 - Area fill edges curve along a line only when that line was drawn with this mod. The game's own markings are not traced — along them the fill edge stays a straight segment between its points.
@@ -45,19 +49,23 @@ The G87 marking packs and the [G87] Vanilla Curb pack ship as dependencies and i
 Редактор дорожной разметки для перекрёстков + автоматическая разметка обычных городских дорог.
 
 ## Редактор разметки
-Кликните по любому перекрёстку и нарисуйте свою разметку:
-- **Линии** между точками-якорями — сплошная, пунктир (короткий / обычный / длинный), двойная сплошная, ванильный жёлтый набор (сплошная / пунктир / двойная / сплошная + пунктир), белые и жёлтые стили G87, бордюр; настраиваемая кривизна и видимость отдельных сегментов. Точки стоят на каждой границе полос, на краю проезжей части (в том числе за парковочными полосами) и вторым рядом за 8 м до перекрёстка — для сплошной перед стоп-линией, запрещающей перестроение.
-- **Заливки областей** по обведённому полигону — точки цепляются к концам полос, углам бордюров и пересечениям линий, рёбра повторяют кривизну линий. Вафельная разметка, белая и жёлтая штриховка, зелёная велополоса, красная автобусная полоса, бетон, трава, песок, тротуарная плитка, плитка, асфальтовая заплатка (нужен отдельный мод «G87 Vanilla Asphalt Pavement»).
+Кликните по любому перекрёстку — или по середине дороги — и нарисуйте свою разметку:
+- **Линии** между точками-якорями — сплошная, пунктир (короткий / обычный / длинный), двойная сплошная, ванильный жёлтый набор (сплошная / пунктир / двойная / сплошная + пунктир), белые и жёлтые стили G87, бордюр; настраиваемая кривизна и видимость отдельных сегментов. Точки стоят на каждой границе полос, на краю проезжей части (в том числе за парковочными полосами) и рядом за 8 м до перекрёстка — для сплошной перед стоп-линией, запрещающей перестроение. Дополнительно (включено по умолчанию): точка по центру каждой полосы и ряды за 4 м и 16 м.
+- **Режим правки** — кликните линию и тяните две голубые ручки на дороге, чтобы изогнуть её, как в Move It; свободные точки перетаскиваются. **«Добавить точку»** делит линию посередине новой подвижной точкой. Показано только то, что можно править, — точки-якоря не мешают.
+- **Свободное рисование** (**F**) — кликайте в любом месте перекрёстка или его дорог, чтобы ставить свои точки и рисовать через них. Правый клик по точке удаляет её.
+- **Разметка посреди дороги** — кликните по середине дороги, чтобы рисовать вдоль неё линии, области и свободные точки; ряды точек каждые 10 м.
+- **Заливки областей** по обведённому полигону — точки цепляются к концам полос, углам бордюров и пересечениям линий, рёбра повторяют кривизну линий. Вафельная разметка, белая и жёлтая штриховка, зелёная велополоса, красная автобусная полоса, бетон, трава, песок, тротуарная плитка, плитка, асфальтовая заплатка (нужен отдельный мод «G87 Vanilla Asphalt Pavement»). После замыкания области режим не выключается — можно сразу обводить следующую.
 - **Скрытие ванильной разметки** на отдельном перекрёстке, чтобы начать с чистого листа.
 - **Пины любимых стилей** — звёздочка в любом дропдауне стилей закрепляет стиль наверху всех списков.
-- Полноценная панель в игре (английский + русский) и горячие клавиши: **Ctrl+M** — инструмент, **Y** — стиль линии, **A** — режим области, **U** — заливка области.
+- Панель в игре в стиле самой игры (английский + русский) с вкладками «Линии» / «Области» / «Ещё» и горячие клавиши: **Ctrl+M** — инструмент, **Y** — стиль линии, **A** — режим области, **U** — заливка области, **F** — свободное рисование.
 
 ## Автоматическая разметка
 Обычные городские дороги с полосами 3 м получают краевую разметку — как на шоссе, — поэтому парковка, тротуары и остановки работают корректно. Разметка парковочных полос включена. В городах с североамериканской темой односторонние и разделённые дороги (включая шоссе) дополнительно получают жёлтую линию вдоль левого края, со стороны медианы, — по американской конвенции; опция включена по умолчанию, европейские темы не затрагиваются.
 
 ## Известные ограничения
 - **Мод чисто визуальный.** Разметка не влияет на реальное движение машин. Управлять полосами нужно модом Traffic (от krzychu124): сначала настройте там направления и соединения полос, затем нарисуйте разметку под них. Автоматической синхронизации между модами нет.
-- **Всё цепляется к точкам-якорям — намеренно.** Точки стоят на реальной геометрии дороги (границы полос, край проезжей части, углы бордюров, пересечения линий, плюс ряд за 8 м до перекрёстка) — поэтому разметка ложится точно по полосам за несколько кликов. Свободного размещения нет: для полностью ручного рисования ставьте декали и нет-лейны паков G87 вручную — этот мод поверх них как слой «быстро и точно» для перекрёстков.
+- **По умолчанию разметка цепляется к точкам-якорям.** Точки стоят на реальной геометрии дороги (границы и центры полос, край проезжей части, углы бордюров, пересечения линий, плюс ряды перед перекрёстком) — поэтому разметка ложится точно по полосам за несколько кликов. Свободное рисование ставит точки в любом месте перекрёстка и его дорог, но не за пределами дорожного полотна — там ставьте декали и нет-лейны паков G87 вручную.
+- Линии на дополнительных точках (центры полос, ряды 4 м / 16 м) сохраняются, но не рисуются, пока соответствующая опция выключена.
 - Почти касательные контакты линий (заметно меньше ~8°) считаются скольжением, а не пересечением — точка-якорь в таком месте не появляется (намеренно: защита от дрожащих дублей-якорей).
 - Вытянутые соединения (съезды и слияния шоссе и другие узлы, где граница «дорога/перекрёсток» не перпендикулярна дороге) могут смещать точки-якоря относительно краски. Лечение: нормализуйте перекрёсток модом Node Controller, чтобы поперечные линии соединений стали перпендикулярны дороге, — настоятельно рекомендуется. Второй ряд точек за 8 м до перекрёстка тоже остаётся пригодным.
 - Рёбра заливок изгибаются вдоль линии, только если линия нарисована этим модом. Ванильную разметку заливка не огибает — вдоль неё ребро остаётся прямым отрезком между точками.
@@ -109,6 +117,26 @@ The G87 marking packs and the [G87] Vanilla Curb pack ship as dependencies and i
 # 1.0.0 — first release
 
 First release of Intersection &amp; Lane Markings (ILM), based on Town Road Lane 2.5.0 by mxerf (GPL-3.0).
+
+New since Town Road Lane:
+- **Free draw** (F / panel): place your own points anywhere on the junction or its roads and draw through them; right-click a point to remove it.
+- **Mid-road editing**: click the middle of a road to draw lines, areas and free points along it, with anchor rows every 10 m.
+- **Edit mode** with curve handles: click a line and drag its two handles to shape it, drag free points to move them; **Add point** splits a line through a movable point. Only editable things are shown while editing.
+- **New area drawing**: click anywhere on the road to place corners (they snap to nearby dots), then shape the area in Edit mode: drag corners, curve each side with handles, + adds a corner, right-click removes one.
+- **Point removal**: right-click a free point in any mode; areas using it only lose that corner instead of being deleted.
+- **More anchor points**: lane centre points and extra setback rows at 4 m and 16 m (both optional in Options, on by default).
+- **New panel** in the game's own style: Lines / Areas / Advanced tabs, a scrolling body, a three-way mode switch, and new lines and areas open automatically. Area drawing continues after closing an area.
+- Fixed a log flood in segment emission; the log level is now set explicitly (Debug only with VerboseLogging).
+
+Первый выпуск ILM на основе Town Road Lane 2.5.0 (mxerf, GPL-3.0). Новое по сравнению с Town Road Lane:
+- **Свободное рисование** (F / панель): свои точки в любом месте перекрёстка и его дорог; правый клик удаляет точку.
+- **Разметка посреди дороги**: клик по середине дороги — линии, области и точки вдоль неё, ряды точек каждые 10 м.
+- **Режим правки** с ручками кривой: кликните линию и тяните ручки, перетаскивайте свободные точки; «Добавить точку» делит линию подвижной точкой. При правке показано только то, что можно изменить.
+- **Новое рисование областей**: кликайте в любом месте дороги, чтобы ставить углы (рядом с точками они притягиваются), затем меняйте форму в «Правке»: тяните углы, изгибайте стороны ручками, + добавляет угол, ПКМ удаляет.
+- **Удаление точек**: правый клик по свободной точке в любом режиме; области с ней теряют только этот угол, а не удаляются целиком.
+- **Больше точек-якорей**: центры полос и ряды за 4 м и 16 м (опционально, включено по умолчанию).
+- **Новая панель** в стиле игры: вкладки «Линии» / «Области» / «Ещё», прокрутка, переключатель режима; новые линии и области раскрываются сами, рисование областей продолжается после замыкания.
+- Исправлен поток сообщений в логе при выводе сегментов.
 	</ChangeLog>
 	<!--External link, can be set multiple times. supported types are "discord", "github", "youtube", "twitch", "x", "paypal", "patreon", "buymeacoffee", "kofi", "crowdin", "gitlab", "gofundme"-->
 	<!--TODO: add your GitHub repo once it exists: <ExternalLink Type="github" Url="https://github.com/YOU/REPO" />-->

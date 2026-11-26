@@ -7,13 +7,16 @@ using ILM.Utilities;
 
 namespace ILM.Systems.Tool
 {
-    // Dragging in the line editor: the two curve handles of the line expanded in the panel
-    // (like Move It's curve handles) and user-placed free points. A press on a handle or a free
-    // point starts a drag; the change is written on release. A press on a free point that is
-    // released without moving is an ordinary click (start a line from it).
+    // Dragging in edit mode: the two curve handles of the open line (clicked in the world or
+    // expanded in the panel, like Move It's curve handles), the vertices and edge handles of
+    // the open area (MarkingNodeToolSystem.AreaEdit.cs) and user-placed free points. A press
+    // on a handle or a free point starts a drag; the change is written on release. A press
+    // released without moving changes nothing. The draw modes never drag, so a click there
+    // always draws.
     public partial class MarkingNodeToolSystem
     {
-        public enum DragKind { None, HandleA, HandleB, FreePoint }
+        // Area* drags act on the open area: a vertex, or a curve handle of edge _dragIndex.
+        public enum DragKind { None, HandleA, HandleB, FreePoint, AreaVertex, AreaHandleA, AreaHandleB }
 
         // Pick radius for handles (XZ, metres), and how far the cursor must move before a
         // press counts as a drag.
@@ -26,19 +29,23 @@ namespace ILM.Systems.Tool
         private float3 _dragStart;
         private MarkingEndpoint _dragPoint;
 
-        /// <summary>Line whose handles are shown (the row expanded in the panel), -1 for none.</summary>
+        /// <summary>Line open for editing (its handles are shown in edit mode), -1 for none.</summary>
         public int EditLine => _editLine;
         /// <summary>What is being dragged right now (None until the cursor actually moved).</summary>
         public DragKind Dragging => _dragMoved ? _drag : DragKind.None;
 
         public void SetEditLine(int lineIndex) => _editLine = lineIndex;
 
+        /// <summary>True for the free point being dragged right now.</summary>
+        public bool IsDraggedPoint(MarkingEndpoint ep)
+            => Dragging == DragKind.FreePoint && ep.edge == _dragPoint.edge && ep.gapIndex == _dragPoint.gapIndex;
+
         /// <summary>Endpoints and control points of the edit line, with a handle drag applied
         /// live so the overlay can preview it.</summary>
         public bool TryGetEditCurve(out Bezier4x3 curve)
         {
             curve = default;
-            if (_selectedNode == Entity.Null || _editLine < 0) return false;
+            if (!EditMode || _selectedNode == Entity.Null || _editLine < 0) return false;
             if (!EntityManager.HasBuffer<MarkingLine>(_selectedNode)) return false;
             var lines = EntityManager.GetBuffer<MarkingLine>(_selectedNode, isReadOnly: true);
             if (_editLine >= lines.Length) return false;
@@ -60,24 +67,22 @@ namespace ILM.Systems.Tool
                 if (applyAction.IsPressed()) return true;
 
                 var kind = _drag;
+                int index = _dragIndex;
                 bool moved = _dragMoved;
                 _drag = DragKind.None;
                 _dragMoved = false;
-                if (moved) CommitDrag(kind);
-                else if (kind == DragKind.FreePoint)
+                _dragIndex = -1;
+                if (moved)
                 {
-                    // A click, not a drag: start a line from the point, as for any dot.
-                    int idx = IndexOfEndpoint(_dragPoint.edge, _dragPoint.gapIndex);
-                    if (idx >= 0)
-                    {
-                        _sourceIdx = idx;
-                        _state = MarkingToolState.SourceSelected;
-                    }
+                    if (kind == DragKind.AreaVertex || kind == DragKind.AreaHandleA || kind == DragKind.AreaHandleB)
+                        CommitAreaDrag(kind, index);
+                    else
+                        CommitDrag(kind);
                 }
                 return true;
             }
 
-            if (_state != MarkingToolState.NodeSelected || !hitSomething || !applyAction.WasPressedThisFrame())
+            if (!EditMode || _state != MarkingToolState.NodeSelected || !hitSomething || !applyAction.WasPressedThisFrame())
                 return false;
 
             if (TryGetEditCurve(out var c))
@@ -85,6 +90,7 @@ namespace ILM.Systems.Tool
                 if (math.distancesq(c.b.xz, _cursorWorldPos.xz) < kHandlePickRadiusSq) _drag = DragKind.HandleA;
                 else if (math.distancesq(c.c.xz, _cursorWorldPos.xz) < kHandlePickRadiusSq) _drag = DragKind.HandleB;
             }
+            if (_drag == DragKind.None) TryStartAreaDrag();
             if (_drag == DragKind.None && _hoverIdx >= 0 && IsFree(_endpoints[_hoverIdx]))
             {
                 _drag = DragKind.FreePoint;

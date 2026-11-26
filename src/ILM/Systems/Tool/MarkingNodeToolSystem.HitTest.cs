@@ -24,12 +24,15 @@ namespace ILM.Systems.Tool
         private readonly List<float3> _areaHitScratch = new List<float3>();
 
 
-        private int FindHoveredEndpoint(float3 cursor)
+        /// <summary>Closest dot within the pick radius, or -1. With <paramref name="freeOnly"/>
+        /// only free points count (edit mode, where the other dots are not shown).</summary>
+        private int FindHoveredEndpoint(float3 cursor, bool freeOnly = false)
         {
             int best = -1;
             float bestSq = kDotPickRadiusSq;
             for (int i = 0; i < _endpoints.Count; i++)
             {
+                if (freeOnly && !IsFree(_endpoints[i])) continue;
                 float sq = PolygonUtils.DistSqXZ(_endpoints[i].position, cursor);
                 if (sq < bestSq) { bestSq = sq; best = i; }
             }

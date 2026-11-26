@@ -30,7 +30,26 @@ namespace ILM.Geometry
             float chord = math.distance(a, b);
             float pull = chord * math.clamp(pullFactor, 0f, kMaxPullFactor);
             ResolveTravelTangents(a, ta, b, tb, chord, out float3 ta3, out float3 tb3);
-            return new Bezier4x3(a, a + ta3 * pull, b + tb3 * pull, b);
+            return EnsureEndTangents(new Bezier4x3(a, a + ta3 * pull, b + tb3 * pull, b));
+        }
+
+        // A control point closer than this to its endpoint counts as sitting on it.
+        private const float kMinControlOffsetSq = 0.01f * 0.01f;
+
+        /// <summary>
+        /// Moves a control point that sits on its endpoint to the third point of the straight
+        /// chord, as vanilla NetUtils.StraightCurve does. Such a curve (a, a, b, b) has a zero
+        /// tangent at the end, and the game's lane decal renderer builds each instance's
+        /// orientation from the curve tangent, so the painted line silently disappears. It
+        /// happens whenever the curvature is 0 (every line drawn in free draw starts straight,
+        /// and the panel allows 0%), and at a junction-interior free point, which has no
+        /// tangent of its own.
+        /// </summary>
+        public static Bezier4x3 EnsureEndTangents(Bezier4x3 c)
+        {
+            if (math.lengthsq(c.b - c.a) < kMinControlOffsetSq) c.b = math.lerp(c.a, c.d, 1f / 3f);
+            if (math.lengthsq(c.c - c.d) < kMinControlOffsetSq) c.c = math.lerp(c.a, c.d, 2f / 3f);
+            return c;
         }
 
         /// <summary>Starting pull factor for a new line: the control offset that best approximates
@@ -89,7 +108,7 @@ namespace ILM.Geometry
         public static Bezier4x3 BuildLine(MarkingEndpoint src, MarkingEndpoint dst, MarkingLine line)
         {
             if (line.hasHandles)
-                return new Bezier4x3(src.position, src.position + line.handleA, dst.position + line.handleB, dst.position);
+                return EnsureEndTangents(new Bezier4x3(src.position, src.position + line.handleA, dst.position + line.handleB, dst.position));
             return Build(src.position, src.tangent, dst.position, dst.tangent, line.curvature);
         }
 

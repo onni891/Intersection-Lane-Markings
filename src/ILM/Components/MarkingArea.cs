@@ -60,6 +60,9 @@ namespace ILM.Components
     {
         Straight = 0,    // chord between the two anchors
         LineBezier = 1,  // both anchors lie on the same MarkingLine: follow its curve
+        // Shaped by the user in edit mode: a Bezier from this anchor to the next with control
+        // points at anchor + handleA and nextAnchor + handleB (see MarkingAreaVertex).
+        Curve = 2,
     }
 
     /// <summary>
@@ -89,11 +92,16 @@ namespace ILM.Components
         public Entity refEdgeB;
         public int refGap;
         public float3 refPos;
+        // Curve edge (edgeToNext == Curve) to the next vertex: control point 1 = this anchor +
+        // handleA, control point 2 = next anchor + handleB. Offsets, so the edge keeps its
+        // shape when either anchor moves with the road. Unused for the other edge kinds.
+        public float3 handleA;
+        public float3 handleB;
 
         /// <summary>Version 1 lane-endpoint or corner vertex, still named by a raw list index.</summary>
         public bool IsLegacyIndexRef => kind != AreaAnchorKind.LineIntersection && refEdgeA == Entity.Null;
 
-        private const int kVersion = 2;
+        private const int kVersion = 3;
 
         public void Serialize<TWriter>(TWriter writer) where TWriter : IWriter
         {
@@ -105,6 +113,8 @@ namespace ILM.Components
             writer.Write(refEdgeB);
             writer.Write(refGap);
             writer.Write(refPos);
+            writer.Write(handleA);
+            writer.Write(handleB);
         }
 
         public void Deserialize<TReader>(TReader reader) where TReader : IReader
@@ -128,6 +138,16 @@ namespace ILM.Components
                 refEdgeB = Entity.Null;
                 refGap = 0;
                 refPos = float3.zero;
+            }
+            if (version >= 3)
+            {
+                reader.Read(out handleA);
+                reader.Read(out handleB);
+            }
+            else
+            {
+                handleA = float3.zero;
+                handleB = float3.zero;
             }
         }
     }

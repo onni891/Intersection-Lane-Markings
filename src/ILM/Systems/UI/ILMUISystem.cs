@@ -91,6 +91,8 @@ namespace ILM.Systems.UI
             CreateTrigger<int>("TogglePinAreaStyle", OnTogglePinAreaStyle);
             CreateTrigger("ToggleAreaMode", OnToggleAreaMode);
             CreateTrigger("ToggleFreeDraw", OnToggleFreeDraw);
+            CreateTrigger<int>("SetLineMode", OnSetLineMode);
+            CreateTrigger<int>("SetEditArea", OnSetEditArea);
             CreateTrigger<int>("SetEditLine", OnSetEditLine);
             CreateTrigger<int>("SplitLine", OnSplitLine);
             CreateTrigger<int, int>("SetAreaStyle", OnSetAreaStyle);
@@ -159,7 +161,8 @@ namespace ILM.Systems.UI
             h.Add(_tool.LastClickedTick);
             h.Add(_tool.HoveredLineInGame);
             h.Add(_tool.HoveredAreaInGame);
-            h.Add(_tool.FreeDraw);
+            h.Add((int)_tool.Mode);
+            h.Add(_tool.EditArea);
             h.Add(node != Entity.Null && EntityManager.HasBuffer<MarkingFreePoint>(node)
                 ? EntityManager.GetBuffer<MarkingFreePoint>(node, isReadOnly: true).Length : 0);
 
@@ -232,6 +235,8 @@ namespace ILM.Systems.UI
                 hoveredLineInGame = _tool.HoveredLineInGame,
                 hoveredAreaInGame = _tool.HoveredAreaInGame,
                 freeDraw = _tool.FreeDraw,
+                lineMode = (int)_tool.Mode,
+                editArea = _tool.EditArea,
                 selectedIsRoad = node != Entity.Null && _tool.SelectedIsRoad,
                 freePointCount = node != Entity.Null && EntityManager.HasBuffer<MarkingFreePoint>(node)
                     ? EntityManager.GetBuffer<MarkingFreePoint>(node, isReadOnly: true).Length : 0,

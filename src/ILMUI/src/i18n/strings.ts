@@ -24,6 +24,8 @@ const enUS = {
   "status.area":              "Outline the area — {n} points",
   "status.free.first":        "Click anywhere on the road to start drawing",
   "status.free.next":         "Click to add a point · Esc to finish",
+  "status.edit.pick":         "Click a line to shape it",
+  "status.edit.open":         "Drag the blue handles or white points · Esc to put the line down",
 
   // Section headers
   "section.drawing":          "Drawing",
@@ -53,11 +55,19 @@ const enUS = {
   "mode.area.tooltip":        "Fill a polygon between anchor dots (safety islands, hatched zones)",
   "mode.free":                "Free draw",
   "mode.free.tooltip":        "Click anywhere on the junction or its roads to place points and draw through them (hotkey F). Right-click a white point to remove it.",
+  "mode.edit":                "Edit",
+  "mode.edit.tooltip":        "Shape lines you have drawn: click a line to show its curve handles, then drag the handles or a white point. Nothing new is drawn, and only what can be edited is shown. Right-click a white point to remove it.",
 
   // Area draft (AreaSelecting)
-  "area.draft.hint.add":      "LMB — add a point",
-  "area.draft.hint.undo":     "RMB — remove the last point",
-  "area.draft.hint.close":    "Click the first point again to close (needs 3+)",
+  "area.draft.hint.add":      "LMB anywhere on the road — add a corner (near a dot it snaps)",
+  "area.draft.hint.undo":     "RMB — remove the last corner",
+  "area.draft.hint.close":    "Click the first corner again to close (needs 3+). Shape it afterwards in Edit.",
+  "area.mode.draw":           "Draw",
+  "area.mode.draw.tooltip":   "Outline a new area: click on the road to place corners, like drawing a line.",
+  "area.mode.edit.tooltip":   "Change areas you have drawn: click an area to open it, drag its corners and blue handles, + adds a corner, right-click removes one.",
+  "area.edit.pick":           "Click an area (or open a row below) to change its shape.",
+  "area.edit.hint":           "Drag the corners and blue handles on the road. Green + adds a corner, right-click a corner removes it.",
+  "status.edit.area":         "Drag corners or blue handles · + adds a corner · RMB removes one",
   "area.draft.cancel":        "Cancel area",
 
   // Next-object style pickers
@@ -108,7 +118,7 @@ const enUS = {
   "hotkeys.areaMode":         "area mode",
   "hotkeys.freeDraw":         "free draw",
   "hotkeys.rmb":              "RMB",
-  "hotkeys.rmb.desc":         "undo point / cancel",
+  "hotkeys.rmb.desc":         "remove a point / undo",
   "hotkeys.esc":              "Esc",
   "hotkeys.esc.desc":         "step back",
 
@@ -130,7 +140,8 @@ const enUS = {
   "line.curvature.step":      "Step 1 · Shift: 10 · Ctrl: 5",
   "line.handles.hint":        "Drag the blue handles on the road to shape the curve.",
   "line.addPoint":            "Add point",
-  "line.addPoint.tooltip":    "Split the line in the middle with a new point you can drag (white). Right-click it in free draw to remove.",
+  "line.addPoint.tooltip":    "Split the line in the middle with a new point you can drag (white). Right-click it to remove.",
+  "line.editHint":            "Switch to Edit to shape this line with handles.",
 
   // Segment row
   "segment.label":            "Segment {n}",
@@ -177,6 +188,8 @@ const ruRU: LocaleDict = {
   "status.area":              "Режим области — точек: {n}",
   "status.free.first":        "Кликните в любом месте дороги, чтобы начать",
   "status.free.next":         "Клик — добавить точку · Esc — закончить",
+  "status.edit.pick":         "Кликните линию, чтобы изменить её",
+  "status.edit.open":         "Тяните голубые ручки или белые точки · Esc — отпустить линию",
 
   // Section headers
   "section.drawing":          "Рисование",
@@ -206,11 +219,19 @@ const ruRU: LocaleDict = {
   "mode.area.tooltip":        "Заливка полигона по опорным точкам (островки безопасности, штриховка)",
   "mode.free":                "Свободно",
   "mode.free.tooltip":        "Кликайте в любом месте перекрёстка или его дорог, чтобы ставить точки и рисовать через них (клавиша F). Правый клик по белой точке удаляет её.",
+  "mode.edit":                "Правка",
+  "mode.edit.tooltip":        "Правка нарисованных линий: кликните линию, чтобы показать ручки кривой, затем тяните ручки или белые точки. Новые линии не рисуются, показано только то, что можно править. Правый клик по белой точке удаляет её.",
 
   // Area draft (AreaSelecting)
-  "area.draft.hint.add":      "ЛКМ — добавить точку",
-  "area.draft.hint.undo":     "ПКМ — убрать последнюю точку",
-  "area.draft.hint.close":    "Клик по первой точке — замкнуть (нужно 3+)",
+  "area.draft.hint.add":      "ЛКМ в любом месте дороги — добавить угол (рядом с точкой — притягивается)",
+  "area.draft.hint.undo":     "ПКМ — убрать последний угол",
+  "area.draft.hint.close":    "Клик по первому углу — замкнуть (нужно 3+). Форму можно изменить в «Правке».",
+  "area.mode.draw":           "Рисовать",
+  "area.mode.draw.tooltip":   "Обвести новую область: кликайте по дороге, чтобы ставить углы, как при рисовании линии.",
+  "area.mode.edit.tooltip":   "Правка нарисованных областей: кликните область, тяните углы и голубые ручки, + добавляет угол, правый клик удаляет.",
+  "area.edit.pick":           "Кликните область (или раскройте строку ниже), чтобы изменить её форму.",
+  "area.edit.hint":           "Тяните углы и голубые ручки на дороге. Зелёный + добавляет угол, правый клик по углу удаляет его.",
+  "status.edit.area":         "Тяните углы или голубые ручки · + — новый угол · ПКМ — удалить",
   "area.draft.cancel":        "Отменить область",
 
   // Next-object style pickers
@@ -261,7 +282,7 @@ const ruRU: LocaleDict = {
   "hotkeys.areaMode":         "режим области",
   "hotkeys.freeDraw":         "свободное рисование",
   "hotkeys.rmb":              "ПКМ",
-  "hotkeys.rmb.desc":         "убрать точку / отмена",
+  "hotkeys.rmb.desc":         "удалить точку / отмена",
   "hotkeys.esc":              "Esc",
   "hotkeys.esc.desc":         "шаг назад",
 
@@ -283,7 +304,8 @@ const ruRU: LocaleDict = {
   "line.curvature.step":      "Шаг 1 · Shift: 10 · Ctrl: 5",
   "line.handles.hint":        "Тяните голубые ручки на дороге, чтобы изогнуть линию.",
   "line.addPoint":            "Добавить точку",
-  "line.addPoint.tooltip":    "Разделить линию посередине новой точкой, которую можно перетаскивать (белая). Правый клик в свободном режиме удаляет её.",
+  "line.addPoint.tooltip":    "Разделить линию посередине новой точкой, которую можно перетаскивать (белая). Правый клик удаляет её.",
+  "line.editHint":            "Переключитесь в «Правка», чтобы изгибать линию ручками.",
 
   // Segment row
   "segment.label":            "Сегмент {n}",

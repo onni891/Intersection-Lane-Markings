@@ -54,6 +54,20 @@ namespace ILM.Systems.Tool
         public const float kHandleStemWidth = 0.06f;
         public static readonly Color kColHandleFill = new Color(0.30f, 0.85f, 1.00f, 0.95f);
         public static readonly Color kColHandleStem = new Color(0.30f, 0.85f, 1.00f, 0.60f);
+        // Edit mode: only what can be edited is drawn. Every line gets a faint trace so it
+        // reads as clickable; the selected line a solid one under its handles. Free points are
+        // the only dots, a little larger than in the draw modes since they are drag targets.
+        public const float kEditableLineWidth = 0.07f;
+        public static readonly Color kColEditableLine = new Color(0.30f, 0.85f, 1.00f, 0.30f);
+        public const float kEditSelectedLineWidth = 0.12f;
+        public static readonly Color kColEditSelectedLine = new Color(0.30f, 0.85f, 1.00f, 0.80f);
+        public const float kEditFreePointDiameter = 0.80f;
+        // Open area in edit mode: edge handles a little smaller than a line's (an area has many),
+        // and green "+" markers in the middle of each edge that add a vertex.
+        public const float kAreaHandleDotDiameter = 0.70f;
+        public const float kInsertDotDiameter = 0.45f;
+        public const float kInsertDotDiameterHover = 0.75f;
+        public static readonly Color kColInsertFill = new Color(0.40f, 1.00f, 0.55f, 0.95f);
         // Dot under the cursor.
         public const float kDotDiameterHover = 0.95f;
         public const float kDotOutlineWidthHover = 0.11f;
@@ -97,6 +111,8 @@ namespace ILM.Systems.Tool
         // candidate solid bright yellow, the placed contour solid white, the preview edge thin
         // white, and the edge that would close the polygon bright green.
         public const float kAreaCandDotDiameter = 0.90f;
+        // Snap candidates are only drawn within this distance (m) of the cursor.
+        public const float kAreaCandShowRadius = 8f;
         public const float kAreaCandDotOutlineWidth = 0.12f;
         public static readonly Color kColAreaCandFill = new Color(1.00f, 0.85f, 0.20f, 0.14f);
         public static readonly Color kColAreaCandRing = new Color(1.00f, 0.85f, 0.20f, 0.95f);

@@ -452,7 +452,13 @@ namespace ILM.Systems.Topology
             for (int v = 0; v < n; v++)
             {
                 ring.Add(anchors[v]);
-                if (avs[v].edgeToNext == AreaEdgeKind.LineBezier
+                if (avs[v].edgeToNext == AreaEdgeKind.Curve)
+                {
+                    var p0 = anchors[v];
+                    var p1 = anchors[(v + 1) % n];
+                    SampleCurvedEdge(new Bezier4x3(p0, p0 + avs[v].handleA, p1 + avs[v].handleB, p1), 0f, 1f, ring);
+                }
+                else if (avs[v].edgeToNext == AreaEdgeKind.LineBezier
                     && TryFindSharedLine(avs[v], avs[(v + 1) % n], endpoints, lines, out _, out var bez, out float tFrom, out float tTo))
                 {
                     SampleCurvedEdge(bez, tFrom, tTo, ring);
@@ -466,6 +472,33 @@ namespace ILM.Systems.Topology
                 ring.RemoveAt(ring.Count - 1);
             return ring;
         }
+
+        /// <summary>
+        /// The edge from <paramref name="from"/> to the next vertex as one Bezier, for editing:
+        /// the user's curve, the span of the marking line both anchors lie on, or the straight
+        /// chord with control points at its thirds. The edit handles sit on its control points,
+        /// so dragging one turns any edge into a <see cref="AreaEdgeKind.Curve"/> edge that
+        /// starts from exactly this shape.
+        /// </summary>
+        public static Bezier4x3 EdgeCurve(MarkingAreaVertex from, MarkingAreaVertex to, float3 pFrom, float3 pTo,
+                                          List<MarkingEndpoint> endpoints, MarkingLine[] lines)
+        {
+            if (from.edgeToNext == AreaEdgeKind.Curve)
+                return new Bezier4x3(pFrom, pFrom + from.handleA, pTo + from.handleB, pTo);
+            if (from.edgeToNext == AreaEdgeKind.LineBezier
+                && TryFindSharedLine(from, to, endpoints, lines, out _, out var bez, out float t0, out float t1))
+            {
+                if (t0 <= t1) return MathUtils.Cut(bez, new float2(t0, t1));
+                var cut = MathUtils.Cut(bez, new float2(t1, t0));
+                return new Bezier4x3(cut.d, cut.c, cut.b, cut.a);
+            }
+            return new Bezier4x3(pFrom, math.lerp(pFrom, pTo, 1f / 3f), math.lerp(pFrom, pTo, 2f / 3f), pTo);
+        }
+
+        /// <summary>World position of an area vertex; public for the tool's edit overlay.</summary>
+        public static bool TryResolveVertexPos(MarkingAreaVertex av, List<MarkingEndpoint> endpoints,
+                                               List<MarkingCornerAnchor> corners, MarkingLine[] lines, out float3 pos)
+            => ResolveVertexPos(av, endpoints, corners, lines, out pos);
 
         private static bool TryFindSharedLine(MarkingAreaVertex from, MarkingAreaVertex to,
                                               List<MarkingEndpoint> endpoints, MarkingLine[] lines,
@@ -639,6 +672,14 @@ namespace ILM.Systems.Topology
                 h.Add((uint)v.kind);
                 h.Add(v.refIndex);
                 h.Add((uint)v.edgeToNext);
+                // A moved vertex or reshaped edge must rebuild the ring.
+                h.Add(v.refEdgeA);
+                h.Add(v.refGap);
+                if (v.edgeToNext == AreaEdgeKind.Curve)
+                {
+                    h.Add(v.handleA.x); h.Add(v.handleA.y); h.Add(v.handleA.z);
+                    h.Add(v.handleB.x); h.Add(v.handleB.y); h.Add(v.handleB.z);
+                }
             }
             if (lines.HasValue) MarkingTopologySystem.AddLines(ref h, lines.Value);
             return h.Value32;

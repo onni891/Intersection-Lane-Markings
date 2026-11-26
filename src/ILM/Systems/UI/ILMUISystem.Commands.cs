@@ -241,6 +241,19 @@ namespace ILM.Systems.UI
             _tool.SetFreeDraw(!_tool.FreeDraw);
         }
 
+        /// <summary>The area row expanded on the Areas tab in edit mode; the tool opens it.</summary>
+        private void OnSetEditArea(int areaIndex)
+        {
+            _tool.SetEditArea(areaIndex);
+        }
+
+        /// <summary>The panel's mode switch: 0 snap to points, 1 free draw, 2 edit.</summary>
+        private void OnSetLineMode(int mode)
+        {
+            if (mode < 0 || mode > (int)MarkingNodeToolSystem.LineMode.Edit) return;
+            _tool.SetMode((MarkingNodeToolSystem.LineMode)mode);
+        }
+
         // Pinned styles. Apply(), not ApplyAndSave(): each ApplyAndSave is a separate async
         // read-modify-write of the settings file that races with the Options screen's own saves
         // and loses edits. Apply() marks the settings dirty and the coalescing saver in

@@ -9,14 +9,18 @@ A road-marking mod for **Cities: Skylines II**: a manual marking editor for inte
 ## Features
 
 ### Marking editor
-Click any intersection and draw your own markings:
+Click any intersection — or the middle of a road — and draw your own markings:
 
 - **Lines** between anchor dots — solid, dashed (short / normal / long), double solid, a vanilla yellow set (solid / dashed / double / solid + dashed), G87 white or yellow styles, and a curb line, with adjustable curvature and per-segment visibility.
-- **Anchor dots everywhere you need them** — on every lane boundary, on the carriageway edge (including past parking lanes), and in a second "setback" row 8 m before the junction, so you can draw the solid no-lane-change stretch in front of the stop line.
-- **Area fills** over any polygon you outline — junction box (yellow box), white/yellow hatching, green bike lane, red bus lane, concrete, grass, sand, pavement, tiles, asphalt patch.
+- **Edit mode with curve handles** — switch the panel to **Edit**, click a line and drag its two blue handles on the road to shape the curve, Move It-style. Free points can be dragged there too, and **Add point** splits a line in the middle with a new point you can drag. Edit mode shows only what can be edited (lines, handles and free points), never the anchor dots, and draws nothing new.
+- **Anchor dots everywhere you need them** — on every lane boundary, on the carriageway edge (including past parking lanes), and in a "setback" row 8 m before the junction, so you can draw the solid no-lane-change stretch in front of the stop line. Optional extras (on by default, in Options): a dot in the **centre of every lane** for arrows and centred lines, and **extra setback rows at 4 m and 16 m**.
+- **Free draw** — switch it on (`F` or the panel) and click anywhere on the junction or its roads to place your own points and draw through them. Right-click a free point to remove it; move it in Edit mode.
+- **Mid-road editing** — click the middle of a road to draw lines, areas and free points along it, with rows of anchor dots every 10 m.
+- **Area fills** drawn like lines — click anywhere on the road to place corners (near a dot, kerb corner or line crossing they snap to it; snap targets only show up near the cursor), then click the first corner to close. In **Edit** mode click an area to open it: drag its corners, curve any side with its two blue handles, use the green **+** in the middle of a side to add a corner, and right-click a corner to remove it. Fills: junction box (yellow box), white/yellow hatching, green bike lane, red bus lane, concrete, grass, sand, pavement, tiles, asphalt patch. Area drawing stays on after you close an area, so you can outline the next one straight away.
+- **Removing points** — right-click a white free point in any mode; its lines go with it, areas only lose that corner.
 - **Hide vanilla markings** per intersection to start from a clean slate.
 - **Pin favourite styles** — star any entry in a style dropdown to keep it at the top of every list.
-- In-game panel (English + Russian) and hotkeys: `Ctrl+M` toggle tool, `Y` cycle line style, `A` area mode, `U` cycle area fill.
+- **In-game panel** in the game's own style (English + Russian), with Lines / Areas / Advanced tabs and a mode switch (snap to points / free draw / edit). Hotkeys: `Ctrl+M` toggle tool, `Y` cycle line style, `A` area mode, `U` cycle area fill, `F` free draw.
 
 ![Area mode: outlining a traffic island between anchor dots](src/ILM/Properties/Screenshots/ILM_a3fa8fbf.jpg)
 
@@ -36,10 +40,11 @@ Ordinary city roads with 3 m lanes get proper edge lane markings — the same wa
 ## Known limitations
 
 - **The mod is purely visual.** Markings never affect how vehicles actually drive. To change real lane behavior use [Traffic](https://github.com/krzychu124/Traffic) — set up lane connections and directions there first, then draw your markings to match. The two mods don't sync automatically.
-- **Everything snaps to anchor dots — by design.** The dots sit on real road geometry (lane boundaries, carriageway edges, kerb corners, line crossings, plus the setback row 8 m before the junction), which is why markings land exactly on the lanes in a few clicks. There is no freehand placement: for fully freehand markings place the G87 packs' decals and net-lanes by hand — this mod is the fast-and-precise layer for junctions on top of them.
+- **Markings snap to anchor dots by default.** The dots sit on real road geometry (lane boundaries, lane centres, carriageway edges, kerb corners, line crossings, plus the setback rows before the junction), which is why markings land exactly on the lanes in a few clicks. Free draw places points anywhere on the junction and its roads, but not off the road surface — for markings elsewhere place the G87 packs' decals and net-lanes by hand.
+- **Lines on optional dots** (lane centres, 4 m / 16 m rows) stay saved but are not drawn while that option is off.
 - **Nearly-tangent line contacts** (well under ~8°) are treated as a graze rather than a crossing — no anchor dot appears at such touch points (by design; prevents jittery duplicate anchors).
 - **Stretched junction connections** — highway ramps/merges and other junctions where the road/junction boundary is not perpendicular to the road — can misplace the anchor dots relative to the painted lines: the paint ends square to each lane, while the dots sit on the skewed boundary. Fix: normalize the junction with the **Node Controller** mod so the connection cross-lines run perpendicular to the road (strongly recommended). The setback dot row 8 m before the junction also stays usable.
-- **Area fill edges** curve along a line only when that line was drawn with this mod. The game's own markings are not traced — along them the fill edge stays a straight segment between its points.
+- **Area fill edges** follow a line automatically only when that line was drawn with this mod. The game's own markings are not traced — along them the edge stays straight until you curve it with its handles in Edit mode.
 - **Move It:** after moving or reshaping a road, line markings adapt to the new geometry, but area fills may not — delete and redraw them.
 
 ## How it works
