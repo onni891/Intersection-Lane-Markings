@@ -178,6 +178,7 @@ namespace ILM.Systems.Tool
         {
             base.OnStartRunning();
             ResetSelection();
+            LoadSnapSetting();
             // The base UpdateActions is empty, so applyAction and friends stay disabled from the
             // last ResetActions and clicks do nothing. Enable them the way DefaultToolSystem does,
             // minus its internal DeferStateUpdating batching, which isn't accessible from a mod.
@@ -247,18 +248,21 @@ namespace ILM.Systems.Tool
             bool hitEdge = hitSomething && !hitNode && MarkingEdgeAnchors.IsEdgeOwner(EntityManager, hitEntity);
             _cursorWorldPos = hitSomething ? hit.m_HitPosition : float3.zero;
             _hoveredNode = hitNode || hitEdge ? hitEntity : Entity.Null;
-            // The open area's outline and handles, then the one edit target under the cursor.
+            // Draw-mode hover and the area candidate first: snapping only applies when the
+            // cursor isn't already on a dot.
+            _hoverIdx = (!EditMode && _state != MarkingToolState.Default && _state != MarkingToolState.AreaSelecting && hitSomething)
+                ? FindHoveredEndpoint(_cursorWorldPos)
+                : -1;
+            // Lines can change from the panel while an area is being drawn.
+            if (_state == MarkingToolState.AreaSelecting) RefreshIntersectionAnchorsIfStale();
+            _areaHover = (_state == MarkingToolState.AreaSelecting && hitSomething) ? FindHoveredAreaCandidate(_cursorWorldPos) : AreaCandidate.None;
+            // The snapped place position, then the open area's outline and handles (its drag
+            // preview follows the snap), then the one edit target under the cursor.
+            UpdateSnap(hitSomething);
             RefreshEditArea();
             UpdateEditHover(hitSomething);
             if (EditMode)
                 _hoverIdx = _editHoverKind == EditHoverKind.FreePoint ? _editHoverIndex : -1;
-            else
-                _hoverIdx = (_state != MarkingToolState.Default && _state != MarkingToolState.AreaSelecting && hitSomething)
-                    ? FindHoveredEndpoint(_cursorWorldPos)
-                    : -1;
-            // Lines can change from the panel while an area is being drawn.
-            if (_state == MarkingToolState.AreaSelecting) RefreshIntersectionAnchorsIfStale();
-            _areaHover = (_state == MarkingToolState.AreaSelecting && hitSomething) ? FindHoveredAreaCandidate(_cursorWorldPos) : AreaCandidate.None;
 
             // Skipped in SourceSelected, where the cursor is aiming at a target dot and line
             // highlights would be noise.
@@ -441,7 +445,7 @@ namespace ILM.Systems.Tool
                     else if (FreeDraw && hitSomething)
                     {
                         // Start a chain from a new free point.
-                        int idx = PlaceFreePoint(_cursorWorldPos);
+                        int idx = PlaceFreePoint(_placePos);
                         if (idx >= 0)
                         {
                             _sourceIdx = idx;
@@ -474,7 +478,7 @@ namespace ILM.Systems.Tool
                     else if (FreeDraw && _hoverIdx < 0 && hitSomething)
                     {
                         var src = _endpoints[_sourceIdx];
-                        int idx = PlaceFreePoint(_cursorWorldPos);
+                        int idx = PlaceFreePoint(_placePos);
                         if (idx >= 0)
                         {
                             // The endpoint list was re-extracted; find the source again by identity.

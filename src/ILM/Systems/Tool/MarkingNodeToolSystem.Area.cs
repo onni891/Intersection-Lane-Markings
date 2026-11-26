@@ -21,7 +21,7 @@ namespace ILM.Systems.Tool
         /// <summary>Area mode click that hit no anchor: a new free point becomes the next vertex.</summary>
         private void AreaPlaceFreeVertex()
         {
-            int idx = PlaceFreePoint(_cursorWorldPos);
+            int idx = PlaceFreePoint(_placePos);
             if (idx < 0) return;
             var ep = _endpoints[idx];
             _draftFreePoints.Add((ep.edge, ep.gapIndex));

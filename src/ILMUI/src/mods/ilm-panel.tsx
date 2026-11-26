@@ -28,6 +28,8 @@ import {
   cmdDeleteArea,
   cmdResetNode,
   cmdSetEditTarget,
+  cmdSetSnapMask,
+  SNAP,
   cmdDeleteFreePoint,
   cmdRemoveUnusedPoints,
   cmdSetHoveredPoint,
@@ -47,7 +49,7 @@ import {
 } from "../hooks/usePinnedStyles";
 import { registerSegmentAnchor, setAnchorExpanded, segKey, areaKey } from "../hooks/positionRegistry";
 import { useConfirm, useKeyedConfirm, Confirm } from "../hooks/useConfirm";
-import { ChevronRight, Eye, EyeOff, Trash, Cycle } from "../components/icons";
+import { ChevronRight, Eye, EyeOff, Trash, Cycle, SnapAll, SnapExisting, SnapAngle, SnapSide, SnapGuides, SnapLength } from "../components/icons";
 import { LineStylePreview, AreaStylePreview, isG87LineStyle } from "../components/stylePreviews";
 import { Dropdown, DropdownOption } from "../components/Dropdown";
 import { TooltipProvider, Tooltip } from "../components/Tooltip";
@@ -75,6 +77,8 @@ import {
   ModeBtn,
   DraftBox,
   DraftHint,
+  SnapRow,
+  SnapLabel,
   FieldRow,
   FieldLabel,
   SectionTitle,
@@ -716,6 +720,7 @@ const ILMPanelInner = () => {
                 </ModeBtn>
               </Tooltip>
             </ModeRow>
+            {state.lineMode !== LINE_MODE.Points && <SnapBar mask={state.snapMask} />}
             {/* Edit mode draws nothing new, so the style for the next line doesn't apply. */}
             {!editMode && (
               <FieldRow>
@@ -770,6 +775,7 @@ const ILMPanelInner = () => {
                 </ModeBtn>
               </Tooltip>
             </ModeRow>
+            <SnapBar mask={state.snapMask} />
             {inAreaMode ? (
               <>
                 <FieldRow>
@@ -818,6 +824,7 @@ const ILMPanelInner = () => {
         {shownTab === "points" && (
           <>
             <PanelHint>{t("points.hint")}</PanelHint>
+            <SnapBar mask={state.snapMask} />
             <SectionTitle>{`${t("section.points")} · ${state.points.length}`}</SectionTitle>
             {state.points.length === 0 ? (
               <PanelHint>{t("points.empty")}</PanelHint>
@@ -1028,6 +1035,38 @@ const AreaRow = ({
         )}
       </LineBody>
     </LineRowOuter>
+  );
+};
+
+// The snap bar, after the game's own snap options: "All" turns every option on, or all off
+// when they are all on already; the others toggle one option each. Kept in the settings.
+const SNAP_BUTTONS: { bit: number; key: StringKey; Icon: (p: { size?: number }) => JSX.Element }[] = [
+  { bit: SNAP.Existing, key: "snap.existing", Icon: SnapExisting },
+  { bit: SNAP.Angle, key: "snap.angle", Icon: SnapAngle },
+  { bit: SNAP.RoadSide, key: "snap.side", Icon: SnapSide },
+  { bit: SNAP.Guides, key: "snap.guides", Icon: SnapGuides },
+  { bit: SNAP.Length, key: "snap.length", Icon: SnapLength },
+];
+
+const SnapBar = ({ mask }: { mask: number }) => {
+  const t = useT();
+  const allOn = (mask & SNAP.All) === SNAP.All;
+  return (
+    <SnapRow>
+      <SnapLabel>{t("snap.label")}</SnapLabel>
+      <Tooltip content={allOn ? t("snap.all.off") : t("snap.all.on")}>
+        <IconToggleBtn $active={allOn} onClick={() => cmdSetSnapMask(allOn ? 0 : SNAP.All)}>
+          <SnapAll size={14} />
+        </IconToggleBtn>
+      </Tooltip>
+      {SNAP_BUTTONS.map(({ bit, key, Icon }) => (
+        <Tooltip key={bit} content={t(key)}>
+          <IconToggleBtn $active={(mask & bit) !== 0} onClick={() => cmdSetSnapMask(mask ^ bit)}>
+            <Icon size={14} />
+          </IconToggleBtn>
+        </Tooltip>
+      ))}
+    </SnapRow>
   );
 };
 

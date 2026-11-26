@@ -693,3 +693,23 @@ export const Btn = styled.button<{ $danger?: boolean; $full?: boolean }>`
     border-color: ${(p) => (p.$danger ? T.colorDanger : T.colorBorderMid)};
   }
 `;
+
+// The snap bar: square toggle buttons in a row, like the game's own snap options.
+export const SnapRow = styled.div`
+  display: flex;
+  align-items: center;
+  margin: ${T.space2} 0 0;
+
+  > * {
+    margin-right: ${T.space1};
+  }
+  > *:last-child {
+    margin-right: 0;
+  }
+`;
+
+export const SnapLabel = styled.span`
+  flex: 1;
+  font-size: ${T.fontSizeSm};
+  color: ${T.colorTextMuted};
+`;

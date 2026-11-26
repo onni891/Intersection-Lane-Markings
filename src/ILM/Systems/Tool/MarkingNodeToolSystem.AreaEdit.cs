@@ -93,7 +93,7 @@ namespace ILM.Systems.Tool
 
             int n = _editAreaVerts.Count;
             var drag = Dragging;
-            if (drag == DragKind.AreaVertex && _dragIndex >= 0 && _dragIndex < n) _editAreaPos[_dragIndex] = _cursorWorldPos;
+            if (drag == DragKind.AreaVertex && _dragIndex >= 0 && _dragIndex < n) _editAreaPos[_dragIndex] = _placePos;
             for (int i = 0; i < n; i++)
             {
                 int j = (i + 1) % n;
@@ -103,8 +103,8 @@ namespace ILM.Systems.Tool
                 if (drag == DragKind.AreaVertex && (i == _dragIndex || j == _dragIndex) && from.edgeToNext == AreaEdgeKind.LineBezier)
                     from.edgeToNext = AreaEdgeKind.Straight;
                 var bez = MarkingAreaTopologySystem.EdgeCurve(from, _editAreaVerts[j], _editAreaPos[i], _editAreaPos[j], _endpoints, lines);
-                if (i == _dragIndex && drag == DragKind.AreaHandleA) bez.b = _cursorWorldPos;
-                if (i == _dragIndex && drag == DragKind.AreaHandleB) bez.c = _cursorWorldPos;
+                if (i == _dragIndex && drag == DragKind.AreaHandleA) bez.b = _placePos;
+                if (i == _dragIndex && drag == DragKind.AreaHandleB) bez.c = _placePos;
                 _editAreaEdges.Add(bez);
             }
         }
@@ -120,8 +120,8 @@ namespace ILM.Systems.Tool
             if (kind == DragKind.AreaHandleA || kind == DragKind.AreaHandleB)
             {
                 var e = _editAreaEdges[index];
-                var c1 = kind == DragKind.AreaHandleA ? _cursorWorldPos : e.b;
-                var c2 = kind == DragKind.AreaHandleB ? _cursorWorldPos : e.c;
+                var c1 = kind == DragKind.AreaHandleA ? _placePos : e.b;
+                var c2 = kind == DragKind.AreaHandleB ? _placePos : e.c;
                 AreaEdits.SetEdgeCurve(EntityManager, _selectedNode, _editArea, index, e.a, c1, c2, e.d);
                 log.Debug($"tool: area#{_editArea} edge {index} reshaped");
                 return;
@@ -132,12 +132,12 @@ namespace ILM.Systems.Tool
             var v = _editAreaVerts[index];
             if (IsFreeVertex(v))
             {
-                MarkingEdits.MoveFreePoint(EntityManager, _selectedNode, v.refEdgeA, v.refGap, _cursorWorldPos);
+                MarkingEdits.MoveFreePoint(EntityManager, _selectedNode, v.refEdgeA, v.refGap, _placePos);
                 RefreshEndpoints();
                 log.Debug($"tool: area#{_editArea} vertex {index} (free point) moved");
                 return;
             }
-            var target = FindHoveredAreaCandidate(_cursorWorldPos);
+            var target = FindHoveredAreaCandidate(_placePos);
             MarkingAreaVertex anchor;
             if (target.IsValid && TryGetAreaAnchorPos(target, out var tpos))
             {
@@ -145,7 +145,7 @@ namespace ILM.Systems.Tool
             }
             else
             {
-                int idx = PlaceFreePoint(_cursorWorldPos);
+                int idx = PlaceFreePoint(_placePos);
                 if (idx < 0) { log.Debug("tool: area vertex dropped off the road, not moved"); return; }
                 anchor = AreaEdits.EndpointVertex(_endpoints[idx]);
             }

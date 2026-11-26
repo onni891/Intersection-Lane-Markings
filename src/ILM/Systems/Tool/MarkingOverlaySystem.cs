@@ -94,6 +94,7 @@ namespace ILM.Systems.Tool
         private void Draw(OverlayRenderSystem.Buffer buf)
         {
             DrawHasPairsRings(buf, _tool.SelectedNode);
+            DrawSnap(buf);
 
             // Only before a node is selected; after that the dots show where the user is.
             if (_tool.ToolState == MarkingToolState.Default && _tool.HoveredNode != Entity.Null)
@@ -156,7 +157,7 @@ namespace ILM.Systems.Tool
                 && (_tool.ToolState == MarkingToolState.NodeSelected || _tool.ToolState == MarkingToolState.SourceSelected)
                 && math.lengthsq(_tool.CursorWorldPos) > 0f)
             {
-                DrawDot(buf, _tool.CursorWorldPos, kDotDiameter, WithAlpha(kColFreePoint, 0.25f), kColFreePoint, kDotOutlineWidth);
+                DrawDot(buf, _tool.PlacePos, kDotDiameter, WithAlpha(kColFreePoint, 0.25f), kColFreePoint, kDotOutlineWidth);
             }
 
             // Corner anchors. Not clickable in line mode (only area mode uses them), so they are
@@ -252,7 +253,7 @@ namespace ILM.Systems.Tool
             else
             {
                 // No dot hovered: straight line to the cursor's terrain hit.
-                float3 to = _tool.CursorWorldPos;
+                float3 to = _tool.PlacePos;
                 if (math.lengthsq(to - src.position) > kMinPreviewLengthSq)
                     buf.DrawLine(kColPreviewCurve, new Line3.Segment(src.position, to), kPreviewCurveWidth);
             }
@@ -435,7 +436,7 @@ namespace ILM.Systems.Tool
                     DrawDot(buf, ep.position, kEditFreePointDiameter, kColFreePoint, kColDotOutline, kDotOutlineWidth);
             }
             if (draggingPoint)
-                DrawDot(buf, _tool.CursorWorldPos, kDotDiameterHover * 1.1f, kColFreePoint, kColDotOutline, kDotOutlineWidthHover);
+                DrawDot(buf, _tool.PlacePos, kDotDiameterHover * 1.1f, kColFreePoint, kColDotOutline, kDotOutlineWidthHover);
         }
 
         /// <summary>Curve handles of the open line: a stem from each end to its control point
@@ -451,6 +452,43 @@ namespace ILM.Systems.Tool
             buf.DrawLine(kColHandleStem, new Line3.Segment(c.d, c.c), kHandleStemWidth);
             DrawHandleDot(buf, c.b, kHandleDotDiameter, IsHover(MarkingNodeToolSystem.EditHoverKind.LineHandleA, _tool.EditLine));
             DrawHandleDot(buf, c.c, kHandleDotDiameter, IsHover(MarkingNodeToolSystem.EditHoverKind.LineHandleB, _tool.EditLine));
+        }
+
+        /// <summary>What the snap followed: guide and angle lines (only the stretch around
+        /// the snapped spot), or the kerb or marking line it slid along, plus a ring on the
+        /// snapped spot.</summary>
+        private void DrawSnap(OverlayRenderSystem.Buffer buf)
+        {
+            if (_tool.CurrentSnap == MarkingNodeToolSystem.SnapKind.None) return;
+            var p = _tool.PlacePos;
+            var guides = _tool.SnapGuides;
+            for (int g = 0; g < guides.Count; g++)
+            {
+                var poly = guides[g];
+                if (poly.Length == 2)
+                {
+                    float3 a = poly[0], b = poly[1];
+                    float3 dir = b - a;
+                    dir.y = 0f;
+                    float len = math.length(dir);
+                    if (len < 1e-3f) continue;
+                    dir /= len;
+                    // Long guide lines are cut to the stretch around the snapped spot.
+                    if (len > 2f * kSnapGuideShowHalfLength)
+                    {
+                        float along = math.dot(p - a, dir);
+                        float lo = math.max(0f, along - kSnapGuideShowHalfLength), hi = math.min(len, along + kSnapGuideShowHalfLength);
+                        b = a + dir * hi;
+                        a += dir * lo;
+                    }
+                    a.y = b.y = p.y;
+                    buf.DrawLine(kColSnapGuide, new Line3.Segment(a, b), kSnapGuideWidth);
+                    continue;
+                }
+                for (int i = 1; i < poly.Length; i++)
+                    buf.DrawLine(kColSnapGuide, new Line3.Segment(poly[i - 1], poly[i]), kSnapGuideWidth);
+            }
+            DrawDot(buf, p, kSnapRingDiameter, kColTransparent, kColSnapGuide, kSnapRingWidth);
         }
 
         private bool IsHover(MarkingNodeToolSystem.EditHoverKind kind, int index)
@@ -510,7 +548,7 @@ namespace ILM.Systems.Tool
                 DrawAreaCandidateNear(buf, crossings[i].position, cursor, cursorValid);
             // Nothing to snap to: a ghost dot shows where the click will place a point.
             if (!hover.IsValid && cursorValid)
-                DrawDot(buf, cursor, kDotDiameter, WithAlpha(kColFreePoint, 0.25f), kColFreePoint, kDotOutlineWidth);
+                DrawDot(buf, _tool.PlacePos, kDotDiameter, WithAlpha(kColFreePoint, 0.25f), kColFreePoint, kDotOutlineWidth);
 
             // 2. Contour through the placed vertices. Edges that follow a line come back sampled
             //    along it, so the preview shows the arc the committed area will follow.
@@ -538,7 +576,7 @@ namespace ILM.Systems.Tool
                 }
                 else
                 {
-                    targetPos = cursor;
+                    targetPos = _tool.PlacePos;
                 }
                 if (math.lengthsq(targetPos - lastPos) > kMinPreviewLengthSq)
                 {

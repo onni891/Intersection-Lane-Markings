@@ -125,6 +125,7 @@ New since Town Road Lane:
 - **New area drawing**: click anywhere on the road to place corners (they snap to nearby dots), then shape the area in Edit mode: drag corners, curve each side with handles, + adds a corner, right-click removes one.
 - **Point removal**: right-click a free point in any mode; areas using it only lose that corner instead of being deleted.
 - **Points tab**: a list of every free point you placed, with what uses it; hover a row to find the point on the road, remove points one by one or all unused ones at once. Points are dragged there without touching lines or areas.
+- **Snapping** with a snap bar like the game's: All, existing geometry, 90°, road side, guide lines and 0.5 m length steps, each on its own toggle. Works in free draw, area drawing and while dragging.
 - **More anchor points**: lane centre points and extra setback rows at 4 m and 16 m (both optional in Options, on by default).
 - **New panel** in the game's own style: Lines / Areas / Points / Advanced tabs, a scrolling body, a three-way mode switch, and new lines and areas open automatically. Area drawing continues after closing an area.
 - Fixed a log flood in segment emission; the log level is now set explicitly (Debug only with VerboseLogging).
@@ -136,6 +137,7 @@ New since Town Road Lane:
 - **Новое рисование областей**: кликайте в любом месте дороги, чтобы ставить углы (рядом с точками они притягиваются), затем меняйте форму в «Правке»: тяните углы, изгибайте стороны ручками, + добавляет угол, ПКМ удаляет.
 - **Удаление точек**: правый клик по свободной точке в любом режиме; области с ней теряют только этот угол, а не удаляются целиком.
 - **Вкладка «Точки»**: список всех ваших свободных точек и того, что их использует; наведите на строку, чтобы найти точку на дороге, удаляйте точки по одной или все неиспользуемые сразу. Там точки перетаскиваются, не задевая линии и области.
+- **Привязка** с панелью как в игре: «Все», существующая геометрия, 90°, край дороги, направляющие и шаг длины 0,5 м, каждая включается отдельно. Работает в свободном рисовании, при рисовании областей и при перетаскивании.
 - **Больше точек-якорей**: центры полос и ряды за 4 м и 16 м (опционально, включено по умолчанию).
 - **Новая панель** в стиле игры: вкладки «Линии» / «Области» / «Точки» / «Ещё», прокрутка, переключатель режима; новые линии и области раскрываются сами, рисование областей продолжается после замыкания.
 - Исправлен поток сообщений в логе при выводе сегментов.

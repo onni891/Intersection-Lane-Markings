@@ -99,6 +99,7 @@ namespace ILM.Systems.UI
             CreateTrigger<int>("SetEditArea", OnSetEditArea);
             CreateTrigger<int>("SetEditLine", OnSetEditLine);
             CreateTrigger<int>("SetEditTarget", OnSetEditTarget);
+            CreateTrigger<int>("SetSnapMask", OnSetSnapMask);
             CreateTrigger<int>("DeleteFreePoint", OnDeleteFreePoint);
             CreateTrigger("RemoveUnusedPoints", OnRemoveUnusedPoints);
             CreateTrigger<int>("SetHoveredPoint", OnSetHoveredPoint);
@@ -173,6 +174,7 @@ namespace ILM.Systems.UI
             h.Add((int)_tool.Mode);
             h.Add(_tool.EditArea);
             h.Add((int)_tool.CurrentEditTarget);
+            h.Add((int)_tool.Snap);
             h.Add(_tool.HoveredFreePointId);
             HashFreePoints(ref h, node);
 
@@ -248,6 +250,7 @@ namespace ILM.Systems.UI
                 lineMode = (int)_tool.Mode,
                 editArea = _tool.EditArea,
                 editTarget = (int)_tool.CurrentEditTarget,
+                snapMask = (int)_tool.Snap,
                 hoveredPointInGame = _tool.HoveredFreePointId,
                 points = BuildFreePoints(node),
                 selectedIsRoad = node != Entity.Null && _tool.SelectedIsRoad,

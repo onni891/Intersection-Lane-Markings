@@ -37,6 +37,9 @@ namespace ILM.Systems.UI
         public int freePointCount;
         // MarkingNodeToolSystem.EditTarget, set by the panel tab: 0 lines, 1 areas, 2 points.
         public int editTarget;
+        // MarkingNodeToolSystem.SnapFlags: 1 existing geometry, 2 90 degrees, 4 road side,
+        // 8 guide lines, 16 length.
+        public int snapMask;
         // Free point id under the cursor in the world, -1 for none.
         public int hoveredPointInGame = -1;
         public FreePointVM[] points = Array.Empty<FreePointVM>();

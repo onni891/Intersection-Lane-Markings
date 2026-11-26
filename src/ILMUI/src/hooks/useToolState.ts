@@ -106,6 +106,8 @@ export interface ToolStateVM {
   freePointCount: number;
   // EDIT_TARGET value.
   editTarget: number;
+  // SNAP bits that are on.
+  snapMask: number;
   // Free point id under the cursor in the world, -1 for none.
   hoveredPointInGame: number;
   points: FreePointVM[];
@@ -131,6 +133,7 @@ const EMPTY: ToolStateVM = {
   selectedIsRoad: false,
   freePointCount: 0,
   editTarget: 0,
+  snapMask: 31,
   hoveredPointInGame: -1,
   points: [],
   lines: [],
@@ -297,4 +300,19 @@ export const cmdSetHoveredPoint = (id: number) => {
 // Clears only while that point is still the hovered one (see cmdClearHoveredArea).
 export const cmdClearHoveredPoint = (id: number) => {
   trigger(BINDING_GROUP, "ClearHoveredPoint", id);
+};
+
+// Mirrors MarkingNodeToolSystem.SnapFlags.
+export const SNAP = {
+  Existing: 1,
+  Angle: 2,
+  RoadSide: 4,
+  Guides: 8,
+  Length: 16,
+  All: 31,
+} as const;
+
+// The snap bar: which snap options are on (SNAP bits). Kept in the mod settings.
+export const cmdSetSnapMask = (mask: number) => {
+  trigger(BINDING_GROUP, "SetSnapMask", mask);
 };

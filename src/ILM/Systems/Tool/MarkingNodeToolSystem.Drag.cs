@@ -26,6 +26,7 @@ namespace ILM.Systems.Tool
         private DragKind _drag;
         private bool _dragMoved;
         private float3 _dragStart;
+        private float3 _dragOrigin;
         private MarkingEndpoint _dragPoint;
 
         /// <summary>Line open for editing (its handles are shown in edit mode), -1 for none.</summary>
@@ -51,8 +52,8 @@ namespace ILM.Systems.Tool
             var line = lines[_editLine];
             if (!MarkingCurveBuilder.TryFindEndpoints(_endpoints, line, out var src, out var dst)) return false;
             curve = MarkingCurveBuilder.BuildLine(src, dst, line);
-            if (_dragMoved && _drag == DragKind.HandleA) curve.b = _cursorWorldPos;
-            if (_dragMoved && _drag == DragKind.HandleB) curve.c = _cursorWorldPos;
+            if (_dragMoved && _drag == DragKind.HandleA) curve.b = _placePos;
+            if (_dragMoved && _drag == DragKind.HandleB) curve.c = _placePos;
             return true;
         }
 
@@ -99,6 +100,8 @@ namespace ILM.Systems.Tool
                     break;
             }
             if (_drag == DragKind.None) return false;
+            // Where the dragged vertex was, so snapping never pulls it back onto itself.
+            _dragOrigin = _drag == DragKind.AreaVertex && hi >= 0 && hi < _editAreaPos.Count ? _editAreaPos[hi] : _cursorWorldPos;
             _dragStart = _cursorWorldPos;
             _dragMoved = false;
             return true;
@@ -108,7 +111,7 @@ namespace ILM.Systems.Tool
         {
             if (kind == DragKind.FreePoint)
             {
-                bool ok = MarkingEdits.MoveFreePoint(EntityManager, _selectedNode, _dragPoint.edge, _dragPoint.gapIndex, _cursorWorldPos);
+                bool ok = MarkingEdits.MoveFreePoint(EntityManager, _selectedNode, _dragPoint.edge, _dragPoint.gapIndex, _placePos);
                 RefreshEndpoints();
                 log.Debug($"tool: free point gap={_dragPoint.gapIndex} {(ok ? "moved" : "not moved (dropped off the road)")}");
                 return;
@@ -127,8 +130,8 @@ namespace ILM.Systems.Tool
                 line.handleB = auto.c - dst.position;
                 line.hasHandles = true;
             }
-            if (kind == DragKind.HandleA) line.handleA = _cursorWorldPos - src.position;
-            else line.handleB = _cursorWorldPos - dst.position;
+            if (kind == DragKind.HandleA) line.handleA = _placePos - src.position;
+            else line.handleB = _placePos - dst.position;
             lines[_editLine] = line;
             EntityManager.MarkUpdated(_selectedNode);
             log.Debug($"tool: line#{_editLine} handle {(kind == DragKind.HandleA ? "A" : "B")} moved");

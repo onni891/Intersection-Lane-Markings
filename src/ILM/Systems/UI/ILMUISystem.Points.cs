@@ -86,6 +86,9 @@ namespace ILM.Systems.UI
             _tool.SetEditTarget((MarkingNodeToolSystem.EditTarget)target);
         }
 
+        /// <summary>The snap bar: which snap options are on (SnapFlags bits).</summary>
+        private void OnSetSnapMask(int mask) => _tool.SetSnap(mask);
+
         /// <summary>Removes the free point with its lines; areas only lose that corner.</summary>
         private void OnDeleteFreePoint(int id)
         {

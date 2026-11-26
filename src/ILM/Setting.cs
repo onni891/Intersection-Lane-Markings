@@ -217,6 +217,11 @@ namespace ILM
         [SettingsUIHidden]
         public string PinnedAreaStylesCsv { get; set; } = "";
 
+        // Snap options of the marking tool (MarkingNodeToolSystem.SnapFlags), set from the
+        // panel's snap bar. All on by default.
+        [SettingsUIHidden]
+        public int SnapMask { get; set; } = 31;
+
         // Per-action tool, panel and rebuild messages at Debug level, for bug reports. Hidden from
         // the options screen; to enable, set "VerboseLogging": true in ILM.coc and
         // restart the game.
@@ -248,6 +253,7 @@ namespace ILM
             SegmentHitClusterM = MarkingTopologySystem.kDefaultHitClusterM;
             PinnedLineStylesCsv = "";
             PinnedAreaStylesCsv = "";
+            SnapMask = 31;
             VerboseLogging = false;
 #if DEBUG
             DiagnosticDumps = false;

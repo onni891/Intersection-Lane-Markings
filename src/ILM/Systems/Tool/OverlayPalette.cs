@@ -27,6 +27,14 @@ namespace ILM.Systems.Tool
         public const float kPreviewCurveWidth = 0.10f;
         public static readonly Color kColPreviewCurve = new Color(1.00f, 1.00f, 1.00f, 0.55f);
 
+        // Snapping: what the snap followed (guide lines, the snapped kerb or line) and a ring
+        // on the snapped spot, in the game's guide-line blue.
+        public const float kSnapGuideWidth = 0.07f;
+        public const float kSnapGuideShowHalfLength = 14f;
+        public static readonly Color kColSnapGuide = new Color(0.35f, 0.75f, 1.00f, 0.70f);
+        public const float kSnapRingDiameter = 1.0f;
+        public const float kSnapRingWidth = 0.10f;
+
         // Endpoint dots. Each road approach gets its own colour so the user can tell which dots
         // belong to which approach. A free dot is a hollow ring; a dot that anchors at least one
         // MarkingLine is filled and gets a small white core.
