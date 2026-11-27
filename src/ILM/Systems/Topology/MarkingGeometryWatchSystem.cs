@@ -16,7 +16,7 @@ namespace ILM.Systems.Topology
     /// Makes markings follow their road when it moves or is reshaped (Move It, the road tools).
     ///
     /// The topology systems only rebuild when the marking data changes, so after a road moved
-    /// the line crossings and the area fills stayed where they were (lines and crosswalks
+    /// the line crossings and the area fills stayed where they were (the lines
     /// themselves are respawned from the current geometry). This system runs after the game has
     /// rebuilt road geometry, looks at every updated node and road, and when the geometry of a
     /// marking owner really changed it clears the owner's topology hashes. The next tick then

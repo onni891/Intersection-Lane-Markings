@@ -20,11 +20,10 @@ Click any intersection — or the middle of a road — and draw your own marking
 - **Snapping** like the game's own snap options — a snap bar with **All**, **existing geometry** (dots, kerb corners, line crossings, your lines), **90°** (along or across the road, or square to the previous segment), **road side** (the kerb), **guide lines** (lane lines continued straight, and lines along and across the road through your points) and **length** (0.5 m steps). Each one turns on and off on its own; where two cross, the point snaps to the crossing. Works in free draw, area drawing and when dragging points, corners and handles.
 - **Hide vanilla markings** per intersection to start from a clean slate.
 - **Pin favourite styles** — star any entry in a style dropdown to keep it at the top of every list.
-- **Crosswalks** — pick the Crossings tool and click a road: a crosswalk goes across it from kerb to kerb. Styles: zebra, ladder (zebra with borders), two lines and thin-bar zebra, drawn from G87 wide-line decals, so any width from 1 to 12 m works. In Edit, drag its end points, drag the blue side handles to change the width, or slide it along the road with the middle handle; right-click removes it.
 - **Wide lines** (30 cm and 60 cm) as line styles, for stop lines.
 - **Undo / redo** — `Ctrl+Z` / `Ctrl+Y` or the panel buttons, per junction or road, for every edit (tool and panel).
-- **Move It support** — lines, line crossings, area fills and crosswalks follow a road that is moved or reshaped with Move It or the road tools.
-- **In-game panel** in the game's own style: a tool strip (Lines, Areas, Crossings, Points) with undo, redo and advanced settings beside it, one Draw / Edit switch for all tools, and below it only the chosen tool's options and list. Hotkeys: `Ctrl+M` toggle tool, `Y` cycle line style, `A` area mode, `U` cycle area fill, `F` free draw, `Ctrl+Z` / `Ctrl+Y` undo / redo.
+- **Move It support** — lines, line crossings and area fills follow a road that is moved or reshaped with Move It or the road tools.
+- **In-game panel** in the game's own style: three tabs (**Lines**, **Areas**, **Points**) pick what you work on; below them, option rows like the game's tool options (**Mode** Draw / Edit, **Place on** Dots / Anywhere, **Style** or **Fill**, **Snapping**), a help card with the next step and the mouse controls, and the list. Junction settings fold away at the bottom; undo / redo sit in the footer. Hotkeys: `Ctrl+M` toggle tool, `Y` cycle line style, `A` area mode, `U` cycle area fill, `F` draw anywhere, `Ctrl+Z` / `Ctrl+Y` undo / redo.
 
 ![Area mode: outlining a traffic island between anchor dots](src/ILM/Properties/Screenshots/ILM_a3fa8fbf.jpg)
 

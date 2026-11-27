@@ -121,7 +121,7 @@ namespace ILM.Systems.Prefabs
             new() { style = MarkingStyle.YellowDoubleSolid, isNA = true,  sourcePrefabName = "NA Car Bay Line",      cloneName = "ILM NA City Yellow Double Solid Line", fallbackMesh = "Yellow Double Solid Line Mesh",        hostOnCityLanes = false },
             new() { style = MarkingStyle.YellowSolidDashed, isNA = false, sourcePrefabName = "EU Car Bay Line",      cloneName = "ILM EU City Yellow Solid Dashed Line", fallbackMesh = "Yellow Solid Dashed Line Mesh - Long", hostOnCityLanes = false },
             new() { style = MarkingStyle.YellowSolidDashed, isNA = true,  sourcePrefabName = "NA Car Bay Line",      cloneName = "ILM NA City Yellow Solid Dashed Line", fallbackMesh = "Yellow Solid Dashed Line Mesh - Long", hostOnCityLanes = false },
-            // G87 wide lines, from Car Bay Line like the other G87 styles. Also the crosswalk bars.
+            // G87 wide lines, from Car Bay Line like the other G87 styles.
             new() { style = MarkingStyle.Wide30, isNA = false, sourcePrefabName = "EU Car Bay Line", cloneName = "ILM EU City Wide 30 Line", fallbackMesh = kG87Wide30Mesh, hostOnCityLanes = false },
             new() { style = MarkingStyle.Wide30, isNA = true,  sourcePrefabName = "NA Car Bay Line", cloneName = "ILM NA City Wide 30 Line", fallbackMesh = kG87Wide30Mesh, hostOnCityLanes = false },
             new() { style = MarkingStyle.Wide60, isNA = false, sourcePrefabName = "EU Car Bay Line", cloneName = "ILM EU City Wide 60 Line", fallbackMesh = kG87Wide60Mesh, hostOnCityLanes = false },

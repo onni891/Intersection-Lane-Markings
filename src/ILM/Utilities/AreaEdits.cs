@@ -170,12 +170,6 @@ namespace ILM.Utilities
         /// <summary>True when any line or area of the node uses the free point.</summary>
         public static bool IsFreePointUsed(EntityManager em, Entity node, Entity edge, int gapIndex)
         {
-            if (em.HasBuffer<MarkingCrosswalk>(node))
-            {
-                var cws = em.GetBuffer<MarkingCrosswalk>(node, isReadOnly: true);
-                for (int i = 0; i < cws.Length; i++)
-                    if (cws[i].Uses(edge, gapIndex)) return true;
-            }
             if (em.HasBuffer<MarkingLine>(node))
             {
                 var lines = em.GetBuffer<MarkingLine>(node, isReadOnly: true);

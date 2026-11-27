@@ -30,18 +30,8 @@ import {
   cmdSetEditTarget,
   cmdSetSnapMask,
   SNAP,
-  cmdSetCurrentCrosswalkStyle,
-  cmdSetCurrentCrosswalkWidth,
-  cmdSetCrosswalkStyle,
-  cmdSetCrosswalkWidth,
-  cmdDeleteCrosswalk,
-  cmdSetEditCrosswalk,
-  cmdSetHoveredCrosswalk,
-  cmdClearHoveredCrosswalk,
   cmdUndo,
   cmdRedo,
-  CROSSWALK_STYLES,
-  CrosswalkVM,
   cmdDeleteFreePoint,
   cmdRemoveUnusedPoints,
   cmdSetHoveredPoint,
@@ -61,7 +51,28 @@ import {
 } from "../hooks/usePinnedStyles";
 import { registerSegmentAnchor, setAnchorExpanded, segKey, areaKey } from "../hooks/positionRegistry";
 import { useConfirm, useKeyedConfirm, Confirm } from "../hooks/useConfirm";
-import { ChevronRight, Eye, EyeOff, Trash, Cycle, SnapAll, SnapExisting, SnapAngle, SnapSide, SnapGuides, SnapLength, ToolLines, ToolAreas, ToolCrosswalks, ToolPoints, Undo, Redo, Gear } from "../components/icons";
+import {
+  ChevronRight,
+  Eye,
+  EyeOff,
+  Trash,
+  Cycle,
+  SnapAll,
+  SnapExisting,
+  SnapAngle,
+  SnapSide,
+  SnapGuides,
+  SnapLength,
+  ToolLines,
+  ToolAreas,
+  ToolPoints,
+  Undo,
+  Redo,
+  Pencil,
+  Cursor,
+  SnapDots,
+  Anywhere,
+} from "../components/icons";
 import { LineStylePreview, AreaStylePreview, isG87LineStyle } from "../components/stylePreviews";
 import { Dropdown, DropdownOption } from "../components/Dropdown";
 import { TooltipProvider, Tooltip } from "../components/Tooltip";
@@ -73,31 +84,14 @@ import {
   WindowPosition,
   WindowBody,
   WindowFixed,
-  PanelStickyChrome,
   PanelTitle,
-  StatusRow,
-  StatusDot,
   ToggleRow,
   IconToggleBtn,
-  FoldoutHeader,
   NodeIdText,
   PanelHint,
   PanelList,
-  ModeRow,
-  ModeBtn,
-  DraftBox,
-  DraftHint,
-  SnapRow,
-  SnapLabel,
-  ToolStrip,
-  ToolBtn,
-  ToolLabel,
-  StripSide,
-  StripSideRow,
-  StripIconBtn,
   FieldRow,
   FieldLabel,
-  SectionTitle,
   HintsBox,
   HintRow,
   HintKey,
@@ -126,6 +120,27 @@ import {
   SegmentIndicator,
   Btn,
   ConfirmRow,
+  TabBar,
+  TabBtn,
+  Options,
+  OptionRow,
+  OptionLabel,
+  OptionControl,
+  Segmented,
+  SegBtn,
+  SnapBtn,
+  SnapDivider,
+  HelpCard,
+  HelpTitle,
+  HelpRow,
+  HelpKey,
+  ListHeader,
+  CountChip,
+  EmptyText,
+  Foldout,
+  FoldoutBtn,
+  Footer,
+  FooterBtn,
 } from "./panel.styles";
 
 // An exception inside the panel must not reach the game's React root, where it would take
@@ -423,18 +438,17 @@ const AreaPopover = ({ area }: { area: AreaVM }) => {
   );
 };
 
-// Hotkey list, on the Advanced tab and the "select a node" card.
+// Hotkey list, in the settings foldout and on the "select a junction" card.
 const HotkeysList = () => {
   const t = useT();
   return (
     <HintsBox>
       <HintRow><HintKey>Ctrl+M</HintKey><span>{t("hotkeys.toggle")}</span></HintRow>
-      <HintRow><HintKey>Y</HintKey><span>{t("hotkeys.cycleLine")}</span></HintRow>
-      <HintRow><HintKey>A</HintKey><span>{t("hotkeys.areaMode")}</span></HintRow>
-      <HintRow><HintKey>U</HintKey><span>{t("hotkeys.cycleArea")}</span></HintRow>
-      <HintRow><HintKey>F</HintKey><span>{t("hotkeys.freeDraw")}</span></HintRow>
       <HintRow><HintKey>Ctrl+Z</HintKey><span>{t("hotkeys.undo")}</span></HintRow>
-      <HintRow><HintKey>{t("hotkeys.rmb")}</HintKey><span>{t("hotkeys.rmb.desc")}</span></HintRow>
+      <HintRow><HintKey>Y</HintKey><span>{t("hotkeys.cycleLine")}</span></HintRow>
+      <HintRow><HintKey>U</HintKey><span>{t("hotkeys.cycleArea")}</span></HintRow>
+      <HintRow><HintKey>A</HintKey><span>{t("hotkeys.areaMode")}</span></HintRow>
+      <HintRow><HintKey>F</HintKey><span>{t("hotkeys.freeDraw")}</span></HintRow>
       <HintRow><HintKey>{t("hotkeys.esc")}</HintKey><span>{t("hotkeys.esc.desc")}</span></HintRow>
     </HintsBox>
   );
@@ -442,13 +456,12 @@ const HotkeysList = () => {
 
 // The game's own panel (cs2/ui): vanilla title bar, close button and blurred body, so the
 // tool window looks like the rest of the CS2 interface. Closing deactivates the tool.
-// `fixed` stays put above the scrolling body (tabs and status); the body scrolls with the
-// game's own Scrollable, which draws the vanilla scrollbar.
-const ILMWindow = ({ fixed, children }: { fixed?: ReactNode; children: ReactNode }) => {
+// `fixed` stays above the scrolling body (the tabs); `footer` sits under it.
+const ILMWindow = ({ fixed, footer, children }: { fixed?: ReactNode; footer?: ReactNode; children: ReactNode }) => {
   const t = useT();
   return (
     <WindowPosition>
-      <VanillaPanel header={t("panel.appTitle")} onClose={() => cmdActivateTool()}>
+      <VanillaPanel header={t("panel.appTitle")} onClose={() => cmdActivateTool()} footer={footer}>
         {fixed && <WindowFixed>{fixed}</WindowFixed>}
         <Scrollable vertical trackVisibility="scrollable" style={{ maxHeight: T.panelScrollMaxHeight }}>
           <WindowBody>{children}</WindowBody>
@@ -458,17 +471,77 @@ const ILMWindow = ({ fixed, children }: { fixed?: ReactNode; children: ReactNode
   );
 };
 
-type PanelTab = "lines" | "areas" | "crosswalks" | "points" | "advanced";
+type PanelTab = "lines" | "areas" | "points";
 
-// The next step for the user in the current tool state.
-const toolStatus = (
+type IconC = (p: { size?: number; color?: string }) => JSX.Element;
+
+const TABS: { id: PanelTab; key: StringKey; tip: StringKey; Icon: IconC }[] = [
+  { id: "lines", key: "tab.lines", tip: "tab.lines.tooltip", Icon: ToolLines },
+  { id: "areas", key: "tab.areas", tip: "tab.areas.tooltip", Icon: ToolAreas },
+  { id: "points", key: "tab.points", tip: "tab.points.tooltip", Icon: ToolPoints },
+];
+
+// One row of the option block: a label on the left, the control on the right.
+const Option = ({ label, tip, children }: { label: string; tip?: string; children: ReactNode }) => (
+  <OptionRow>
+    {tip ? (
+      <Tooltip content={tip}>
+        <OptionLabel>{label}</OptionLabel>
+      </Tooltip>
+    ) : (
+      <OptionLabel>{label}</OptionLabel>
+    )}
+    <OptionControl>{children}</OptionControl>
+  </OptionRow>
+);
+
+// A joined pair of buttons where exactly one is on.
+const Choice = ({
+  options,
+}: {
+  options: { active: boolean; label: string; tip: string; Icon: IconC; onClick: () => void }[];
+}) => (
+  <Segmented>
+    {options.map(({ active, label, tip, Icon, onClick }) => (
+      <Tooltip key={label} content={tip}>
+        <SegBtn $active={active} onClick={onClick}>
+          <Icon size={13} />
+          <span>{label}</span>
+        </SegBtn>
+      </Tooltip>
+    ))}
+  </Segmented>
+);
+
+// What to do next, and the mouse controls of the current mode.
+const Help = ({ title, rows }: { title: string; rows: [StringKey, StringKey][] }) => {
+  const t = useT();
+  return (
+    <HelpCard>
+      <HelpTitle>{title}</HelpTitle>
+      {rows.map(([key, text]) => (
+        <HelpRow key={text}>
+          <HelpKey>{t(key)}</HelpKey>
+          <span>{t(text)}</span>
+        </HelpRow>
+      ))}
+    </HelpCard>
+  );
+};
+
+const ListTitle = ({ label, count }: { label: string; count: number }) => (
+  <ListHeader>
+    <span>{label}</span>
+    <CountChip>{count}</CountChip>
+  </ListHeader>
+);
+
+// The next step for the user while working on lines.
+const lineStatus = (
   t: ReturnType<typeof useT>,
-  state: { toolState: number; areaVertexCount: number; freeDraw: boolean; lineMode: number },
+  state: { toolState: number; freeDraw: boolean; lineMode: number },
   lineOpen: boolean,
 ): string => {
-  if (state.toolState === TOOL_STATE.AreaSelecting) {
-    return t("status.area", { n: state.areaVertexCount });
-  }
   if (state.lineMode === LINE_MODE.Edit) {
     return lineOpen ? t("status.edit.open") : t("status.edit.pick");
   }
@@ -481,7 +554,6 @@ const toolStatus = (
   return t("status.line.first");
 };
 
-
 const ILMPanelInner = () => {
   const state = useToolState();
   const t = useT();
@@ -493,12 +565,11 @@ const ILMPanelInner = () => {
   // Line armed for deletion by the Delete key; a second press in time deletes it.
   // DeleteLineButton shows its confirm row while this matches its line.
   const keyDelete = useKeyedConfirm<number>();
-  // Folded lists keep only the header (with count) and the row that is expanded or hovered
-  // in the world, so a busy junction doesn't turn the panel into a wall. Kept across node
-  // switches on purpose.
   // Chosen tab. Area drawing is the C# AreaSelecting state, so the Areas tab follows it:
   // while drawing an area the Areas tab shows, and when drawing ends it falls back to Lines.
   const [tab, setTab] = useState<PanelTab>("lines");
+  // The settings foldout at the bottom of the body.
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   // The expanded rows react to changes pushed by C#. They are adjusted while rendering, on
   // the render that first sees the change, instead of in effects that would commit a frame
@@ -573,29 +644,12 @@ const ILMPanelInner = () => {
       ? EDIT_TARGET.Areas
       : tab === "points"
         ? EDIT_TARGET.Points
-        : tab === "crosswalks"
-          ? EDIT_TARGET.Crosswalks
-          : EDIT_TARGET.Lines;
+        : EDIT_TARGET.Lines;
   useEffect(() => {
     if (state.isActive) cmdSetEditTarget(editTarget);
   }, [editTarget, state.isActive, state.selectedNodeIndex]);
 
-  // Crosswalks: the expanded row follows a crosswalk placed or clicked in the world, and in
-  // edit mode the expanded one gets its handles on the road.
-  const [expandedCw, setExpandedCw] = useState<number>(-1);
-  const [seenCwTick, setSeenCwTick] = useState<number | null>(null);
-  if (state.lastCrosswalkTick !== seenCwTick) {
-    setSeenCwTick(state.lastCrosswalkTick);
-    if (seenCwTick !== null) setExpandedCw(state.lastCrosswalk);
-  }
-  if (expandedCw >= state.crosswalks.length && expandedCw !== -1) setExpandedCw(-1);
-  const handleCw = state.isActive && tab === "crosswalks" && state.lineMode === LINE_MODE.Edit ? expandedCw : -1;
-  useEffect(() => {
-    cmdSetEditCrosswalk(handleCw);
-  }, [handleCw, state.selectedNodeIndex]);
-
-  // The draw sub-mode for lines (snap to dots or free), kept while editing so Draw returns
-  // to it.
+  // The draw sub-mode for lines (dots or anywhere), kept while editing so Draw returns to it.
   const [lineDrawMode, setLineDrawMode] = useState<number>(LINE_MODE.Points);
   if (state.lineMode !== LINE_MODE.Edit && state.lineMode !== lineDrawMode) setLineDrawMode(state.lineMode);
 
@@ -660,6 +714,16 @@ const ILMPanelInner = () => {
 
   if (!state.isActive) return null;
 
+  // Nothing selected yet: one card that says how to start.
+  if (state.selectedNodeIndex < 0) {
+    return (
+      <ILMWindow>
+        <Help title={t("panel.hint.selectNode")} rows={[]} />
+        <HotkeysList />
+      </ILMWindow>
+    );
+  }
+
   const inAreaMode = state.toolState === TOOL_STATE.AreaSelecting;
   const editMode = state.lineMode === LINE_MODE.Edit;
   // The Areas tab is either drawing (the C# AreaSelecting state) or editing areas (edit mode).
@@ -673,155 +737,127 @@ const ILMPanelInner = () => {
     if (next === "areas" && !inAreaMode && !editMode) cmdToggleAreaMode();
     if (next !== "areas" && inAreaMode) cmdToggleAreaMode();
   };
-  // The Draw / Edit switch under the tool strip. It is one mode for every tool, so switching
-  // tools keeps you drawing or editing. Drawing areas is the C# area mode.
+  // Draw / Edit is one mode for Lines and Areas, so switching tabs keeps you drawing or
+  // editing. Drawing areas is the C# area mode.
   const setDraw = () => {
     if (editMode) cmdSetLineMode(lineDrawMode);
-    if (tab === "areas" && !inAreaMode) cmdToggleAreaMode();
+    if (shownTab === "areas" && !inAreaMode) cmdToggleAreaMode();
   };
   const setEdit = () => {
     if (inAreaMode) cmdToggleAreaMode();
     cmdSetLineMode(LINE_MODE.Edit);
   };
 
-  // No node selected yet: a short "how to start" card, so activating the tool gives
-  // visible feedback before the first node click.
-  if (state.selectedNodeIndex < 0) {
-    return (
-      <ILMWindow
-        fixed={
-          <StatusRow>
-            <StatusDot />
-            <span>{t("panel.hint.selectNode")}</span>
-          </StatusRow>
-        }
-      >
-        <HotkeysList />
-      </ILMWindow>
-    );
-  }
-
   const popoverLine =
     expandedLine >= 0 && expandedLine < state.lines.length ? state.lines[expandedLine] : null;
   const popoverArea = state.areas.find((a) => a.areaIndex === expandedArea) ?? null;
-
   const lineStyleOptions = makeLineStyleOptions(t, pinned.lineStyles);
-  const statusText =
-    shownTab === "advanced"
-      ? t("status.advanced")
-      : shownTab === "points"
-        ? t("status.points")
-      : shownTab === "crosswalks"
-        ? editMode
-          ? expandedCw >= 0 ? t("status.cw.open") : t("status.cw.pick")
-          : t("status.cw.place")
-      : shownTab === "areas" && editMode && !inAreaMode
-        ? popoverArea ? t("status.edit.area") : t("area.edit.pick")
-        : toolStatus(t, state, popoverLine !== null);
   const areaStyleOptions = makeAreaStyleOptions(t, pinned.areaStyles);
-  const crosswalkStyleOptions = makeCrosswalkStyleOptions(t);
 
-  // Tool strip: one button per kind of marking, then undo / redo and the advanced gear.
-  // Draw / Edit below it applies to the chosen tool; Points is always editing.
-  const tools: { id: PanelTab; key: StringKey; tip: StringKey; Icon: (p: { size?: number }) => JSX.Element }[] = [
-    { id: "lines", key: "tab.lines", tip: "tool.lines.tooltip", Icon: ToolLines },
-    { id: "areas", key: "tab.areas", tip: "tool.areas.tooltip", Icon: ToolAreas },
-    { id: "crosswalks", key: "tab.crosswalks", tip: "tool.crosswalks.tooltip", Icon: ToolCrosswalks },
-    { id: "points", key: "tab.points", tip: "tool.points.tooltip", Icon: ToolPoints },
-  ];
-  const showDrawEdit = shownTab !== "points" && shownTab !== "advanced";
   const drawing = shownTab === "areas" ? inAreaMode : !editMode;
+  const freeLines = state.lineMode === LINE_MODE.Free;
+
+  const modeChoice = (
+    <Option label={t("opt.mode")}>
+      <Choice
+        options={[
+          { active: drawing, label: t("opt.draw"), tip: t("opt.draw.tooltip"), Icon: Pencil, onClick: setDraw },
+          { active: !drawing, label: t("opt.edit"), tip: t("opt.edit.tooltip"), Icon: Cursor, onClick: setEdit },
+        ]}
+      />
+    </Option>
+  );
+
   const fixed = (
-    <>
-      <ToolStrip>
-        {tools.map(({ id, key, tip, Icon }) => (
-          <Tooltip key={id} content={t(tip)}>
-            <ToolBtn $active={shownTab === id} onClick={() => openTab(id)}>
-              <Icon size={18} />
-              <ToolLabel>{t(key)}</ToolLabel>
-            </ToolBtn>
-          </Tooltip>
-        ))}
-        <StripSide>
-          <StripSideRow>
-            <Tooltip content={t("undo.tooltip")}>
-              <StripIconBtn $disabled={!state.canUndo} onClick={() => state.canUndo && cmdUndo()}>
-                <Undo size={13} />
-              </StripIconBtn>
-            </Tooltip>
-            <Tooltip content={t("redo.tooltip")}>
-              <StripIconBtn $disabled={!state.canRedo} onClick={() => state.canRedo && cmdRedo()}>
-                <Redo size={13} />
-              </StripIconBtn>
-            </Tooltip>
-          </StripSideRow>
-          <StripSideRow>
-            <Tooltip content={t("tab.advanced")}>
-              <StripIconBtn $active={shownTab === "advanced"} onClick={() => openTab(shownTab === "advanced" ? "lines" : "advanced")}>
-                <Gear size={13} />
-              </StripIconBtn>
-            </Tooltip>
-          </StripSideRow>
-        </StripSide>
-      </ToolStrip>
-      {showDrawEdit && (
-        <ModeRow>
-          <Tooltip content={t("action.draw.tooltip")}>
-            <ModeBtn $active={drawing} onClick={setDraw}>{t("action.draw")}</ModeBtn>
-          </Tooltip>
-          <Tooltip content={t("action.edit.tooltip")}>
-            <ModeBtn $active={!drawing && editMode} onClick={setEdit}>{t("mode.edit")}</ModeBtn>
-          </Tooltip>
-        </ModeRow>
-      )}
-      <StatusRow>
-        <StatusDot />
-        <span>{statusText}</span>
-      </StatusRow>
-    </>
+    <TabBar>
+      {TABS.map(({ id, key, tip, Icon }) => (
+        <Tooltip key={id} content={t(tip)}>
+          <TabBtn $active={shownTab === id} onClick={() => openTab(id)}>
+            <Icon size={15} />
+            <span>{t(key)}</span>
+          </TabBtn>
+        </Tooltip>
+      ))}
+    </TabBar>
+  );
+
+  const footer = (
+    <Footer>
+      <span>
+        {state.selectedIsRoad
+          ? t("panel.title.road", { n: state.selectedNodeIndex })
+          : t("panel.title", { n: state.selectedNodeIndex })}
+      </span>
+      <Tooltip content={t("undo.tooltip")}>
+        <FooterBtn $disabled={!state.canUndo} onClick={() => state.canUndo && cmdUndo()}>
+          <Undo size={12} />
+          <span>{t("undo")}</span>
+        </FooterBtn>
+      </Tooltip>
+      <Tooltip content={t("redo.tooltip")}>
+        <FooterBtn $disabled={!state.canRedo} onClick={() => state.canRedo && cmdRedo()}>
+          <Redo size={12} />
+          <span>{t("redo")}</span>
+        </FooterBtn>
+      </Tooltip>
+    </Footer>
   );
 
   return (
     <>
-      <ILMWindow fixed={fixed}>
+      <ILMWindow fixed={fixed} footer={footer}>
         {shownTab === "lines" && (
           <>
-            {/* Drawing: snap to the road's dots, or place points anywhere. */}
-            {!editMode ? (
-              <ModeRow>
-                <Tooltip content={t("mode.lines.tooltip")}>
-                  <ModeBtn $active={state.lineMode === LINE_MODE.Points} onClick={() => cmdSetLineMode(LINE_MODE.Points)}>
-                    {t("mode.points")}
-                  </ModeBtn>
-                </Tooltip>
-                <Tooltip content={t("mode.free.tooltip")}>
-                  <ModeBtn $active={state.lineMode === LINE_MODE.Free} onClick={() => cmdSetLineMode(LINE_MODE.Free)}>
-                    {t("mode.free")}
-                  </ModeBtn>
-                </Tooltip>
-              </ModeRow>
-            ) : (
-              <PanelHint>{t("lines.edit.hint")}</PanelHint>
-            )}
-            {state.lineMode !== LINE_MODE.Points && <SnapBar mask={state.snapMask} />}
-            {/* Edit mode draws nothing new, so the style for the next line doesn't apply. */}
-            {!editMode && (
-              <FieldRow>
-                <Tooltip content={t("next.lineStyle.tooltip")}>
-                  <FieldLabel>{t("next.lineStyle")}</FieldLabel>
-                </Tooltip>
-                <Dropdown
-                  value={state.currentStyle as StyleValue}
-                  options={lineStyleOptions}
-                  onChange={(s) => cmdSetCurrentStyle(s)}
-                  onTogglePin={cmdTogglePinLineStyle}
-                />
-              </FieldRow>
-            )}
+            <Options>
+              {modeChoice}
+              {!editMode && (
+                <Option label={t("opt.place")}>
+                  <Choice
+                    options={[
+                      {
+                        active: !freeLines,
+                        label: t("opt.place.dots"),
+                        tip: t("opt.place.dots.tooltip"),
+                        Icon: SnapDots,
+                        onClick: () => cmdSetLineMode(LINE_MODE.Points),
+                      },
+                      {
+                        active: freeLines,
+                        label: t("opt.place.free"),
+                        tip: t("opt.place.free.tooltip"),
+                        Icon: Anywhere,
+                        onClick: () => cmdSetLineMode(LINE_MODE.Free),
+                      },
+                    ]}
+                  />
+                </Option>
+              )}
+              {!editMode && (
+                <Option label={t("opt.style")} tip={t("opt.style.tooltip")}>
+                  <Dropdown
+                    value={state.currentStyle as StyleValue}
+                    options={lineStyleOptions}
+                    onChange={(s) => cmdSetCurrentStyle(s)}
+                    onTogglePin={cmdTogglePinLineStyle}
+                  />
+                </Option>
+              )}
+              {(editMode || freeLines) && <SnapOption mask={state.snapMask} />}
+            </Options>
+            <Help
+              title={lineStatus(t, state, popoverLine !== null)}
+              rows={
+                editMode
+                  ? [["help.lmb", "help.lines.edit.lmb"], ["help.rmb", "help.lines.edit.rmb"], ["help.esc", "help.lines.edit.esc"]]
+                  : freeLines
+                    ? [["help.lmb", "help.lines.free.lmb"], ["help.rmb", "help.lines.free.rmb"], ["help.esc", "help.lines.free.esc"]]
+                    : [["help.lmb", "help.lines.dots.lmb"], ["help.esc", "help.lines.dots.esc"]]
+              }
+            />
 
-            <SectionTitle>{`${t("section.lines")} · ${state.lines.length}`}</SectionTitle>
+            <ListTitle label={t("section.lines")} count={state.lines.length} />
             {state.lines.length === 0 ? (
-              <PanelHint>{t("lines.empty")}</PanelHint>
+              <EmptyText>{t("lines.empty")}</EmptyText>
             ) : (
               <PanelList>
                 {state.lines.map((line) => (
@@ -845,33 +881,35 @@ const ILMPanelInner = () => {
 
         {shownTab === "areas" && (
           <>
-            <SnapBar mask={state.snapMask} />
-            {inAreaMode ? (
-              <>
-                <FieldRow>
-                  <Tooltip content={t("next.areaStyle.tooltip")}>
-                    <FieldLabel>{t("next.areaStyle")}</FieldLabel>
-                  </Tooltip>
+            <Options>
+              {modeChoice}
+              {inAreaMode && (
+                <Option label={t("opt.fill")} tip={t("opt.fill.tooltip")}>
                   <Dropdown
                     value={state.currentAreaStyle}
                     options={areaStyleOptions}
                     onChange={(s) => cmdSetCurrentAreaStyle(s)}
                     onTogglePin={cmdTogglePinAreaStyle}
                   />
-                </FieldRow>
-                <DraftBox>
-                  <DraftHint>{t("area.draft.hint.add")}</DraftHint>
-                  <DraftHint>{t("area.draft.hint.undo")}</DraftHint>
-                  <DraftHint>{t("area.draft.hint.close")}</DraftHint>
-                </DraftBox>
-              </>
+                </Option>
+              )}
+              <SnapOption mask={state.snapMask} />
+            </Options>
+            {inAreaMode ? (
+              <Help
+                title={t("status.area", { n: state.areaVertexCount })}
+                rows={[["help.lmb", "help.areas.draw.lmb"], ["help.rmb", "help.areas.draw.rmb"]]}
+              />
             ) : (
-              <PanelHint>{t("area.edit.hint")}</PanelHint>
+              <Help
+                title={popoverArea ? t("status.area.open") : t("status.area.pick")}
+                rows={[["help.lmb", "help.areas.edit.lmb"], ["help.rmb", "help.areas.edit.rmb"]]}
+              />
             )}
 
-            <SectionTitle>{`${t("section.areas")} · ${state.areas.length}`}</SectionTitle>
+            <ListTitle label={t("section.areas")} count={state.areas.length} />
             {state.areas.length === 0 ? (
-              <PanelHint>{t("areas.empty")}</PanelHint>
+              <EmptyText>{t("areas.empty")}</EmptyText>
             ) : (
               <PanelList>
                 {state.areas.map((area) => (
@@ -891,56 +929,18 @@ const ILMPanelInner = () => {
           </>
         )}
 
-        {shownTab === "crosswalks" && (
-          <>
-            {!editMode ? (
-              <>
-                <FieldRow>
-                  <FieldLabel>{t("cw.next.style")}</FieldLabel>
-                  <Dropdown
-                    value={state.currentCrosswalkStyle}
-                    options={crosswalkStyleOptions}
-                    onChange={(s) => cmdSetCurrentCrosswalkStyle(s)}
-                  />
-                </FieldRow>
-                <WidthStepper
-                  label={t("cw.next.width")}
-                  widthCm={state.currentCrosswalkWidthCm}
-                  onChange={cmdSetCurrentCrosswalkWidth}
-                />
-                <PanelHint>{t("cw.place.hint")}</PanelHint>
-              </>
-            ) : (
-              <PanelHint>{t("cw.edit.hint")}</PanelHint>
-            )}
-            <SnapBar mask={state.snapMask} />
-            <SectionTitle>{`${t("section.crosswalks")} · ${state.crosswalks.length}`}</SectionTitle>
-            {state.crosswalks.length === 0 ? (
-              <PanelHint>{t("cw.empty")}</PanelHint>
-            ) : (
-              <PanelList>
-                {state.crosswalks.map((cw) => (
-                  <CrosswalkRow
-                    key={cw.index}
-                    cw={cw}
-                    options={crosswalkStyleOptions}
-                    isExpanded={expandedCw === cw.index}
-                    isGameHovered={state.hoveredCrosswalkInGame === cw.index}
-                    onToggleExpand={() => setExpandedCw(expandedCw === cw.index ? -1 : cw.index)}
-                  />
-                ))}
-              </PanelList>
-            )}
-          </>
-        )}
-
         {shownTab === "points" && (
           <>
-            <PanelHint>{t("points.hint")}</PanelHint>
-            <SnapBar mask={state.snapMask} />
-            <SectionTitle>{`${t("section.points")} · ${state.points.length}`}</SectionTitle>
+            <Options>
+              <SnapOption mask={state.snapMask} />
+            </Options>
+            <Help
+              title={t("status.points")}
+              rows={[["help.lmb", "help.points.lmb"], ["help.rmb", "help.points.rmb"]]}
+            />
+            <ListTitle label={t("section.points")} count={state.points.length} />
             {state.points.length === 0 ? (
-              <PanelHint>{t("points.empty")}</PanelHint>
+              <EmptyText>{t("points.empty")}</EmptyText>
             ) : (
               <>
                 <PanelList>
@@ -952,7 +952,7 @@ const ILMPanelInner = () => {
                     />
                   ))}
                 </PanelList>
-                {state.points.some((p) => p.lineCount === 0 && p.areaCount === 0 && p.crosswalkCount === 0) && (
+                {state.points.some((p) => p.lineCount === 0 && p.areaCount === 0) && (
                   <Tooltip content={t("points.removeUnused.tooltip")}>
                     <Btn $full onClick={cmdRemoveUnusedPoints}>
                       <Trash size={12} />
@@ -965,33 +965,32 @@ const ILMPanelInner = () => {
           </>
         )}
 
-        {shownTab === "advanced" && (
-          <>
-            <SectionTitle>{state.selectedIsRoad ? t("section.road") : t("section.node")}</SectionTitle>
-            <ToggleRow>
-              <FieldLabel>{t("node.vanilla.label")}</FieldLabel>
-              <Tooltip content={t("vanilla.tooltip")}>
-                <IconToggleBtn $active={state.vanillaHidden} onClick={cmdToggleVanillaMarkings}>
-                  {state.vanillaHidden ? <EyeOff size={14} /> : <Eye size={14} />}
-                </IconToggleBtn>
-              </Tooltip>
-            </ToggleRow>
-            {(state.lines.length > 0 || state.areas.length > 0 || state.vanillaHidden || state.freePointCount > 0) && (
-              <ResetNodeButton />
-            )}
-            <NodeIdText>
-              {state.selectedIsRoad
-                ? t("panel.title.road", { n: state.selectedNodeIndex })
-                : t("panel.title", { n: state.selectedNodeIndex })}
-            </NodeIdText>
-
-            <SectionTitle>{t("hotkeys.title")}</SectionTitle>
-            <HotkeysList />
-
-            <SectionTitle>{t("section.more")}</SectionTitle>
-            <PanelHint>{t("advanced.optionsHint")}</PanelHint>
-          </>
-        )}
+        {/* Settings for the selected junction or road, folded away: rarely needed. */}
+        <Foldout>
+          <FoldoutBtn onClick={() => setSettingsOpen(!settingsOpen)}>
+            <LineChevron $open={settingsOpen}>
+              <ChevronRight size={10} />
+            </LineChevron>
+            <span>{state.selectedIsRoad ? t("settings.title.road") : t("settings.title")}</span>
+          </FoldoutBtn>
+          {settingsOpen && (
+            <>
+              <ToggleRow>
+                <FieldLabel>{t("node.vanilla.label")}</FieldLabel>
+                <Tooltip content={t("vanilla.tooltip")}>
+                  <IconToggleBtn $active={state.vanillaHidden} onClick={cmdToggleVanillaMarkings}>
+                    {state.vanillaHidden ? <EyeOff size={14} /> : <Eye size={14} />}
+                  </IconToggleBtn>
+                </Tooltip>
+              </ToggleRow>
+              {(state.lines.length > 0 || state.areas.length > 0 || state.vanillaHidden || state.freePointCount > 0) && (
+                <ResetNodeButton />
+              )}
+              <HotkeysList />
+              <NodeIdText>{t("advanced.optionsHint")}</NodeIdText>
+            </>
+          )}
+        </Foldout>
       </ILMWindow>
       {shownTab === "lines" && popoverLine?.segments.map((seg) => (
         <SegmentPopover
@@ -1052,17 +1051,12 @@ const LineRow = ({
       <LineBody $open={isExpanded}>
         <StyleSelector line={line} />
         <CurvatureInput line={line} />
-        {editMode ? (
-          <>
-            <PanelHint>{t("line.handles.hint")}</PanelHint>
+        {editMode && (
             <Tooltip content={t("line.addPoint.tooltip")}>
               <Btn $full onClick={() => cmdSplitLine(line.lineIndex)}>
                 <span>{t("line.addPoint")}</span>
               </Btn>
             </Tooltip>
-          </>
-        ) : (
-          <PanelHint>{t("line.editHint")}</PanelHint>
         )}
         {line.segments.map((seg) => (
           <SegmentRowComponent key={`${seg.lineIndex}-${seg.segmentIndex}`} seg={seg} />
@@ -1151,9 +1145,9 @@ const AreaRow = ({
   );
 };
 
-// The snap bar, after the game's own snap options: "All" turns every option on, or all off
-// when they are all on already; the others toggle one option each. Kept in the settings.
-const SNAP_BUTTONS: { bit: number; key: StringKey; Icon: (p: { size?: number }) => JSX.Element }[] = [
+// Snapping, after the game's own snap buttons: "all" turns every option on, or all off when
+// they are all on already; the others toggle one option each. Kept in the settings.
+const SNAP_BUTTONS: { bit: number; key: StringKey; Icon: IconC }[] = [
   { bit: SNAP.Existing, key: "snap.existing", Icon: SnapExisting },
   { bit: SNAP.Angle, key: "snap.angle", Icon: SnapAngle },
   { bit: SNAP.RoadSide, key: "snap.side", Icon: SnapSide },
@@ -1161,120 +1155,25 @@ const SNAP_BUTTONS: { bit: number; key: StringKey; Icon: (p: { size?: number }) 
   { bit: SNAP.Length, key: "snap.length", Icon: SnapLength },
 ];
 
-const SnapBar = ({ mask }: { mask: number }) => {
+const SnapOption = ({ mask }: { mask: number }) => {
   const t = useT();
   const allOn = (mask & SNAP.All) === SNAP.All;
   return (
-    <SnapRow>
-      <SnapLabel>{t("snap.label")}</SnapLabel>
+    <Option label={t("opt.snap")}>
       <Tooltip content={allOn ? t("snap.all.off") : t("snap.all.on")}>
-        <IconToggleBtn $active={allOn} onClick={() => cmdSetSnapMask(allOn ? 0 : SNAP.All)}>
+        <SnapBtn $active={allOn} onClick={() => cmdSetSnapMask(allOn ? 0 : SNAP.All)}>
           <SnapAll size={14} />
-        </IconToggleBtn>
+        </SnapBtn>
       </Tooltip>
+      <SnapDivider />
       {SNAP_BUTTONS.map(({ bit, key, Icon }) => (
         <Tooltip key={bit} content={t(key)}>
-          <IconToggleBtn $active={(mask & bit) !== 0} onClick={() => cmdSetSnapMask(mask ^ bit)}>
+          <SnapBtn $active={(mask & bit) !== 0} onClick={() => cmdSetSnapMask(mask ^ bit)}>
             <Icon size={14} />
-          </IconToggleBtn>
+          </SnapBtn>
         </Tooltip>
       ))}
-    </SnapRow>
-  );
-};
-
-// Crosswalk looks (CrosswalkStyle in C#), with a small preview of each.
-const CW_KEYS: Record<number, StringKey> = { 0: "cw.style.0", 1: "cw.style.1", 2: "cw.style.2", 3: "cw.style.3" };
-
-const CrosswalkPreview = ({ style }: { style: number }) => {
-  const bars = style === 2 ? [] : style === 3 ? [3, 8, 13, 18, 23, 28] : [4, 11, 18, 25];
-  const barW = style === 3 ? 2 : 4;
-  const borders = style === 1 || style === 2;
-  return (
-    <svg width={28} height={12} viewBox="0 0 32 14" fill="none">
-      {borders && <rect x="0.5" y="0.5" width="31" height="1.6" fill="rgba(240, 251, 255, 0.92)" />}
-      {borders && <rect x="0.5" y="11.9" width="31" height="1.6" fill="rgba(240, 251, 255, 0.92)" />}
-      {bars.map((x) => (
-        <rect key={x} x={x} y={borders ? 3 : 1} width={barW} height={borders ? 8 : 12} fill="rgba(240, 251, 255, 0.92)" />
-      ))}
-    </svg>
-  );
-};
-
-const makeCrosswalkStyleOptions = (t: ReturnType<typeof useT>): DropdownOption<number>[] =>
-  CROSSWALK_STYLES.map((s) => ({ value: s, label: t(CW_KEYS[s]), preview: <CrosswalkPreview style={s} /> }));
-
-// Width in 0.5 m steps (Shift: 0.1 m), 1 to 12 m.
-const WidthStepper = ({ label, widthCm, onChange }: { label: string; widthCm: number; onChange: (cm: number) => void }) => {
-  const t = useT();
-  const step = (dir: number, e: ReactMouseEvent<HTMLButtonElement>) =>
-    onChange(Math.max(100, Math.min(1200, Math.round((widthCm + dir * (e.shiftKey ? 10 : 50)) / 10) * 10)));
-  return (
-    <CurvRow>
-      <CurvLabel>{label}</CurvLabel>
-      <Tooltip content={t("cw.width.step")}>
-        <CurvStepBtn onClick={(e: ReactMouseEvent<HTMLButtonElement>) => step(-1, e)}>−</CurvStepBtn>
-      </Tooltip>
-      <CurvUnit>{(widthCm / 100).toFixed(1)}</CurvUnit>
-      <Tooltip content={t("cw.width.step")}>
-        <CurvStepBtn onClick={(e: ReactMouseEvent<HTMLButtonElement>) => step(1, e)}>+</CurvStepBtn>
-      </Tooltip>
-      <CurvUnit>m</CurvUnit>
-    </CurvRow>
-  );
-};
-
-const CrosswalkRow = ({
-  cw,
-  options,
-  isExpanded,
-  isGameHovered,
-  onToggleExpand,
-}: {
-  cw: CrosswalkVM;
-  options: DropdownOption<number>[];
-  isExpanded: boolean;
-  isGameHovered: boolean;
-  onToggleExpand: () => void;
-}) => {
-  const t = useT();
-  const deleteConfirm = useConfirm();
-  return (
-    <LineRowOuter
-      $expanded={isExpanded}
-      $gameHovered={isGameHovered}
-      onMouseEnter={() => cmdSetHoveredCrosswalk(cw.index)}
-      onMouseLeave={() => cmdClearHoveredCrosswalk(cw.index)}
-    >
-      <LineHeader onClick={onToggleExpand}>
-        <LineChevron $open={isExpanded}>
-          <ChevronRight size={10} />
-        </LineChevron>
-        <LineTitle>{t("cw.title", { n: cw.index + 1 })}</LineTitle>
-        <SwatchWrap>
-          <CrosswalkPreview style={cw.style} />
-        </SwatchWrap>
-        <LineSegCount>{`${(cw.widthCm / 100).toFixed(1)} × ${(cw.lengthCm / 100).toFixed(1)} m`}</LineSegCount>
-      </LineHeader>
-      <LineBody $open={isExpanded}>
-        <FieldRow style={{ marginTop: 0 }}>
-          <FieldLabel>{t("cw.style")}</FieldLabel>
-          <Dropdown value={cw.style} options={options} onChange={(s) => cmdSetCrosswalkStyle(cw.index, s)} />
-        </FieldRow>
-        <WidthStepper label={t("cw.width")} widthCm={cw.widthCm} onChange={(cm) => cmdSetCrosswalkWidth(cw.index, cm)} />
-        {!deleteConfirm.armed ? (
-          <Btn $danger $full onClick={deleteConfirm.arm}>
-            <Trash size={12} color={T.colorDanger} />
-            <span>{t("cw.delete")}</span>
-          </Btn>
-        ) : (
-          <ConfirmDeleteRow
-            onCancel={deleteConfirm.disarm}
-            onConfirm={() => deleteConfirm.confirm(() => cmdDeleteCrosswalk(cw.index))}
-          />
-        )}
-      </LineBody>
-    </LineRowOuter>
+    </Option>
   );
 };
 
@@ -1283,12 +1182,11 @@ const CrosswalkRow = ({
 const PointRow = ({ point, isGameHovered }: { point: FreePointVM; isGameHovered: boolean }) => {
   const t = useT();
   const deleteConfirm = useConfirm();
-  const used = point.lineCount > 0 || point.areaCount > 0 || point.crosswalkCount > 0;
+  const used = point.lineCount > 0 || point.areaCount > 0;
   const usage = used
     ? [
         point.lineCount > 0 ? t("point.lines", { n: point.lineCount }) : null,
         point.areaCount > 0 ? t("point.areas", { n: point.areaCount }) : null,
-        point.crosswalkCount > 0 ? t("point.crosswalks", { n: point.crosswalkCount }) : null,
       ]
         .filter((s) => s !== null)
         .join(" · ")

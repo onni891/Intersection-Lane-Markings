@@ -1,4 +1,4 @@
-﻿<Publish>
+<Publish>
 	<!--Id must be set in order to update existed mod. it is not required for publishing mod for the first time-->
 	<ModId Value="" />
 	<!--Name of the mod to display to players-->
@@ -20,9 +20,8 @@ Click any intersection — or the middle of a road — and draw your own marking
 - **Area fills** over any polygon you outline — points snap to lane endpoints, kerb corners and line crossings, edges follow line curvature. Junction box (yellow box / waffle), white or yellow hatching, green bike lane, red bus lane, concrete, grass, sand, pavement, tiles, asphalt patch (needs the separate "G87 Vanilla Asphalt Pavement" mod). Area mode stays on after closing an area, so you can outline the next one straight away.
 - **Hide vanilla markings** per intersection to start from a clean slate.
 - **Pin favourite styles** — star any entry in a style dropdown to keep it at the top of every list.
-- **Crosswalks**: click a road and a crosswalk goes across it, kerb to kerb. Zebra, ladder, two lines or thin zebra, any width from 1 to 12 m; drag its ends, width handles or slide it along the road in Edit mode.
 - **Undo / redo** (Ctrl+Z / Ctrl+Y or the panel buttons) for every marking edit.
-- In-game panel in the game's own style: a tool strip (Lines, Areas, Crossings, Points), undo / redo, one Draw / Edit switch, and hotkeys: **Ctrl+M** toggle tool, **Y** cycle line style, **A** area mode, **U** cycle area fill, **F** free draw, **Ctrl+Z** / **Ctrl+Y** undo / redo.
+- In-game panel in the game's own style: three tabs (Lines, Areas, Points), option rows for mode, placement, style and snapping, a help card with the mouse controls, and undo / redo in the footer. Hotkeys: **Ctrl+M** toggle tool, **Y** cycle line style, **A** area mode, **U** cycle area fill, **F** draw anywhere, **Ctrl+Z** / **Ctrl+Y** undo / redo.
 
 ## Automatic markings
 Ordinary city roads with 3 m lanes get proper edge lane markings — the same way highways do — so parking, sidewalks and stops react correctly. Parking lane markings included. In North American-theme cities, one-way and divided roads (highways included) also get the US-style yellow line along the left, median-side edge — optional, on by default; European themes are unaffected.
@@ -90,11 +89,10 @@ New since Town Road Lane:
 - **Point removal**: right-click a free point in any mode; areas using it only lose that corner instead of being deleted.
 - **Points tab**: a list of every free point you placed, with what uses it; hover a row to find the point on the road, remove points one by one or all unused ones at once. Points are dragged there without touching lines or areas.
 - **Snapping** with a snap bar like the game's: All, existing geometry, 90°, road side, guide lines and 0.5 m length steps, each on its own toggle. Works in free draw, area drawing and while dragging.
-- **Crosswalks** as one-click objects with editable ends, width (1–12 m) and position, in four styles built from G87 wide-line decals.
 - **Undo / redo** (Ctrl+Z / Ctrl+Y and panel buttons) for every edit, per junction or road.
-- **Move It support**: lines, line crossings, area fills and crosswalks follow a road that is moved or reshaped.
+- **Move It support**: lines, line crossings and area fills follow a road that is moved or reshaped.
 - **Wide line styles** (30 / 60 cm) for stop lines.
-- **New panel layout**: tool strip with Lines, Areas, Crossings and Points, one Draw / Edit switch, undo / redo and the advanced settings behind a gear.
+- **New panel layout**: three tabs (Lines, Areas, Points), option rows like the game's tool options, a help card with the mouse controls for the current mode, junction settings folded away and undo / redo in the footer.
 - English only for now; the translation support stays in place for later.
 - **More anchor points**: lane centre points and extra setback rows at 4 m and 16 m (both optional in Options, on by default).
 - **New panel** in the game's own style with a scrolling body; new lines and areas open automatically, and area drawing continues after closing an area.

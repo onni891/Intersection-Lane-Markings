@@ -38,7 +38,7 @@ namespace ILM.Components
         YellowDashed = 11,
         YellowDoubleSolid = 12,
         YellowSolidDashed = 13,
-        // G87 wide white lines (30 and 60 cm): stop lines, and the bars and borders of crosswalks.
+        // G87 wide white lines (30 and 60 cm), for stop lines.
         Wide30 = 14,
         Wide60 = 15,
     }

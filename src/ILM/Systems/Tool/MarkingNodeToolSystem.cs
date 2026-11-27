@@ -215,8 +215,6 @@ namespace ILM.Systems.Tool
             if (_selectedNode != Entity.Null && EntityManager.Exists(_selectedNode)) DiscardDraftPoints();
             else _draftFreePoints.Clear();
             _editArea = -1;
-            _editCrosswalk = -1;
-            _kerbLatCache.Clear();
             _state = MarkingToolState.Default;
             _selectedNode = Entity.Null;
             _endpoints.Clear();
@@ -263,10 +261,8 @@ namespace ILM.Systems.Tool
             // The snapped place position, then the open area's outline and handles (its drag
             // preview follows the snap), then the one edit target under the cursor.
             UpdateSnap(hitSomething);
-            UpdateCrosswalks(hitSomething);
             RefreshEditArea();
             UpdateEditHover(hitSomething);
-            UpdateCrosswalkHover(hitSomething);
             if (EditMode)
                 _hoverIdx = _editHoverKind == EditHoverKind.FreePoint ? _editHoverIndex : -1;
 
@@ -345,8 +341,7 @@ namespace ILM.Systems.Tool
             // removed by repeating the create gesture (see TogglePair) or from the panel.
             if (_state != MarkingToolState.Default && secondaryApplyAction.WasPressedThisFrame())
             {
-                if (_editTarget == EditTarget.Crosswalks) TryRemoveHoveredCrosswalk();
-                else if (EditMode && _editTarget == EditTarget.Areas) TryRemoveHoveredAreaVertex();
+                if (EditMode && _editTarget == EditTarget.Areas) TryRemoveHoveredAreaVertex();
                 else TryRemoveHoveredFreePoint();
                 return inputDeps;
             }
@@ -434,12 +429,6 @@ namespace ILM.Systems.Tool
 
                 case MarkingToolState.NodeSelected when EditMode:
                     HandleEditClick(hitSomething, hitNode, hitEdge, hitEntity);
-                    break;
-
-                case MarkingToolState.NodeSelected when CrosswalkDrawing:
-                    if (_cwPreviewValid) PlaceCrosswalk();
-                    else if (hitNode && hitEntity != _selectedNode) SelectNode(hitEntity);
-                    else if (hitEdge && hitEntity != _selectedNode && !IsRoadOfSelectedJunction(hitEntity)) SelectNode(hitEntity);
                     break;
 
                 case MarkingToolState.NodeSelected:
@@ -543,12 +532,6 @@ namespace ILM.Systems.Tool
                     SetClickedLine(_editHoverIndex);
                     log.Debug($"tool: edit — opened line #{_editHoverIndex}");
                     return;
-                case EditHoverKind.Crosswalk:
-                    _editCrosswalk = _editHoverIndex;
-                    _lastCreatedCrosswalk = _editHoverIndex;
-                    _lastCreatedCrosswalkTick++;
-                    log.Debug($"tool: edit — opened crosswalk #{_editHoverIndex}");
-                    return;
                 case EditHoverKind.None:
                     break;
                 default:
@@ -570,12 +553,6 @@ namespace ILM.Systems.Tool
             {
                 if (_editArea >= 0) log.Debug($"tool: edit — closed area #{_editArea}");
                 _editArea = -1;
-            }
-            else if (_editTarget == EditTarget.Crosswalks)
-            {
-                _editCrosswalk = -1;
-                _lastCreatedCrosswalk = -1;
-                _lastCreatedCrosswalkTick++;
             }
             else if (_editTarget == EditTarget.Lines)
             {
@@ -601,8 +578,6 @@ namespace ILM.Systems.Tool
             // Runs only on node click.
             _endpoints = MarkingEndpointExtractor.Extract(EntityManager, node, log: true);
             _cornerAnchors = MarkingEndpointExtractor.ExtractCornerAnchors(EntityManager, node);
-            _kerbLatCache.Clear();
-            _editCrosswalk = -1;
             RefreshIntersectionAnchors();
             _sourceIdx = -1;
             _editLine = -1;

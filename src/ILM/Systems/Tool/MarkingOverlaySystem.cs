@@ -124,12 +124,6 @@ namespace ILM.Systems.Tool
 
             // Edit mode shows only what can be edited: the lines, the open line's handles and
             // the free points. Anchor dots and corners can't be edited, so they are left out.
-            // Crosswalks tab: only crosswalks (placing preview or editing), no line dots.
-            if (_tool.CurrentEditTarget == MarkingNodeToolSystem.EditTarget.Crosswalks)
-            {
-                DrawCrosswalks(buf, node, endpoints);
-                return;
-            }
 
             // Each panel tab shows only its own kind, so nothing else can be mistaken for a
             // target: lines (Lines tab), areas (Areas tab) or free points (Points tab).
@@ -496,56 +490,6 @@ namespace ILM.Systems.Tool
                     buf.DrawLine(kColSnapGuide, new Line3.Segment(poly[i - 1], poly[i]), kSnapGuideWidth);
             }
             DrawDot(buf, p, kSnapRingDiameter, kColTransparent, kColSnapGuide, kSnapRingWidth);
-        }
-
-        /// <summary>Crosswalks tab: every crosswalk as a faint outline (the hovered one lit),
-        /// the placing preview, and for the open one its outline, side handles (width), middle
-        /// handle (slide along the road) and end points.</summary>
-        private void DrawCrosswalks(OverlayRenderSystem.Buffer buf, Entity node, IReadOnlyList<MarkingEndpoint> endpoints)
-        {
-            int hovered = _uiSystem.UIHoveredCrosswalk >= 0 ? _uiSystem.UIHoveredCrosswalk : _tool.HoveredCrosswalkInGame;
-            int open = _tool.EditMode ? _tool.EditCrosswalk : -1;
-            if (node != Entity.Null && EntityManager.HasBuffer<MarkingCrosswalk>(node))
-            {
-                var cws = EntityManager.GetBuffer<MarkingCrosswalk>(node, isReadOnly: true);
-                for (int i = 0; i < cws.Length; i++)
-                {
-                    if (i == open && _tool.EditCrosswalkValid) continue;
-                    if (!CrosswalkGeometry.TryGetOutline(endpoints, cws[i], out var c)) continue;
-                    bool lit = i == hovered;
-                    DrawRing(buf, c, lit ? kColHighlightedCurve : kColEditableLine, lit ? kHighlightedPairCurveWidth : kEditableLineWidth);
-                }
-            }
-
-            if (_tool.CrosswalkDrawing && _tool.CrosswalkPreviewValid)
-            {
-                var a = _tool.CrosswalkPreviewA;
-                var b = _tool.CrosswalkPreviewB;
-                DrawRing(buf, CrosswalkGeometry.Outline(a, b, _tool.CurrentCrosswalkWidth), kColPreviewCurve, kPreviewCurveWidth * 1.5f);
-                buf.DrawLine(kColPreviewCurve, new Line3.Segment(a, b), kPreviewCurveWidth);
-            }
-
-            if (_tool.EditMode && _tool.EditCrosswalkValid)
-            {
-                var a = _tool.EditCrosswalkA;
-                var b = _tool.EditCrosswalkB;
-                DrawRing(buf, CrosswalkGeometry.Outline(a, b, _tool.EditCrosswalkWidth), kColEditSelectedLine, kEditSelectedLineWidth);
-                buf.DrawLine(kColHandleStem, new Line3.Segment(a, b), kHandleStemWidth);
-                for (int side = 0; side < 2; side++)
-                    DrawHandleDot(buf, _tool.CrosswalkSideHandle(side), kHandleDotDiameter, IsHover(MarkingNodeToolSystem.EditHoverKind.CrosswalkWidth, side));
-                if (_tool.CanSlide())
-                {
-                    bool hov = _tool.EditHover == MarkingNodeToolSystem.EditHoverKind.CrosswalkMove;
-                    DrawDot(buf, _tool.CrosswalkMoveHandle, hov ? kInsertDotDiameterHover * 1.3f : kInsertDotDiameterHover, kColInsertFill, kColDotOutline, kDotOutlineWidth);
-                }
-                DrawEditFreePoints(buf, endpoints);
-            }
-        }
-
-        private static void DrawRing(OverlayRenderSystem.Buffer buf, float3[] corners, Color color, float width)
-        {
-            for (int i = 0; i < corners.Length; i++)
-                buf.DrawLine(color, new Line3.Segment(corners[i], corners[(i + 1) % corners.Length]), width);
         }
 
         private bool IsHover(MarkingNodeToolSystem.EditHoverKind kind, int index)

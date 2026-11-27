@@ -67,34 +67,6 @@ namespace ILM.Geometry
             }
         }
 
-        /// <summary>World position and road tangent of a free point that is not stored yet (the
-        /// crosswalk tool's preview). Same math as <see cref="AppendFreePoints"/>.</summary>
-        public static bool TryResolve(EntityManager em, Entity node, MarkingFreePoint p, out float3 pos, out float2 tangent)
-        {
-            pos = default; tangent = default;
-            if (MarkingEdgeAnchors.IsEdgeOwner(em, node))
-            {
-                if (!MarkingEndpointExtractor.IsEdgeExtractionReady(em, node)) return false;
-                var eg = em.GetComponentData<EdgeGeometry>(node);
-                MarkingEdgeAnchors.Locate(eg, p.t, out var l, out var r, out var tl, out var tr);
-                pos = math.lerp(l, r, p.lateral);
-                tangent = math.normalizesafe(math.lerp(tl, tr, p.lateral).xz);
-                return true;
-            }
-            if (!em.HasComponent<Node>(node)) return false;
-            if (p.IsInterior(node))
-            {
-                pos = em.GetComponentData<Node>(node).m_Position + p.offset;
-                return true;
-            }
-            if (!TryGetCapCurves(em, node, p.edge, out var left, out var right, out bool nodeIsStart)) return false;
-            pos = math.lerp(MathUtils.Position(left, p.t), MathUtils.Position(right, p.t), p.lateral);
-            float3 tan = math.lerp(MathUtils.Tangent(left, p.t), MathUtils.Tangent(right, p.t), p.lateral);
-            if (!nodeIsStart) tan = -tan;
-            tangent = math.normalizesafe(tan.xz);
-            return true;
-        }
-
         /// <summary>Builds a free point for a click at <paramref name="cursor"/>: on the
         /// node-side half of a connected road, or inside the junction outline. False when the
         /// click is off the road (sidewalk, another junction, empty terrain).</summary>

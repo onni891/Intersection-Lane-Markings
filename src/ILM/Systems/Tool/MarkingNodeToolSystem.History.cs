@@ -29,7 +29,6 @@ namespace ILM.Systems.Tool
             public MarkingArea[] areas;
             public MarkingAreaVertex[] vertices;
             public MarkingFreePoint[] points;
-            public MarkingCrosswalk[] crosswalks;
             public bool hasOverride;
             public MarkingOverride overrideData;
             public int hash;
@@ -185,7 +184,6 @@ namespace ILM.Systems.Tool
                 areas = Copy<MarkingArea>(EntityManager, node),
                 vertices = Copy<MarkingAreaVertex>(EntityManager, node),
                 points = Copy<MarkingFreePoint>(EntityManager, node),
-                crosswalks = Copy<MarkingCrosswalk>(EntityManager, node),
                 hasOverride = EntityManager.HasComponent<MarkingOverride>(node),
             };
             if (s.hasOverride) s.overrideData = EntityManager.GetComponentData<MarkingOverride>(node);
@@ -200,7 +198,6 @@ namespace ILM.Systems.Tool
             Write(EntityManager, node, s.areas);
             Write(EntityManager, node, s.vertices);
             Write(EntityManager, node, s.points);
-            Write(EntityManager, node, s.crosswalks);
             if (s.hasOverride)
             {
                 if (EntityManager.HasComponent<MarkingOverride>(node)) EntityManager.SetComponentData(node, s.overrideData);
@@ -221,11 +218,9 @@ namespace ILM.Systems.Tool
             _dragMoved = false;
             _editLine = -1;
             _editArea = -1;
-            _editCrosswalk = -1;
             _lastClickedLine = -1;
             _lastClickedTick++;
             RefreshEndpoints();
-            _kerbLatCache.Clear();
         }
 
         /// <summary>Hash of what the user edits. Leaves out what the game derives (segment
@@ -280,16 +275,6 @@ namespace ILM.Systems.Tool
                 {
                     var p = b[i];
                     h.Add(p.id); h.Add(p.edge); h.Add(p.t); h.Add(p.lateral); h.Add(p.offset.x); h.Add(p.offset.z);
-                }
-            }
-            if (EntityManager.HasBuffer<MarkingCrosswalk>(node))
-            {
-                var b = EntityManager.GetBuffer<MarkingCrosswalk>(node, isReadOnly: true);
-                h.Add(b.Length);
-                for (int i = 0; i < b.Length; i++)
-                {
-                    var c = b[i];
-                    h.Add(c.sourceEdge); h.Add(c.sourceGapIndex); h.Add(c.targetEdge); h.Add(c.targetGapIndex); h.Add(c.width); h.Add(c.style);
                 }
             }
             h.Add(EntityManager.HasComponent<MarkingOverride>(node) && EntityManager.GetComponentData<MarkingOverride>(node).HideAll);

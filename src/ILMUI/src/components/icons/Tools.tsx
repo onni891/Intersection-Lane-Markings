@@ -22,15 +22,6 @@ export const ToolAreas = (props: IconProps) => (
   </IconBase>
 );
 
-// Crosswalks: zebra bars.
-export const ToolCrosswalks = (props: IconProps) => (
-  <IconBase {...props}>
-    <rect x="2" y="3" width="2" height="10" fill={fillOf(props)} />
-    <rect x="7" y="3" width="2" height="10" fill={fillOf(props)} />
-    <rect x="12" y="3" width="2" height="10" fill={fillOf(props)} />
-  </IconBase>
-);
-
 // Points: a point with a ring.
 export const ToolPoints = (props: IconProps) => (
   <IconBase {...props}>
@@ -53,11 +44,34 @@ export const Redo = (props: IconProps) => (
   </IconBase>
 );
 
-// Advanced settings: a gear.
-export const Gear = (props: IconProps) => (
+// Draw: a pencil.
+export const Pencil = (props: IconProps) => (
   <IconBase {...props}>
-    <circle cx="8" cy="8" r="2.2" />
-    <path d="M8 1.5 V3.5 M8 12.5 V14.5 M1.5 8 H3.5 M12.5 8 H14.5 M3.4 3.4 L4.8 4.8 M11.2 11.2 L12.6 12.6 M3.4 12.6 L4.8 11.2 M11.2 4.8 L12.6 3.4" />
-    <circle cx="8" cy="8" r="4.6" />
+    <path d="M10.5 2.5 L13.5 5.5 L5.5 13.5 L2 14 L2.5 10.5 Z" />
+    <line x1="9" y1="4" x2="12" y2="7" />
+  </IconBase>
+);
+
+// Edit: a cursor arrow.
+export const Cursor = (props: IconProps) => (
+  <IconBase {...props}>
+    <path d="M3 2 L13 7.5 L8.5 8.8 L11 13.5 L9.2 14.4 L6.8 9.7 L3.5 12.5 Z" />
+  </IconBase>
+);
+
+// Draw between the road's dots: two dots on a lane line.
+export const SnapDots = (props: IconProps) => (
+  <IconBase {...props}>
+    <line x1="2" y1="12" x2="14" y2="4" strokeDasharray="2 2" />
+    <circle cx="3.5" cy="11" r="1.8" fill={fillOf(props)} />
+    <circle cx="12.5" cy="5" r="1.8" fill={fillOf(props)} />
+  </IconBase>
+);
+
+// Draw anywhere: a crosshair.
+export const Anywhere = (props: IconProps) => (
+  <IconBase {...props}>
+    <circle cx="8" cy="8" r="4.5" />
+    <path d="M8 1.5 V5 M8 11 V14.5 M1.5 8 H5 M11 8 H14.5" />
   </IconBase>
 );

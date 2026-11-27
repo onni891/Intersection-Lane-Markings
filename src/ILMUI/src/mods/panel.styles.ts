@@ -32,47 +32,12 @@ export const WindowPosition = styled.div`
   pointer-events: auto;
 `;
 
-// Non-scrolling top of the window: tabs and the status line.
+// Non-scrolling top of the window: the tabs.
 export const WindowFixed = styled.div`
   padding: ${T.space2} ${T.space3} ${T.space1};
   border-bottom: 1rem solid ${T.colorBorderSoft};
   color: ${T.colorTextPrimary};
   font-size: ${T.fontSizeMd};
-`;
-
-// Tab strip (Lines / Areas / Advanced). The active tab gets the game's selected blue.
-export const TabRow = styled.div`
-  display: flex;
-
-  > * {
-    flex: 1;
-    margin-right: 2rem;
-  }
-  > *:last-child {
-    margin-right: 0;
-  }
-`;
-
-export const TabBtn = styled.button<{ $active?: boolean }>`
-  height: 32rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: ${(p) => (p.$active ? T.colorSelected : T.colorBtnBg)};
-  color: ${(p) => (p.$active ? T.colorTextPrimary : T.colorTextMuted)};
-  border: 0;
-  border-radius: ${T.radiusSm};
-  font-size: ${T.fontSizeSm};
-  font-weight: ${T.fontWeightBold};
-  text-transform: uppercase;
-  cursor: pointer;
-  pointer-events: auto;
-  transition: background-color ${T.transitionFast}, color ${T.transitionFast};
-
-  &:hover {
-    background-color: ${(p) => (p.$active ? T.colorSelectedHover : T.colorBtnBgHover)};
-    color: ${T.colorTextPrimary};
-  }
 `;
 
 // Body inside the vanilla Scrollable, which does the scrolling.
@@ -106,77 +71,10 @@ export const Panel = styled.div`
   box-shadow: ${T.shadowMd};
 `;
 
-// Header, status and drawing controls, divided from the lists below. Despite the name it
-// is not sticky (cohtml can't parse position: sticky); the whole panel scrolls as one.
-export const PanelStickyChrome = styled.div`
-  padding-bottom: ${T.space1};
-`;
-
 export const PanelTitle = styled.h3`
   font-size: ${T.fontSizeXl};
   font-weight: ${T.fontWeightBold};
   margin: 0 0 ${T.space1} 0;
-`;
-
-// Mode switch (Lines / Free draw / Area).
-
-export const ModeRow = styled.div`
-  display: flex;
-  margin: ${T.space2} 0 0;
-
-  > * {
-    flex: 1;
-    margin-right: ${T.space1};
-  }
-  > *:last-child {
-    margin-right: 0;
-  }
-`;
-
-// The active mode gets the game's selected-toggle blue (--selectedColor) with light text,
-// like the vanilla tool option buttons.
-export const ModeBtn = styled.button<{ $active?: boolean }>`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 30rem;
-  padding: 0 ${T.space2};
-  // background-color (longhand) — the active fill is a var()-based token.
-  background-color: ${(p) => (p.$active ? T.colorSelected : T.colorBtnBg)};
-  color: ${(p) => (p.$active ? T.colorTextPrimary : T.colorTextMuted)};
-  border: 1rem solid transparent;
-  border-radius: ${T.radiusSm};
-  font-size: ${T.fontSizeSm};
-  font-weight: ${T.fontWeightMedium};
-  cursor: pointer;
-  pointer-events: auto;
-  transition: background-color ${T.transitionFast}, border-color ${T.transitionFast}, color ${T.transitionFast};
-
-  > svg {
-    margin-right: ${T.space1};
-    flex-shrink: 0;
-  }
-
-  &:hover {
-    background-color: ${(p) => (p.$active ? T.colorSelectedHover : T.colorBtnBgHover)};
-    color: ${T.colorTextPrimary};
-  }
-`;
-
-// Area draft box, shown while AreaSelecting. Accent-tinted so the mode is hard to miss; it
-// lists the click hints for adding, undoing and closing.
-export const DraftBox = styled.div`
-  background: ${T.colorAccentDim};
-  border: 1rem solid ${T.colorAccentSoft};
-  border-radius: ${T.radiusMd};
-  padding: ${T.space2};
-  margin: ${T.space2} 0 0;
-`;
-
-export const DraftHint = styled.div`
-  font-size: ${T.fontSizeXs};
-  color: ${T.colorTextMuted};
-  margin-bottom: 2rem;
 `;
 
 // Label on the left, control on the right taking the remaining width. Used by the next line
@@ -196,41 +94,6 @@ export const FieldLabel = styled.span`
   color: ${T.colorTextMuted};
   margin-right: ${T.space2};
   flex-shrink: 0;
-`;
-
-// Section titles: the game's section header strip (--sectionHeaderColor), uppercase.
-export const SectionTitle = styled.div`
-  font-size: ${T.fontSizeXs};
-  font-weight: ${T.fontWeightBold};
-  color: ${T.colorTextMuted};
-  text-transform: uppercase;
-  letter-spacing: 0.6rem;
-  background: ${T.colorSectionHeader};
-  border-radius: ${T.radiusSm};
-  padding: ${T.space1} ${T.space2};
-  margin: ${T.space3} 0 ${T.space1};
-`;
-
-// Status line under the header: an accent dot and the next step for the current
-// MarkingNodeToolSystem.State.
-export const StatusRow = styled.div`
-  display: flex;
-  align-items: center;
-  margin-top: ${T.space1};
-  font-size: ${T.fontSizeSm};
-  color: ${T.colorTextPrimary};
-`;
-
-export const StatusDot = styled.span`
-  display: block;
-  flex-shrink: 0;
-  width: 6rem;
-  height: 6rem;
-  border-radius: 3rem;
-  // background-color, NOT background: the accent token is a var(), and cohtml
-  // drops var() inside shorthand declarations.
-  background-color: ${T.colorAccent};
-  margin-right: ${T.space2};
 `;
 
 // Label and toggle row for node settings (hide vanilla markings).
@@ -262,31 +125,6 @@ export const IconToggleBtn = styled.button<{ $active?: boolean }>`
 
   &:hover {
     background-color: ${(p) => (p.$active ? T.colorSelectedHover : T.colorBtnBgHover)};
-  }
-`;
-
-// Header of a collapsible list: SectionTitle look plus a chevron.
-export const FoldoutHeader = styled.div`
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  user-select: none;
-  font-size: ${T.fontSizeXs};
-  font-weight: ${T.fontWeightBold};
-  color: ${T.colorTextMuted};
-  text-transform: uppercase;
-  letter-spacing: 0.6rem;
-  background: ${T.colorSectionHeader};
-  border-radius: ${T.radiusSm};
-  padding: ${T.space1} ${T.space2};
-  margin: ${T.space3} 0 ${T.space1};
-
-  > *:first-child {
-    margin-right: ${T.space1};
-  }
-
-  &:hover {
-    color: ${T.colorTextPrimary};
   }
 `;
 
@@ -694,107 +532,281 @@ export const Btn = styled.button<{ $danger?: boolean; $full?: boolean }>`
   }
 `;
 
-// The snap bar: square toggle buttons in a row, like the game's own snap options.
-export const SnapRow = styled.div`
-  display: flex;
-  align-items: center;
-  margin: ${T.space2} 0 0;
 
-  > * {
-    margin-right: ${T.space1};
-  }
-  > *:last-child {
-    margin-right: 0;
-  }
+// ---------------------------------------------------------------------------------------
+// Panel layout, top to bottom:
+//   tabs (what you work on) → option rows (how) → help card (mouse controls) → list
+//   → settings foldout; footer with undo / redo.
+// ---------------------------------------------------------------------------------------
+
+// Tabs: one joined bar of equal buttons, icon and label side by side.
+export const TabBar = styled.div`
+  display: flex;
+  background-color: ${T.colorSectionHeader};
+  border-radius: ${T.radiusMd};
+  padding: 3rem;
 `;
 
-export const SnapLabel = styled.span`
+export const TabBtn = styled.button<{ $active?: boolean }>`
   flex: 1;
-  font-size: ${T.fontSizeSm};
-  color: ${T.colorTextMuted};
-`;
-
-// Tool strip: the main tools as big icon buttons, then undo / redo / advanced on the right.
-export const ToolStrip = styled.div`
+  height: 34rem;
   display: flex;
-  align-items: stretch;
-
-  > * {
-    margin-right: ${T.space1};
-  }
-  > *:last-child {
-    margin-right: 0;
-  }
-`;
-
-export const ToolBtn = styled.button<{ $active?: boolean }>`
-  flex: 1;
-  min-width: 0;
-  height: 48rem;
-  display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  background-color: ${(p) => (p.$active ? T.colorSelected : T.colorBtnBg)};
+  margin-right: 3rem;
+  background-color: ${(p) => (p.$active ? T.colorSelected : "rgba(0, 0, 0, 0)")};
   color: ${(p) => (p.$active ? T.colorTextPrimary : T.colorTextMuted)};
   border: 0;
   border-radius: ${T.radiusSm};
+  font-size: ${T.fontSizeMd};
+  font-weight: ${T.fontWeightBold};
   cursor: pointer;
   pointer-events: auto;
   padding: 0;
   transition: background-color ${T.transitionFast}, color ${T.transitionFast};
 
+  &:last-child {
+    margin-right: 0;
+  }
+  > svg {
+    margin-right: 6rem;
+    flex-shrink: 0;
+  }
   &:hover {
     background-color: ${(p) => (p.$active ? T.colorSelectedHover : T.colorBtnBgHover)};
     color: ${T.colorTextPrimary};
   }
 `;
 
-export const ToolLabel = styled.span`
-  margin-top: 3rem;
-  font-size: 10rem;
-  white-space: nowrap;
-  font-weight: ${T.fontWeightBold};
-  text-transform: uppercase;
+// Block of option rows, like the game's tool options panel.
+export const Options = styled.div`
+  margin-top: ${T.space2};
 `;
 
-export const StripSpacer = styled.span`
+export const OptionRow = styled.div`
+  display: flex;
+  align-items: center;
+  min-height: 32rem;
+  margin-bottom: ${T.space1};
+`;
+
+// Fixed width so the controls of every row line up.
+export const OptionLabel = styled.span`
+  width: 76rem;
+  flex-shrink: 0;
+  font-size: ${T.fontSizeSm};
+  color: ${T.colorTextMuted};
+`;
+
+export const OptionControl = styled.div`
   flex: 1;
-`;
-
-// Small square buttons on the right of the strip, stacked two per column.
-export const StripSide = styled.div`
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+  align-items: center;
+  min-width: 0;
 `;
 
-export const StripSideRow = styled.div`
+// Joined buttons where exactly one is on (Draw | Edit, Dots | Anywhere).
+export const Segmented = styled.div`
+  flex: 1;
   display: flex;
-
-  > * {
-    margin-right: 2rem;
-  }
-  > *:last-child {
-    margin-right: 0;
-  }
+  background-color: ${T.colorSectionHeader};
+  border-radius: ${T.radiusSm};
+  padding: 2rem;
 `;
 
-export const StripIconBtn = styled.button<{ $active?: boolean; $disabled?: boolean }>`
-  width: 23rem;
-  height: 23rem;
+export const SegBtn = styled.button<{ $active?: boolean }>`
+  flex: 1;
+  height: 28rem;
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-right: 2rem;
+  background-color: ${(p) => (p.$active ? T.colorSelected : "rgba(0, 0, 0, 0)")};
+  color: ${(p) => (p.$active ? T.colorTextPrimary : T.colorTextMuted)};
+  border: 0;
+  border-radius: ${T.radiusSm};
+  font-size: ${T.fontSizeSm};
+  font-weight: ${T.fontWeightMedium};
+  cursor: pointer;
+  pointer-events: auto;
+  padding: 0 ${T.space2};
+  transition: background-color ${T.transitionFast}, color ${T.transitionFast};
+
+  &:last-child {
+    margin-right: 0;
+  }
+  > svg {
+    margin-right: 5rem;
+    flex-shrink: 0;
+  }
+  &:hover {
+    background-color: ${(p) => (p.$active ? T.colorSelectedHover : T.colorBtnBgHover)};
+    color: ${T.colorTextPrimary};
+  }
+`;
+
+// Square snap toggles, blue when on, like the game's snap buttons.
+export const SnapBtn = styled.button<{ $active?: boolean }>`
+  width: 28rem;
+  height: 28rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 3rem;
   background-color: ${(p) => (p.$active ? T.colorSelected : T.colorBtnBg)};
   border: 0;
   border-radius: ${T.radiusSm};
+  cursor: pointer;
+  pointer-events: auto;
   padding: 0;
+  transition: background-color ${T.transitionFast};
+
+  &:last-child {
+    margin-right: 0;
+  }
+  &:hover {
+    background-color: ${(p) => (p.$active ? T.colorSelectedHover : T.colorBtnBgHover)};
+  }
+`;
+
+// A small gap after the "all" snap button, so it reads as the master switch.
+export const SnapDivider = styled.span`
+  width: 1rem;
+  height: 20rem;
+  margin: 0 5rem 0 2rem;
+  background-color: ${T.colorBorderSoft};
+`;
+
+// Help card: what to do next (title) and the mouse controls for this mode.
+export const HelpCard = styled.div`
+  margin-top: ${T.space2};
+  padding: ${T.space2} ${T.space2} 6rem;
+  background-color: ${T.colorAccentDim};
+  border-left: 3rem solid ${T.colorAccentSoft};
+  border-radius: ${T.radiusSm};
+`;
+
+export const HelpTitle = styled.div`
+  font-size: ${T.fontSizeMd};
+  font-weight: ${T.fontWeightMedium};
+  color: ${T.colorTextPrimary};
+  margin-bottom: ${T.space1};
+`;
+
+export const HelpRow = styled.div`
+  display: flex;
+  align-items: center;
+  margin-top: 3rem;
+  font-size: ${T.fontSizeXs};
+  color: ${T.colorTextMuted};
+`;
+
+export const HelpKey = styled.span`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34rem;
+  flex-shrink: 0;
+  padding: 1rem 0;
+  margin-right: ${T.space2};
+  background-color: ${T.colorBtnBg};
+  border-radius: ${T.radiusSm};
+  font-size: 10rem;
+  font-weight: ${T.fontWeightBold};
+  color: ${T.colorTextPrimary};
+`;
+
+// List header: name on the left, count chip on the right.
+export const ListHeader = styled.div`
+  display: flex;
+  align-items: center;
+  margin: ${T.space3} 0 ${T.space1};
+  padding-bottom: ${T.space1};
+  border-bottom: 1rem solid ${T.colorBorderSoft};
+  font-size: ${T.fontSizeXs};
+  font-weight: ${T.fontWeightBold};
+  text-transform: uppercase;
+  letter-spacing: 0.6rem;
+  color: ${T.colorTextMuted};
+
+  > *:first-child {
+    flex: 1;
+  }
+`;
+
+export const CountChip = styled.span`
+  padding: 0 6rem;
+  border-radius: 8rem;
+  background-color: ${T.colorBtnBg};
+  color: ${T.colorTextPrimary};
+  font-variant-numeric: tabular-nums;
+`;
+
+export const EmptyText = styled.div`
+  padding: ${T.space2} 0;
+  font-size: ${T.fontSizeSm};
+  color: ${T.colorTextDim};
+`;
+
+// Settings foldout at the bottom of the body.
+export const Foldout = styled.div`
+  margin-top: ${T.space3};
+  border-top: 1rem solid ${T.colorBorderSoft};
+`;
+
+export const FoldoutBtn = styled.button`
+  width: 100%;
+  display: flex;
+  align-items: center;
+  padding: ${T.space2} 0 ${T.space1};
+  background-color: rgba(0, 0, 0, 0);
+  border: 0;
+  color: ${T.colorTextMuted};
+  font-size: ${T.fontSizeSm};
+  cursor: pointer;
+  pointer-events: auto;
+
+  > *:first-child {
+    margin-right: ${T.space1};
+  }
+  &:hover {
+    color: ${T.colorTextPrimary};
+  }
+`;
+
+// Footer under the scroll area: what is selected, and undo / redo.
+export const Footer = styled.div`
+  display: flex;
+  align-items: center;
+  padding: 6rem ${T.space3};
+  border-top: 1rem solid ${T.colorBorderSoft};
+  font-size: ${T.fontSizeXs};
+  color: ${T.colorTextDim};
+
+  > *:first-child {
+    flex: 1;
+  }
+`;
+
+export const FooterBtn = styled.button<{ $disabled?: boolean }>`
+  height: 26rem;
+  display: flex;
+  align-items: center;
+  margin-left: ${T.space1};
+  padding: 0 ${T.space2};
+  background-color: ${T.colorBtnBg};
+  border: 0;
+  border-radius: ${T.radiusSm};
+  color: ${T.colorTextPrimary};
+  font-size: ${T.fontSizeSm};
   cursor: ${(p) => (p.$disabled ? "default" : "pointer")};
   opacity: ${(p) => (p.$disabled ? 0.35 : 1)};
   pointer-events: auto;
 
+  > svg {
+    margin-right: 5rem;
+  }
   &:hover {
-    background-color: ${(p) => (p.$disabled ? T.colorBtnBg : p.$active ? T.colorSelectedHover : T.colorBtnBgHover)};
+    background-color: ${(p) => (p.$disabled ? T.colorBtnBg : T.colorBtnBgHover)};
   }
 `;

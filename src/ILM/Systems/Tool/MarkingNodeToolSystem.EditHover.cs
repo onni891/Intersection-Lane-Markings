@@ -18,9 +18,9 @@ namespace ILM.Systems.Tool
     // Lines can't be picked while editing areas and the other way round.
     public partial class MarkingNodeToolSystem
     {
-        public enum EditTarget { Lines = 0, Areas = 1, Points = 2, Crosswalks = 3 }
+        public enum EditTarget { Lines = 0, Areas = 1, Points = 2 }
 
-        public enum EditHoverKind { None, LineHandleA, LineHandleB, FreePoint, AreaVertex, AreaHandleA, AreaHandleB, AreaInsert, Line, Area, CrosswalkWidth, CrosswalkMove, Crosswalk }
+        public enum EditHoverKind { None, LineHandleA, LineHandleB, FreePoint, AreaVertex, AreaHandleA, AreaHandleB, AreaInsert, Line, Area }
 
         // Pick radii in edit mode (XZ, metres). Close to the drawn sizes so a click lands on
         // what is under the cursor and not on a neighbour; point targets beat lines and areas
@@ -56,7 +56,6 @@ namespace ILM.Systems.Tool
             _editTarget = target;
             if (target != EditTarget.Lines) _editLine = -1;
             if (target != EditTarget.Areas) _editArea = -1;
-            if (target != EditTarget.Crosswalks) _editCrosswalk = -1;
             if (_state == MarkingToolState.SourceSelected && (EditMode || target != EditTarget.Lines)) DropSource();
             _drag = DragKind.None;
             _dragMoved = false;
@@ -74,7 +73,6 @@ namespace ILM.Systems.Tool
             switch (_editTarget)
             {
                 case EditTarget.Points: return true;
-                case EditTarget.Crosswalks: return IsOpenCrosswalkEnd(ep);
                 case EditTarget.Lines:
                     var key = (ep.edge, ep.gapIndex);
                     return _pointsOnLines.Contains(key) || !_pointsOnAreas.Contains(key);
@@ -128,8 +126,7 @@ namespace ILM.Systems.Tool
                 Consider(c.b, EditHoverKind.LineHandleA, _editLine, ref best);
                 Consider(c.c, EditHoverKind.LineHandleB, _editLine, ref best);
             }
-            if (_editTarget == EditTarget.Crosswalks) ConsiderCrosswalkHover(cursor, ref best);
-            if (_editTarget == EditTarget.Lines || _editTarget == EditTarget.Points || _editTarget == EditTarget.Crosswalks)
+            if (_editTarget == EditTarget.Lines || _editTarget == EditTarget.Points)
             {
                 for (int i = 0; i < _endpoints.Count; i++)
                     if (IsEditablePoint(_endpoints[i])) Consider(_endpoints[i].position, EditHoverKind.FreePoint, i, ref best);
@@ -161,11 +158,6 @@ namespace ILM.Systems.Tool
             {
                 int area = HitTestAreas(cursor);
                 if (area >= 0) { _editHoverKind = EditHoverKind.Area; _editHoverIndex = area; }
-            }
-            else if (_editTarget == EditTarget.Crosswalks)
-            {
-                int cw = HitTestCrosswalks(cursor);
-                if (cw >= 0) { _editHoverKind = EditHoverKind.Crosswalk; _editHoverIndex = cw; }
             }
         }
     }

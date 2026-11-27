@@ -140,7 +140,6 @@ namespace ILM
             updateSystem.UpdateAt<MarkingPairMigrationSystem>(SystemUpdatePhase.Modification1);
             updateSystem.UpdateAt<MarkingTopologySystem>(SystemUpdatePhase.Modification1);
             updateSystem.UpdateAt<MarkingSegmentEmissionSystem>(SystemUpdatePhase.Modification1);
-            updateSystem.UpdateAt<MarkingCrosswalkEmissionSystem>(SystemUpdatePhase.Modification1);
             updateSystem.UpdateAt<MarkingAreaTopologySystem>(SystemUpdatePhase.Modification1);
             updateSystem.UpdateAt<MarkingAreaEmissionSystem>(SystemUpdatePhase.Modification1);
             // Runs after vanilla Game.Areas.GeometrySystem (Modification2B) and replaces its

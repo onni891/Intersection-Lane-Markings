@@ -155,13 +155,6 @@ namespace ILM.Systems.Tool
                         ctx.hasExclude = true;
                         ctx.exclude = _dragOrigin;
                         break;
-                    case DragKind.CrosswalkWidth:
-                        // The width rounds to 0.1 m (0.5 m with Length snapping) on its own.
-                        ctx.active = false;
-                        return ctx;
-                    case DragKind.CrosswalkMove:
-                        ctx.allowPoints = false;
-                        break;
                     case DragKind.AreaHandleA:
                     case DragKind.AreaHandleB:
                         if (_dragIndex < 0 || _dragIndex >= _editAreaEdges.Count) { ctx.active = false; return ctx; }
@@ -189,8 +182,6 @@ namespace ILM.Systems.Tool
                 }
                 return ctx;
             }
-
-            if (CrosswalkDrawing) { ctx.active = true; ctx.allowPoints = false; return ctx; }
             if (!FreeDraw || _hoverIdx >= 0) return ctx;
             if (_state == MarkingToolState.NodeSelected) { ctx.active = true; return ctx; }
             if (_state == MarkingToolState.SourceSelected && _sourceIdx >= 0 && _sourceIdx < _endpoints.Count)
