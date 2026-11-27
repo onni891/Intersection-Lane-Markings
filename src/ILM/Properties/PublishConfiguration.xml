@@ -52,18 +52,15 @@ Ordinary city roads with 3 m lanes get proper edge lane markings — the same wa
 The G87 marking packs and the [G87] Vanilla Curb pack ship as dependencies and install automatically — they supply the line styles, area fills and the curb texture. Huge thanks to G87 for the assets!
 	</LongDescription>
 	<!--Thumbnail-->
-	<Thumbnail Value="Properties/Thumbnail.jpg" />
+	<Thumbnail Value="Properties/Thumbnail_ab296e8c.jpg" />
 	<!--Screenshot, can be set multiple times-->
 	<!-- Screenshot filenames carry a content hash: the PDX CDN caches by name, so re-publishing
 	     under a reused name can serve the stale image. New content = new name, always fresh. -->
-	<Screenshot Value="Properties/Screenshots/ILM_2ecbc8fe.jpg" />
-	<Screenshot Value="Properties/Screenshots/ILM_9c1107eb.jpg" />
-	<Screenshot Value="Properties/Screenshots/ILM_9f56d721.jpg" />
-	<Screenshot Value="Properties/Screenshots/ILM_f43d4d3e.jpg" />
-	<Screenshot Value="Properties/Screenshots/ILM_7f19dcc1.jpg" />
-	<Screenshot Value="Properties/Screenshots/ILM_332a9cfc.jpg" />
-	<Screenshot Value="Properties/Screenshots/ILM_a051f879.jpg" />
-	<Screenshot Value="Properties/Screenshots/ILM_4996f529.jpg" />
+	<Screenshot Value="Properties/Screenshots/ILM_05dccaf6.jpg" />
+	<Screenshot Value="Properties/Screenshots/ILM_133425c1.jpg" />
+	<Screenshot Value="Properties/Screenshots/ILM_e004493c.jpg" />
+	<Screenshot Value="Properties/Screenshots/ILM_2d81d317.jpg" />
+	<Screenshot Value="Properties/Screenshots/ILM_24ceb67f.jpg" />
 	<!--Tag, can be set multiple times-->
 	<Tag Value="Code Mod" />
 	<!--Link to the forum post where the mod can be discussed-->
@@ -113,5 +110,5 @@ New since Town Road Lane:
 	<!--External link, can be set multiple times. supported types are "discord", "github", "youtube", "twitch", "x", "paypal", "patreon", "buymeacoffee", "kofi", "crowdin", "gitlab", "gofundme"-->
 	<ExternalLink Type="github" Url="https://github.com/onni891/Intersection-Lane-Markings" />
 	<!--Supported values Public, Private, Unlisted-->
-	<AccessLevel Value="Public" />
+	<AccessLevel Value="Unlisted" />
 </Publish>

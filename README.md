@@ -5,7 +5,7 @@ A road-marking mod for **Cities: Skylines II**: a manual marking editor for inte
 > **Beta. A personal mod: use at your own risk.**
 > This is my own edit of **Town Road Lane** by mxerf (GPL-3.0), changed to fit my needs. Not everything has been tested in-game, and I am not sure how all of it behaves in every case. Back up your saves before trying it. Bug reports are welcome, but fixes come when I have time.
 
-![Intersection markings with curved area fills](src/ILM/Properties/Screenshots/Screenshot_04.jpg)
+![Highway exit with hatched chevron islands](src/ILM/Properties/Screenshots/ILM_24ceb67f.jpg)
 
 ## Features
 
@@ -31,20 +31,16 @@ Click any intersection — or the middle of a road — and draw your own marking
 - **Live editing** — dragging a handle, point or area corner moves the real marking as you drag, not just the outline.
 - **In-game panel** in the game's own style: the tabs (**Lines**, **Areas**, **Points**) pick what you work on; below them, option rows like the game's tool options (**Mode** Draw / Edit, **Place on** Dots / Anywhere, **Style** or **Fill**, **Snapping**), a help card with the next step and the mouse controls, and the list. A fourth tab, **Advanced**, holds copy / paste, templates, auto markings and the junction settings; undo / redo sit in the footer. Hotkeys: `Ctrl+M` toggle tool, `Y` cycle line style, `A` area mode, `U` cycle area fill, `F` draw anywhere, `Ctrl+Z` / `Ctrl+Y` undo / redo.
 
-![Area mode: outlining a traffic island between anchor dots](src/ILM/Properties/Screenshots/ILM_a3fa8fbf.jpg)
+![Junction with anchor dots in the editor](src/ILM/Properties/Screenshots/ILM_e004493c.jpg)
 
-![Zebra crossing and custom junction markings](src/ILM/Properties/Screenshots/ILM_9f56d721.jpg)
+![Edit mode: shaping a line with its curve handles](src/ILM/Properties/Screenshots/ILM_2d81d317.jpg)
 
-![Autumn interchange with chevron islands and lane guidance](src/ILM/Properties/Screenshots/ILM_9c1107eb.jpg)
+![Highway merge with chevron islands](src/ILM/Properties/Screenshots/ILM_05dccaf6.jpg)
 
-![Junction with hatched safety islands](src/ILM/Properties/Screenshots/ILM_2ecbc8fe.jpg)
+![Cloverleaf ramp with hatched gore area](src/ILM/Properties/Screenshots/ILM_133425c1.jpg)
 
 ### Automatic markings
 Ordinary city roads with 3 m lanes get proper edge lane markings — the same way highways do — so parking, sidewalks and stops react correctly. Parking lane markings included. In North American-theme cities, one-way and divided roads (highways included) also get the US-style yellow line along the left, median-side edge — optional, on by default; European themes are unaffected.
-
-![Forest road with edge markings](src/ILM/Properties/Screenshots/ILM_7f19dcc1.jpg)
-
-![City overview](src/ILM/Properties/Screenshots/ILM_4996f529.jpg)
 
 ## Known limitations
 
