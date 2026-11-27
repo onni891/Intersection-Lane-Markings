@@ -1,6 +1,9 @@
-# Intersection & Lane Markings
+# Intersection & Lane Markings (Beta)
 
 A road-marking mod for **Cities: Skylines II**: a manual marking editor for intersections plus automatic edge/parking lane markings for ordinary town roads.
+
+> **Beta. A personal mod: use at your own risk.**
+> This is my own edit of **Town Road Lane** by mxerf (GPL-3.0), changed to fit my needs. Not everything has been tested in-game, and I am not sure how all of it behaves in every case. Back up your saves before trying it. Bug reports are welcome, but fixes come when I have time.
 
 ![Intersection markings with curved area fills](src/ILM/Properties/Screenshots/Screenshot_04.jpg)
 

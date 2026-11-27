@@ -2,13 +2,22 @@
 	<!--Id must be set in order to update existed mod. it is not required for publishing mod for the first time-->
 	<ModId Value="" />
 	<!--Name of the mod to display to players-->
-	<DisplayName Value="Intersection &amp; Lane Markings" />
+	<DisplayName Value="Intersection &amp; Lane Markings (Beta)" />
 	<!--Short description of the mod-->
-	<ShortDescription Value="Road-marking editor: draw lines and area fills on any intersection, plus automatic edge and parking markings for town roads" />
+	<ShortDescription Value="BETA, personal mod: road-marking editor for intersections, edited from Town Road Lane to fit my own needs. Use at your own risk." />
 	<!--Long description of the mod. Single line or multi line. Supports minimal markdown subset-->
 	<LongDescription>
-# Intersection &amp; Lane Markings
+# Intersection &amp; Lane Markings (Beta)
 
+## Please read first
+**This is my personal mod.** It is based on **Town Road Lane** by mxerf (GPL-3.0) and edited to fit my own needs. I share it in case it is useful to someone else, but:
+- It is a **beta**. Not everything has been tested in-game, and I am not sure how all of it works in every case.
+- **Use it at your own risk.** Back up your saves before trying it. Markings made with it may not load in other or older versions of the mod.
+- Support and updates come when I have time. Bug reports are welcome on GitHub, but I can't promise fixes.
+
+All credit for the original mod goes to mxerf and Town Road Lane, and for the marking assets to G87.
+
+## What it is
 A road-marking editor for intersections plus automatic lane markings for ordinary town roads.
 
 ## Marking editor
@@ -37,7 +46,7 @@ Ordinary city roads with 3 m lanes get proper edge lane markings — the same wa
 ## How it works
 - The mod replaces the game's lane-marking generator (SecondaryLaneSystem) with a copy that adds its features; vehicles and traffic lanes are untouched. Mods that patch or replace the same system conflict with it; mods that add markings as their own decals or net-lanes (such as the G87 packs) do not.
 - After every game update the copy is compared with the new vanilla system before the next release (1.6.2 required no changes).
-- AI tools (Claude) are among the tools used to develop the mod; every release is tested in-game before publishing. Full source on GitHub.
+- AI tools (Claude) were used heavily to develop this mod. Treat it as a beta: not every feature has been tested in-game. Full source on GitHub.
 
 ## Requirements
 The G87 marking packs and the [G87] Vanilla Curb pack ship as dependencies and install automatically — they supply the line styles, area fills and the curb texture. Huge thanks to G87 for the assets!
@@ -60,7 +69,7 @@ The G87 marking packs and the [G87] Vanilla Curb pack ship as dependencies and i
 	<!--Link to the forum post where the mod can be discussed-->
 	<!--<ForumLink Value="" />-->
 	<!--Version of the mod-->
-	<ModVersion Value="1.0.0" />
+	<ModVersion Value="0.9.0" />
 	<!--Recommended version of the base game to use the mod-->
 	<GameVersion Value="1.6.*" />
 	<!--Dependency for the mod, can be set multiple times.
@@ -77,9 +86,9 @@ The G87 marking packs and the [G87] Vanilla Curb pack ship as dependencies and i
 	<RequiredDLC Value="" />
 	<!--Change log for new version. Single line or multi line. Supports minimal markdown subset-->
 	<ChangeLog>
-# 1.0.0 — first release
+# 0.9.0 — first beta
 
-First release of Intersection &amp; Lane Markings (ILM), based on Town Road Lane 2.5.0 by mxerf (GPL-3.0).
+First public beta of Intersection &amp; Lane Markings (ILM): my personal edit of Town Road Lane 2.5.0 by mxerf (GPL-3.0), made to fit my own needs. Not everything is tested in-game. Use at your own risk and back up your saves.
 
 New since Town Road Lane:
 - **Free draw** (F / panel): place your own points anywhere on the junction or its roads and draw through them; right-click a point to remove it.
@@ -102,7 +111,7 @@ New since Town Road Lane:
 - Fixed a log flood in segment emission; the log level is now set explicitly (Debug only with VerboseLogging).
 	</ChangeLog>
 	<!--External link, can be set multiple times. supported types are "discord", "github", "youtube", "twitch", "x", "paypal", "patreon", "buymeacoffee", "kofi", "crowdin", "gitlab", "gofundme"-->
-	<!--TODO: add your GitHub repo once it exists: <ExternalLink Type="github" Url="https://github.com/YOU/REPO" />-->
+	<ExternalLink Type="github" Url="https://github.com/onni891/Intersection-Lane-Markings" />
 	<!--Supported values Public, Private, Unlisted-->
 	<AccessLevel Value="Public" />
 </Publish>
