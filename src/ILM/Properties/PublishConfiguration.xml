@@ -21,7 +21,7 @@ Click any intersection — or the middle of a road — and draw your own marking
 - **Hide vanilla markings** per intersection to start from a clean slate.
 - **Pin favourite styles** — star any entry in a style dropdown to keep it at the top of every list.
 - **Undo / redo** (Ctrl+Z / Ctrl+Y or the panel buttons) for every marking edit.
-- In-game panel in the game's own style: three tabs (Lines, Areas, Points), option rows for mode, placement, style and snapping, a help card with the mouse controls, and undo / redo in the footer. Hotkeys: **Ctrl+M** toggle tool, **Y** cycle line style, **A** area mode, **U** cycle area fill, **F** draw anywhere, **Ctrl+Z** / **Ctrl+Y** undo / redo.
+- In-game panel in the game's own style: tabs (Lines, Areas, Points, Advanced), option rows for mode, placement, style and snapping, a help card with the mouse controls, and undo / redo in the footer. Hotkeys: **Ctrl+M** toggle tool, **Y** cycle line style, **A** area mode, **U** cycle area fill, **F** draw anywhere, **Ctrl+Z** / **Ctrl+Y** undo / redo.
 
 ## Automatic markings
 Ordinary city roads with 3 m lanes get proper edge lane markings — the same way highways do — so parking, sidewalks and stops react correctly. Parking lane markings included. In North American-theme cities, one-way and divided roads (highways included) also get the US-style yellow line along the left, median-side edge — optional, on by default; European themes are unaffected.
@@ -92,7 +92,10 @@ New since Town Road Lane:
 - **Undo / redo** (Ctrl+Z / Ctrl+Y and panel buttons) for every edit, per junction or road.
 - **Move It support**: lines, line crossings and area fills follow a road that is moved or reshaped.
 - **Wide line styles** (30 / 60 cm) for stop lines.
-- **New panel layout**: three tabs (Lines, Areas, Points), option rows like the game's tool options, a help card with the mouse controls for the current mode, junction settings folded away and undo / redo in the footer.
+- **Copy / paste and templates**: copy a junction's markings onto another junction with the same number of roads (turned to fit, Turn rotates them), or save them as named templates.
+- **Auto markings (test)**: guide lines along the lanes through junctions, following the Traffic mod's lane connections; on everywhere or per junction.
+- **Live editing**: markings follow the cursor while you drag handles, points and corners.
+- **New panel layout**: tabs for Lines, Areas, Points and Advanced, option rows like the game's tool options, a help card with the mouse controls for the current mode, junction settings on the Advanced tab and undo / redo in the footer.
 - English only for now; the translation support stays in place for later.
 - **More anchor points**: lane centre points and extra setback rows at 4 m and 16 m (both optional in Options, on by default).
 - **New panel** in the game's own style with a scrolling body; new lines and areas open automatically, and area drawing continues after closing an area.

@@ -544,7 +544,15 @@ export const TabBar = styled.div`
   display: flex;
   background-color: ${T.colorSectionHeader};
   border-radius: ${T.radiusMd};
-  padding: 3rem;
+  padding: 4rem;
+
+  // Spacing goes on the children: each button sits in a Tooltip wrapper span.
+  > * {
+    margin-right: 4rem;
+  }
+  > *:last-child {
+    margin-right: 0;
+  }
 `;
 
 export const TabBtn = styled.button<{ $active?: boolean }>`
@@ -553,21 +561,17 @@ export const TabBtn = styled.button<{ $active?: boolean }>`
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 3rem;
   background-color: ${(p) => (p.$active ? T.colorSelected : "rgba(0, 0, 0, 0)")};
   color: ${(p) => (p.$active ? T.colorTextPrimary : T.colorTextMuted)};
   border: 0;
   border-radius: ${T.radiusSm};
-  font-size: ${T.fontSizeMd};
+  font-size: ${T.fontSizeSm};
   font-weight: ${T.fontWeightBold};
   cursor: pointer;
   pointer-events: auto;
   padding: 0;
   transition: background-color ${T.transitionFast}, color ${T.transitionFast};
 
-  &:last-child {
-    margin-right: 0;
-  }
   > svg {
     margin-right: 6rem;
     flex-shrink: 0;
@@ -587,7 +591,7 @@ export const OptionRow = styled.div`
   display: flex;
   align-items: center;
   min-height: 32rem;
-  margin-bottom: ${T.space1};
+  margin-bottom: ${T.space2};
 `;
 
 // Fixed width so the controls of every row line up.
@@ -603,6 +607,14 @@ export const OptionControl = styled.div`
   display: flex;
   align-items: center;
   min-width: 0;
+
+  // Gap between snap buttons; each sits in a Tooltip wrapper span.
+  > * {
+    margin-right: 5rem;
+  }
+  > *:last-child {
+    margin-right: 0;
+  }
 `;
 
 // Joined buttons where exactly one is on (Draw | Edit, Dots | Anywhere).
@@ -611,7 +623,14 @@ export const Segmented = styled.div`
   display: flex;
   background-color: ${T.colorSectionHeader};
   border-radius: ${T.radiusSm};
-  padding: 2rem;
+  padding: 3rem;
+
+  > * {
+    margin-right: 4rem;
+  }
+  > *:last-child {
+    margin-right: 0;
+  }
 `;
 
 export const SegBtn = styled.button<{ $active?: boolean }>`
@@ -620,7 +639,6 @@ export const SegBtn = styled.button<{ $active?: boolean }>`
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 2rem;
   background-color: ${(p) => (p.$active ? T.colorSelected : "rgba(0, 0, 0, 0)")};
   color: ${(p) => (p.$active ? T.colorTextPrimary : T.colorTextMuted)};
   border: 0;
@@ -632,9 +650,6 @@ export const SegBtn = styled.button<{ $active?: boolean }>`
   padding: 0 ${T.space2};
   transition: background-color ${T.transitionFast}, color ${T.transitionFast};
 
-  &:last-child {
-    margin-right: 0;
-  }
   > svg {
     margin-right: 5rem;
     flex-shrink: 0;
@@ -652,7 +667,6 @@ export const SnapBtn = styled.button<{ $active?: boolean }>`
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 3rem;
   background-color: ${(p) => (p.$active ? T.colorSelected : T.colorBtnBg)};
   border: 0;
   border-radius: ${T.radiusSm};
@@ -661,9 +675,6 @@ export const SnapBtn = styled.button<{ $active?: boolean }>`
   padding: 0;
   transition: background-color ${T.transitionFast};
 
-  &:last-child {
-    margin-right: 0;
-  }
   &:hover {
     background-color: ${(p) => (p.$active ? T.colorSelectedHover : T.colorBtnBgHover)};
   }
@@ -673,7 +684,6 @@ export const SnapBtn = styled.button<{ $active?: boolean }>`
 export const SnapDivider = styled.span`
   width: 1rem;
   height: 20rem;
-  margin: 0 5rem 0 2rem;
   background-color: ${T.colorBorderSoft};
 `;
 
@@ -748,32 +758,6 @@ export const EmptyText = styled.div`
   color: ${T.colorTextDim};
 `;
 
-// Settings foldout at the bottom of the body.
-export const Foldout = styled.div`
-  margin-top: ${T.space3};
-  border-top: 1rem solid ${T.colorBorderSoft};
-`;
-
-export const FoldoutBtn = styled.button`
-  width: 100%;
-  display: flex;
-  align-items: center;
-  padding: ${T.space2} 0 ${T.space1};
-  background-color: rgba(0, 0, 0, 0);
-  border: 0;
-  color: ${T.colorTextMuted};
-  font-size: ${T.fontSizeSm};
-  cursor: pointer;
-  pointer-events: auto;
-
-  > *:first-child {
-    margin-right: ${T.space1};
-  }
-  &:hover {
-    color: ${T.colorTextPrimary};
-  }
-`;
-
 // Footer under the scroll area: what is selected, and undo / redo.
 export const Footer = styled.div`
   display: flex;
@@ -809,4 +793,111 @@ export const FooterBtn = styled.button<{ $disabled?: boolean }>`
   &:hover {
     background-color: ${(p) => (p.$disabled ? T.colorBtnBg : T.colorBtnBgHover)};
   }
+`;
+
+// ---------------------------------------------------------------------------------------
+// Advanced tab.
+// ---------------------------------------------------------------------------------------
+
+// A row of equal buttons (Copy / Paste / Turn). Children may be Tooltip wrapper spans.
+export const ActionRow = styled.div`
+  display: flex;
+  margin-top: ${T.space1};
+
+  > * {
+    flex: 1;
+    margin-right: ${T.space1};
+  }
+  > *:last-child {
+    margin-right: 0;
+  }
+`;
+
+export const ActionBtn = styled.button<{ $disabled?: boolean; $primary?: boolean }>`
+  flex: 1;
+  height: 30rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 ${T.space2};
+  background-color: ${(p) => (p.$primary && !p.$disabled ? T.colorSelected : T.colorBtnBg)};
+  border: 0;
+  border-radius: ${T.radiusSm};
+  color: ${T.colorTextPrimary};
+  font-size: ${T.fontSizeSm};
+  cursor: ${(p) => (p.$disabled ? "default" : "pointer")};
+  opacity: ${(p) => (p.$disabled ? 0.4 : 1)};
+  pointer-events: auto;
+
+  > svg {
+    margin-right: 6rem;
+    flex-shrink: 0;
+  }
+  &:hover {
+    background-color: ${(p) => (p.$disabled ? T.colorBtnBg : p.$primary ? T.colorSelectedHover : T.colorBtnBgHover)};
+  }
+`;
+
+// Small muted line under a control.
+export const InfoText = styled.div<{ $tone?: "ok" | "warn" }>`
+  margin-top: 6rem;
+  font-size: ${T.fontSizeXs};
+  color: ${(p) => (p.$tone === "ok" ? T.colorSuccess : p.$tone === "warn" ? T.colorWarning : T.colorTextMuted)};
+`;
+
+export const TextInput = styled.input`
+  flex: 1;
+  min-width: 0;
+  height: 30rem;
+  margin-right: ${T.space1};
+  padding: 0 ${T.space2};
+  background-color: ${T.colorSectionHeader};
+  border: 1rem solid ${T.colorBorderMid};
+  border-radius: ${T.radiusSm};
+  color: ${T.colorTextPrimary};
+  font-size: ${T.fontSizeSm};
+  pointer-events: auto;
+`;
+
+export const InputRow = styled.div`
+  display: flex;
+  align-items: center;
+  margin-top: ${T.space1};
+`;
+
+// One saved template: name and details, then paste and delete.
+export const TemplateRow = styled.div`
+  display: flex;
+  align-items: center;
+  padding: 5rem ${T.space2};
+  margin-bottom: ${T.space1};
+  background-color: ${T.colorRowBg};
+  border-radius: ${T.radiusMd};
+
+  > * {
+    margin-right: ${T.space1};
+  }
+  > *:last-child {
+    margin-right: 0;
+  }
+`;
+
+export const TemplateText = styled.div`
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+`;
+
+export const TemplateName = styled.span`
+  font-size: ${T.fontSizeSm};
+  color: ${T.colorTextPrimary};
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
+
+export const TemplateMeta = styled.span`
+  font-size: ${T.fontSizeXs};
+  color: ${T.colorTextMuted};
 `;

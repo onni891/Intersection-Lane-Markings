@@ -26,6 +26,8 @@ export interface LineVM {
   curv: number;
   // Shaped by dragging its handles; the curvature value then doesn't apply.
   handles: boolean;
+  // Made by auto markings.
+  auto: boolean;
   segments: SegmentVM[];
 }
 
@@ -47,6 +49,24 @@ export interface FreePointVM {
   lineCount: number;
   areaCount: number;
 }
+
+// Copied markings or a saved template (index -1 for the clipboard).
+export interface TemplateVM {
+  index: number;
+  name: string;
+  roads: number;
+  isRoad: boolean;
+  lines: number;
+  areas: number;
+  // Same kind and road count as the selection: can be pasted here.
+  fits: boolean;
+}
+
+// Mirrors PasteResult in C#.
+export const PASTE_RESULT = { Ok: 0, NothingToPaste: 1, RoadCountDiffers: 2, KindDiffers: 3, NoRoads: 4 } as const;
+
+// Mirrors AutoMarkingMode in C#.
+export const AUTO_MODE = { Default: 0, On: 1, Off: 2 } as const;
 
 // Mirrors MarkingNodeToolSystem.EditTarget: what edit mode works on, set by the panel tab.
 export const EDIT_TARGET = {
@@ -113,6 +133,19 @@ export interface ToolStateVM {
   points: FreePointVM[];
   canUndo: boolean;
   canRedo: boolean;
+  // Advanced tab (see ViewModels.cs).
+  clipboard: TemplateVM | null;
+  templates: TemplateVM[];
+  pasteResult: number;
+  pasteTick: number;
+  pastedLines: number;
+  pastedAreas: number;
+  canTurn: boolean;
+  autoGlobal: boolean;
+  autoStyle: number;
+  autoTurnsOnly: boolean;
+  autoMode: number;
+  autoLineCount: number;
   lines: LineVM[];
   areas: AreaVM[];
 }
@@ -140,6 +173,18 @@ const EMPTY: ToolStateVM = {
   points: [],
   canUndo: false,
   canRedo: false,
+  clipboard: null,
+  templates: [],
+  pasteResult: 0,
+  pasteTick: 0,
+  pastedLines: 0,
+  pastedAreas: 0,
+  canTurn: false,
+  autoGlobal: false,
+  autoStyle: 1,
+  autoTurnsOnly: true,
+  autoMode: 0,
+  autoLineCount: 0,
   lines: [],
   areas: [],
 };
@@ -155,6 +200,7 @@ const normalizeToolState = (state: ToolStateVM | null | undefined): ToolStateVM 
         lines: Array.isArray(state.lines) ? state.lines : [],
         areas: Array.isArray(state.areas) ? state.areas : [],
         points: Array.isArray(state.points) ? state.points : [],
+        templates: Array.isArray(state.templates) ? state.templates : [],
       }
     : EMPTY;
 
@@ -328,4 +374,53 @@ export const cmdUndo = () => {
 
 export const cmdRedo = () => {
   trigger(BINDING_GROUP, "Redo");
+};
+
+// Advanced tab: copy / paste and templates. Paste replaces the selection's markings (undo
+// brings them back); Turn lays the last paste down rotated one road further.
+export const cmdCopyMarkings = () => {
+  trigger(BINDING_GROUP, "CopyMarkings");
+};
+
+export const cmdPasteMarkings = () => {
+  trigger(BINDING_GROUP, "PasteMarkings");
+};
+
+export const cmdTurnPaste = () => {
+  trigger(BINDING_GROUP, "TurnPaste");
+};
+
+export const cmdSaveTemplate = (name: string) => {
+  trigger(BINDING_GROUP, "SaveTemplate", name);
+};
+
+export const cmdPasteTemplate = (index: number) => {
+  trigger(BINDING_GROUP, "PasteTemplate", index);
+};
+
+export const cmdDeleteTemplate = (index: number) => {
+  trigger(BINDING_GROUP, "DeleteTemplate", index);
+};
+
+// Auto markings.
+export const cmdSetAutoMarkings = (on: boolean) => {
+  trigger(BINDING_GROUP, "SetAutoMarkings", on);
+};
+
+export const cmdSetAutoMarkingStyle = (style: number) => {
+  trigger(BINDING_GROUP, "SetAutoMarkingStyle", style);
+};
+
+export const cmdSetAutoTurnsOnly = (on: boolean) => {
+  trigger(BINDING_GROUP, "SetAutoTurnsOnly", on);
+};
+
+// This junction's own mode (AUTO_MODE).
+export const cmdSetAutoMode = (mode: number) => {
+  trigger(BINDING_GROUP, "SetAutoMode", mode);
+};
+
+// Turns the junction's auto lines into normal lines and stops auto markings here.
+export const cmdKeepAutoLines = () => {
+  trigger(BINDING_GROUP, "KeepAutoLines");
 };

@@ -236,6 +236,18 @@ namespace ILM
         [SettingsUIHidden]
         public int SnapMask { get; set; } = 31;
 
+        // Auto markings (MarkingAutoSystem): guide lines through junctions made from the lanes the
+        // game built, which follow the Traffic mod's lane connections. Set from the panel's
+        // Advanced tab; junctions set to On or Off there ignore AutoMarkings.
+        [SettingsUIHidden]
+        public bool AutoMarkings { get; set; } = false;
+
+        [SettingsUIHidden]
+        public int AutoMarkingStyle { get; set; } = 1;
+
+        [SettingsUIHidden]
+        public bool AutoMarkingTurnsOnly { get; set; } = true;
+
         // Per-action tool, panel and rebuild messages at Debug level, for bug reports. Hidden from
         // the options screen; to enable, set "VerboseLogging": true in ILM.coc and
         // restart the game.
@@ -268,6 +280,9 @@ namespace ILM
             PinnedLineStylesCsv = "";
             PinnedAreaStylesCsv = "";
             SnapMask = 31;
+            AutoMarkings = false;
+            AutoMarkingStyle = 1;
+            AutoMarkingTurnsOnly = true;
             VerboseLogging = false;
 #if DEBUG
             DiagnosticDumps = false;

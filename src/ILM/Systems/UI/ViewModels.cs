@@ -45,6 +45,23 @@ namespace ILM.Systems.UI
         public FreePointVM[] points = Array.Empty<FreePointVM>();
         public bool canUndo;
         public bool canRedo;
+        // Advanced tab: copied markings (null when nothing is copied), saved templates, the last
+        // paste (PasteResult, a tick that changes on every paste, what was placed) and whether
+        // "Turn" can lay it down rotated.
+        public TemplateVM clipboard;
+        public TemplateVM[] templates = Array.Empty<TemplateVM>();
+        public int pasteResult;
+        public int pasteTick;
+        public int pastedLines;
+        public int pastedAreas;
+        public bool canTurn;
+        // Auto markings: the global switch and its options, this junction's mode
+        // (AutoMarkingMode: 0 default, 1 on, 2 off) and how many auto lines it has.
+        public bool autoGlobal;
+        public int autoStyle;
+        public bool autoTurnsOnly;
+        public int autoMode;
+        public int autoLineCount;
         public LineVM[] lines = Array.Empty<LineVM>();
         public AreaVM[] areas = Array.Empty<AreaVM>();
     }
@@ -56,6 +73,8 @@ namespace ILM.Systems.UI
         public int curv;
         // Hand-shaped with drag handles; the curvature stepper then shows "custom".
         public bool handles;
+        // Made by auto markings (MarkingLine.isAuto).
+        public bool auto;
         public SegmentVM[] segments = Array.Empty<SegmentVM>();
     }
 
@@ -79,6 +98,19 @@ namespace ILM.Systems.UI
         public int lineCount;
         public int areaCount;
     }
+    /// <summary>Copied markings or a saved template, for the Advanced tab.</summary>
+    public class TemplateVM
+    {
+        public int index; // -1 for the clipboard
+        public string name = "";
+        public int roads;
+        public bool isRoad;
+        public int lines;
+        public int areas;
+        // Same kind and number of roads as the selection, so it can be pasted here.
+        public bool fits;
+    }
+
     public class AreaVM
     {
         public int areaIndex;

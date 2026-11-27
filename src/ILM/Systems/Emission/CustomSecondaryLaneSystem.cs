@@ -380,9 +380,13 @@ public partial class CustomSecondaryLaneSystem : GameSystemBase
 				// disappear on the next update.
 				bool skipGeneration = m_MarkingOverrideData.TryGetComponent(owner, out var __markingOverride) && __markingOverride.HideAll;
 				// ILM: a node with user-drawn lines gets no vanilla markings at all; its lines are
-				// spawned by MarkingSegmentEmissionSystem.
-				if (isNode && m_MarkingLines.TryGetBuffer(owner, out var __userLines) && __userLines.Length > 0)
-					skipGeneration = true;
+				// spawned by MarkingSegmentEmissionSystem. Auto lines (MarkingLine.isAuto) don't count:
+				// they add guide lines on top of the game's markings.
+				if (isNode && m_MarkingLines.TryGetBuffer(owner, out var __userLines))
+				{
+					for (int __l = 0; __l < __userLines.Length; __l++)
+						if (!__userLines[__l].isAuto) { skipGeneration = true; break; }
+				}
 				if (skipGeneration) { goto skipMarkingGeneration; }
 				EdgeGeometry edgeGeometry = default(EdgeGeometry);
 				Line3 line = default(Line3);

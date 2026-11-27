@@ -36,8 +36,11 @@ namespace ILM.Components
         public bool hasHandles;
         public float3 handleA; // control point 1 = source position + handleA
         public float3 handleB; // control point 2 = target position + handleB
+        // Made by auto markings (MarkingAutoSystem) from the junction's lane connections. Auto lines are
+        // replaced when the lanes change and do not hide the game's own markings.
+        public bool isAuto;
 
-        private const int kVersion = 5;
+        private const int kVersion = 6;
 
         public void Serialize<TWriter>(TWriter writer) where TWriter : IWriter
         {
@@ -51,6 +54,7 @@ namespace ILM.Components
             writer.Write(hasHandles);
             writer.Write(handleA);
             writer.Write(handleB);
+            writer.Write(isAuto);
         }
 
         public void Deserialize<TReader>(TReader reader) where TReader : IReader
@@ -76,6 +80,8 @@ namespace ILM.Components
                 handleA = default;
                 handleB = default;
             }
+            if (version >= 6) reader.Read(out isAuto);
+            else isAuto = false;
         }
     }
 }

@@ -148,6 +148,7 @@ namespace ILM
             updateSystem.UpdateAt<MarkingAreaTriangulationSystem>(SystemUpdatePhase.Modification2B);
             // After GeometrySystem (Modification4): rebuilds markings whose road moved (Move It).
             updateSystem.UpdateAt<MarkingGeometryWatchSystem>(SystemUpdatePhase.Modification5);
+            updateSystem.UpdateAt<MarkingAutoSystem>(SystemUpdatePhase.Modification5);
 
             updateSystem.UpdateAt<ILMUISystem>(SystemUpdatePhase.UIUpdate);
         }

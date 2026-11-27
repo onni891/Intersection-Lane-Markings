@@ -101,6 +101,7 @@ namespace ILM.Systems.UI
             CreateTrigger<int>("SetEditTarget", OnSetEditTarget);
             CreateTrigger<int>("SetSnapMask", OnSetSnapMask);
             RegisterHistoryTriggers();
+            RegisterAdvancedTriggers();
             CreateTrigger<int>("DeleteFreePoint", OnDeleteFreePoint);
             CreateTrigger("RemoveUnusedPoints", OnRemoveUnusedPoints);
             CreateTrigger<int>("SetHoveredPoint", OnSetHoveredPoint);
@@ -180,6 +181,7 @@ namespace ILM.Systems.UI
             HashFreePoints(ref h, node);
             h.Add(_tool.CanUndo);
             h.Add(_tool.CanRedo);
+            HashAdvanced(ref h, node);
 
             if (node != Entity.Null && EntityManager.HasBuffer<MarkingLine>(node))
             {
@@ -190,6 +192,7 @@ namespace ILM.Systems.UI
                     h.Add(lines[i].style);
                     h.Add(lines[i].curvature);
                     h.Add(lines[i].hasHandles);
+                    h.Add(lines[i].isAuto);
                 }
                 if (EntityManager.HasBuffer<MarkingSegment>(node))
                 {
@@ -262,6 +265,7 @@ namespace ILM.Systems.UI
                 freePointCount = node != Entity.Null && EntityManager.HasBuffer<MarkingFreePoint>(node)
                     ? EntityManager.GetBuffer<MarkingFreePoint>(node, isReadOnly: true).Length : 0,
             };
+            FillAdvanced(vm, node);
 
             if (node != Entity.Null && EntityManager.HasBuffer<MarkingLine>(node))
             {
@@ -311,6 +315,7 @@ namespace ILM.Systems.UI
                         // Integer percent of [0, kMaxPullFactor]; 50% is the 0.4 default pull.
                         curv = (int)math.round(math.saturate(line.curvature / MarkingCurveBuilder.kMaxPullFactor) * 100f),
                         handles = line.hasHandles,
+                        auto = line.isAuto,
                         segments = segScratch.ToArray(),
                     };
                 }

@@ -147,6 +147,12 @@ namespace ILM.Systems.Tool
                     case DragKind.AreaVertex:
                         int n = _editAreaPos.Count;
                         if (n < 3 || _dragIndex < 0 || _dragIndex >= n) { ctx.active = false; return ctx; }
+                        // A free-point corner moves live (see LiveDrag), so it must not snap to itself.
+                        if (_dragIndex < _editAreaVerts.Count && IsFreeVertex(_editAreaVerts[_dragIndex]))
+                        {
+                            ctx.excludeEdge = _editAreaVerts[_dragIndex].refEdgeA;
+                            ctx.excludeGap = _editAreaVerts[_dragIndex].refGap;
+                        }
                         var prev = _editAreaPos[(_dragIndex - 1 + n) % n];
                         var prev2 = _editAreaPos[(_dragIndex - 2 + n) % n];
                         ctx.hasFrom = true;

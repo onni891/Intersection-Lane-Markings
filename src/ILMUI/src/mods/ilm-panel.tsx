@@ -36,6 +36,21 @@ import {
   cmdRemoveUnusedPoints,
   cmdSetHoveredPoint,
   cmdClearHoveredPoint,
+  cmdCopyMarkings,
+  cmdPasteMarkings,
+  cmdTurnPaste,
+  cmdSaveTemplate,
+  cmdPasteTemplate,
+  cmdDeleteTemplate,
+  cmdSetAutoMarkings,
+  cmdSetAutoMarkingStyle,
+  cmdSetAutoTurnsOnly,
+  cmdSetAutoMode,
+  cmdKeepAutoLines,
+  PASTE_RESULT,
+  AUTO_MODE,
+  TemplateVM,
+  ToolStateVM,
   TOOL_STATE,
   LINE_MODE,
   EDIT_TARGET,
@@ -72,6 +87,10 @@ import {
   Cursor,
   SnapDots,
   Anywhere,
+  Gear,
+  Copy,
+  Paste,
+  Save,
 } from "../components/icons";
 import { LineStylePreview, AreaStylePreview, isG87LineStyle } from "../components/stylePreviews";
 import { Dropdown, DropdownOption } from "../components/Dropdown";
@@ -137,10 +156,17 @@ import {
   ListHeader,
   CountChip,
   EmptyText,
-  Foldout,
-  FoldoutBtn,
   Footer,
   FooterBtn,
+  ActionRow,
+  ActionBtn,
+  InfoText,
+  TextInput,
+  InputRow,
+  TemplateRow,
+  TemplateText,
+  TemplateName,
+  TemplateMeta,
 } from "./panel.styles";
 
 // An exception inside the panel must not reach the game's React root, where it would take
@@ -471,7 +497,7 @@ const ILMWindow = ({ fixed, footer, children }: { fixed?: ReactNode; footer?: Re
   );
 };
 
-type PanelTab = "lines" | "areas" | "points";
+type PanelTab = "lines" | "areas" | "points" | "advanced";
 
 type IconC = (p: { size?: number; color?: string }) => JSX.Element;
 
@@ -479,6 +505,7 @@ const TABS: { id: PanelTab; key: StringKey; tip: StringKey; Icon: IconC }[] = [
   { id: "lines", key: "tab.lines", tip: "tab.lines.tooltip", Icon: ToolLines },
   { id: "areas", key: "tab.areas", tip: "tab.areas.tooltip", Icon: ToolAreas },
   { id: "points", key: "tab.points", tip: "tab.points.tooltip", Icon: ToolPoints },
+  { id: "advanced", key: "tab.advanced", tip: "tab.advanced.tooltip", Icon: Gear },
 ];
 
 // One row of the option block: a label on the left, the control on the right.
@@ -503,7 +530,7 @@ const Choice = ({
 }) => (
   <Segmented>
     {options.map(({ active, label, tip, Icon, onClick }) => (
-      <Tooltip key={label} content={tip}>
+      <Tooltip key={label} content={tip} grow>
         <SegBtn $active={active} onClick={onClick}>
           <Icon size={13} />
           <span>{label}</span>
@@ -529,10 +556,10 @@ const Help = ({ title, rows }: { title: string; rows: [StringKey, StringKey][] }
   );
 };
 
-const ListTitle = ({ label, count }: { label: string; count: number }) => (
+const ListTitle = ({ label, count }: { label: string; count?: number }) => (
   <ListHeader>
     <span>{label}</span>
-    <CountChip>{count}</CountChip>
+    {count !== undefined && <CountChip>{count}</CountChip>}
   </ListHeader>
 );
 
@@ -568,9 +595,6 @@ const ILMPanelInner = () => {
   // Chosen tab. Area drawing is the C# AreaSelecting state, so the Areas tab follows it:
   // while drawing an area the Areas tab shows, and when drawing ends it falls back to Lines.
   const [tab, setTab] = useState<PanelTab>("lines");
-  // The settings foldout at the bottom of the body.
-  const [settingsOpen, setSettingsOpen] = useState(false);
-
   // The expanded rows react to changes pushed by C#. They are adjusted while rendering, on
   // the render that first sees the change, instead of in effects that would commit a frame
   // with the stale row first. The seen values start out null so the first render applies
@@ -771,7 +795,7 @@ const ILMPanelInner = () => {
   const fixed = (
     <TabBar>
       {TABS.map(({ id, key, tip, Icon }) => (
-        <Tooltip key={id} content={t(tip)}>
+        <Tooltip key={id} content={t(tip)} grow>
           <TabBtn $active={shownTab === id} onClick={() => openTab(id)}>
             <Icon size={15} />
             <span>{t(key)}</span>
@@ -965,32 +989,7 @@ const ILMPanelInner = () => {
           </>
         )}
 
-        {/* Settings for the selected junction or road, folded away: rarely needed. */}
-        <Foldout>
-          <FoldoutBtn onClick={() => setSettingsOpen(!settingsOpen)}>
-            <LineChevron $open={settingsOpen}>
-              <ChevronRight size={10} />
-            </LineChevron>
-            <span>{state.selectedIsRoad ? t("settings.title.road") : t("settings.title")}</span>
-          </FoldoutBtn>
-          {settingsOpen && (
-            <>
-              <ToggleRow>
-                <FieldLabel>{t("node.vanilla.label")}</FieldLabel>
-                <Tooltip content={t("vanilla.tooltip")}>
-                  <IconToggleBtn $active={state.vanillaHidden} onClick={cmdToggleVanillaMarkings}>
-                    {state.vanillaHidden ? <EyeOff size={14} /> : <Eye size={14} />}
-                  </IconToggleBtn>
-                </Tooltip>
-              </ToggleRow>
-              {(state.lines.length > 0 || state.areas.length > 0 || state.vanillaHidden || state.freePointCount > 0) && (
-                <ResetNodeButton />
-              )}
-              <HotkeysList />
-              <NodeIdText>{t("advanced.optionsHint")}</NodeIdText>
-            </>
-          )}
-        </Foldout>
+        {shownTab === "advanced" && <AdvancedTab state={state} />}
       </ILMWindow>
       {shownTab === "lines" && popoverLine?.segments.map((seg) => (
         <SegmentPopover
@@ -1042,6 +1041,7 @@ const LineRow = ({
           <SwatchWrap>
             <LineStylePreview style={line.style} width={28} height={8} />
             {isG87LineStyle(line.style) && <G87Mark>G87</G87Mark>}
+            {line.auto && <G87Mark>AUTO</G87Mark>}
           </SwatchWrap>
         </Tooltip>
         <LineSegCount>
@@ -1142,6 +1142,195 @@ const AreaRow = ({
         )}
       </LineBody>
     </LineRowOuter>
+  );
+};
+
+// "4-way junction · 6 lines · 2 areas"
+const templateMeta = (t: ReturnType<typeof useT>, tpl: TemplateVM): string =>
+  [
+    tpl.isRoad ? t("adv.kind.road") : t("adv.kind.junction", { n: tpl.roads }),
+    t("adv.count.lines", { n: tpl.lines }),
+    tpl.areas > 0 ? t("adv.count.areas", { n: tpl.areas }) : null,
+  ]
+    .filter((s) => s !== null)
+    .join(" · ");
+
+const PASTE_MESSAGES: Record<number, StringKey> = {
+  [PASTE_RESULT.NothingToPaste]: "adv.paste.nothing",
+  [PASTE_RESULT.RoadCountDiffers]: "adv.paste.roads",
+  [PASTE_RESULT.KindDiffers]: "adv.paste.kind",
+  [PASTE_RESULT.NoRoads]: "adv.paste.noRoads",
+};
+
+// The Advanced tab: copy / paste, templates, auto markings and this junction's settings.
+const AdvancedTab = ({ state }: { state: ToolStateVM }) => {
+  const t = useT();
+  const pinned = usePinnedStyles();
+  const [name, setName] = useState("");
+  const clip = state.clipboard;
+  const hasMarkings = state.lines.length > 0 || state.areas.length > 0;
+
+  // Shown for the paste that just happened, until the selection changes.
+  const [seenPaste, setSeenPaste] = useState(state.pasteTick);
+  const [pasteNode, setPasteNode] = useState(state.selectedNodeIndex);
+  if (state.selectedNodeIndex !== pasteNode) {
+    setPasteNode(state.selectedNodeIndex);
+    setSeenPaste(state.pasteTick);
+  }
+  const showPaste = state.pasteTick !== seenPaste;
+
+  const save = () => {
+    cmdSaveTemplate(name);
+    setName("");
+  };
+
+  return (
+    <>
+      <ListTitle label={t("adv.copy.title")} />
+      <ActionRow>
+        <Tooltip content={t("adv.copy.tooltip")} grow>
+          <ActionBtn $disabled={!hasMarkings} onClick={() => hasMarkings && cmdCopyMarkings()}>
+            <Copy size={13} />
+            <span>{t("adv.copy")}</span>
+          </ActionBtn>
+        </Tooltip>
+        <Tooltip content={clip && !clip.fits ? t("adv.paste.noFit") : t("adv.paste.tooltip")} grow>
+          <ActionBtn $primary $disabled={!clip?.fits} onClick={() => clip?.fits && cmdPasteMarkings()}>
+            <Paste size={13} />
+            <span>{t("adv.paste")}</span>
+          </ActionBtn>
+        </Tooltip>
+        <Tooltip content={t("adv.turn.tooltip")} grow>
+          <ActionBtn $disabled={!state.canTurn} onClick={() => state.canTurn && cmdTurnPaste()}>
+            <Cycle size={13} />
+            <span>{t("adv.turn")}</span>
+          </ActionBtn>
+        </Tooltip>
+      </ActionRow>
+      <InfoText>{clip ? t("adv.clipboard", { what: templateMeta(t, clip) }) : t("adv.clipboard.empty")}</InfoText>
+      {showPaste && (
+        <InfoText $tone={state.pasteResult === PASTE_RESULT.Ok ? "ok" : "warn"}>
+          {state.pasteResult === PASTE_RESULT.Ok
+            ? t("adv.paste.ok", { lines: state.pastedLines, areas: state.pastedAreas })
+            : t(PASTE_MESSAGES[state.pasteResult] ?? "adv.paste.nothing")}
+        </InfoText>
+      )}
+
+      <InputRow>
+        <TextInput
+          type="text"
+          value={name}
+          placeholder={t("adv.template.placeholder")}
+          onChange={(e: ChangeEvent<HTMLInputElement>) => setName(e.target.value.slice(0, 40))}
+          onKeyDown={(e: ReactKeyboardEvent<HTMLInputElement>) => {
+            if (e.key === "Enter" && hasMarkings) save();
+          }}
+        />
+        <Tooltip content={t("adv.template.save.tooltip")}>
+          <ActionBtn $disabled={!hasMarkings} onClick={() => hasMarkings && save()}>
+            <Save size={13} />
+            <span>{t("adv.template.save")}</span>
+          </ActionBtn>
+        </Tooltip>
+      </InputRow>
+      <div style={{ marginTop: T.space2 }}>
+        {state.templates.length === 0 ? (
+          <EmptyText>{t("adv.template.empty")}</EmptyText>
+        ) : (
+          state.templates.map((tpl) => <TemplateItem key={`${tpl.index}-${tpl.name}`} tpl={tpl} />)
+        )}
+      </div>
+
+      <ListTitle label={t("adv.auto.title")} count={state.autoLineCount} />
+      <Options>
+        <Option label={t("adv.auto.global")} tip={t("adv.auto.global.tooltip")}>
+          <Choice
+            options={[
+              { active: !state.autoGlobal, label: t("adv.off"), tip: t("adv.auto.global.off"), Icon: EyeOff, onClick: () => cmdSetAutoMarkings(false) },
+              { active: state.autoGlobal, label: t("adv.on"), tip: t("adv.auto.global.on"), Icon: Eye, onClick: () => cmdSetAutoMarkings(true) },
+            ]}
+          />
+        </Option>
+        {!state.selectedIsRoad && (
+          <Option label={t("adv.auto.here")} tip={t("adv.auto.here.tooltip")}>
+            <Segmented>
+              {[
+                { mode: AUTO_MODE.Default, label: t("adv.auto.here.default") },
+                { mode: AUTO_MODE.On, label: t("adv.on") },
+                { mode: AUTO_MODE.Off, label: t("adv.off") },
+              ].map(({ mode, label }) => (
+                <SegBtn key={mode} $active={state.autoMode === mode} onClick={() => cmdSetAutoMode(mode)}>
+                  {label}
+                </SegBtn>
+              ))}
+            </Segmented>
+          </Option>
+        )}
+        <Option label={t("adv.auto.style")}>
+          <Dropdown
+            value={state.autoStyle as StyleValue}
+            options={makeLineStyleOptions(t, pinned.lineStyles)}
+            onChange={(s) => cmdSetAutoMarkingStyle(s)}
+            onTogglePin={cmdTogglePinLineStyle}
+          />
+        </Option>
+        <Option label={t("adv.auto.lanes")} tip={t("adv.auto.lanes.tooltip")}>
+          <Segmented>
+            <SegBtn $active={state.autoTurnsOnly} onClick={() => cmdSetAutoTurnsOnly(true)}>{t("adv.auto.lanes.turns")}</SegBtn>
+            <SegBtn $active={!state.autoTurnsOnly} onClick={() => cmdSetAutoTurnsOnly(false)}>{t("adv.auto.lanes.all")}</SegBtn>
+          </Segmented>
+        </Option>
+      </Options>
+      <InfoText>{t("adv.auto.hint")}</InfoText>
+      {state.autoLineCount > 0 && (
+        <Tooltip content={t("adv.auto.keep.tooltip")}>
+          <Btn $full onClick={cmdKeepAutoLines}>
+            <span>{t("adv.auto.keep", { n: state.autoLineCount })}</span>
+          </Btn>
+        </Tooltip>
+      )}
+
+      <ListTitle label={state.selectedIsRoad ? t("settings.title.road") : t("settings.title")} />
+      <ToggleRow>
+        <FieldLabel>{t("node.vanilla.label")}</FieldLabel>
+        <Tooltip content={t("vanilla.tooltip")}>
+          <IconToggleBtn $active={state.vanillaHidden} onClick={cmdToggleVanillaMarkings}>
+            {state.vanillaHidden ? <EyeOff size={14} /> : <Eye size={14} />}
+          </IconToggleBtn>
+        </Tooltip>
+      </ToggleRow>
+      {(hasMarkings || state.vanillaHidden || state.freePointCount > 0) && <ResetNodeButton />}
+
+      <ListTitle label={t("hotkeys.title")} />
+      <HotkeysList />
+      <NodeIdText>{t("advanced.optionsHint")}</NodeIdText>
+    </>
+  );
+};
+
+const TemplateItem = ({ tpl }: { tpl: TemplateVM }) => {
+  const t = useT();
+  const del = useConfirm();
+  return (
+    <TemplateRow>
+      <TemplateText>
+        <TemplateName>{tpl.name}</TemplateName>
+        <TemplateMeta>{templateMeta(t, tpl)}</TemplateMeta>
+      </TemplateText>
+      <Tooltip content={tpl.fits ? t("adv.paste.tooltip") : t("adv.paste.noFit")}>
+        <IconToggleBtn style={tpl.fits ? undefined : { opacity: 0.4 }} onClick={() => tpl.fits && cmdPasteTemplate(tpl.index)}>
+          <Paste size={13} />
+        </IconToggleBtn>
+      </Tooltip>
+      <Tooltip content={del.armed ? t("line.delete.confirm.btn") : t("adv.template.delete")}>
+        <IconToggleBtn
+          style={del.armed ? ARMED_DELETE_STYLE : undefined}
+          onClick={() => del.press(() => cmdDeleteTemplate(tpl.index))}
+        >
+          <Trash size={12} color={T.colorDanger} />
+        </IconToggleBtn>
+      </Tooltip>
+    </TemplateRow>
   );
 };
 

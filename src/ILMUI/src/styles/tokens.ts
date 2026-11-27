@@ -117,7 +117,7 @@ export const tokens = {
 
   // Layout. calc() does not work in cohtml, so the panel's max height is a fixed value
   // that leaves the bottom toolbar visible on most screens; the panel scrolls past it.
-  panelWidth:     "320rem",
+  panelWidth:     "360rem",
   panelMaxHeight: "760rem",
   // Scrolling part below the title bar, tabs and status; leaves the bottom toolbar visible.
   panelScrollMaxHeight: "600rem",

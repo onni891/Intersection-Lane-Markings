@@ -142,10 +142,13 @@ export const TooltipProvider = ({ children }: { children: ReactNode }) => {
 export const Tooltip = ({
   content,
   position = "bottom",
+  grow,
   children,
 }: {
   content: ReactNode;
   position?: TooltipPosition;
+  // Let the wrapper take its share of a flex row (tabs, segmented buttons).
+  grow?: boolean;
   children: ReactNode;
 }) => {
   const { show, hide } = useTooltip();
@@ -154,7 +157,7 @@ export const Tooltip = ({
   return (
     <span
       ref={ref}
-      style={{ display: "flex" }}
+      style={grow ? { display: "flex", flex: 1, minWidth: 0 } : { display: "flex" }}
       onMouseEnter={() => {
         if (ref.current) show(content, ref.current.getBoundingClientRect(), position);
       }}
